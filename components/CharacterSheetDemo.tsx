@@ -1674,6 +1674,7 @@ useEffect(() => {
 
   // track edit state for skills
   const [editSkills, setEditSkills] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const toggleCurrentMission = (skillId: string, v: boolean) => {
     const next = { ...(char.currentMissionSkills ?? {}), [skillId]: v };
@@ -2031,14 +2032,39 @@ useEffect(() => {
             Import Character
           </Button>
 
+          {!confirmReset ? (
           <Button
             type="button"
             variant="destructive"
             onMouseDown={(e) => e.preventDefault()}
-            onClick={handleResetSave}
+            onClick={() => setConfirmReset(true)}
           >
             Reset Save
           </Button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="destructive"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                try { localStorage.removeItem(STORAGE_KEY); } catch {}
+                onChange(DEFAULT_CHARACTER);
+                setConfirmReset(false);
+              }}
+            >
+              Confirm Reset
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setConfirmReset(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
         </CardContent>
       </Card>
     </div>
