@@ -1243,7 +1243,7 @@ const InjuriesPanel: React.FC<{
             inputMode="numeric"
             pattern="[0-9]*"
             value={injuries}
-            onChange={(e) => onChange(clamp(parseInt(e.target.value || '0', 10), 0, 10))}
+            onChange={(e) => onChange(clamp(parseInt(e.target.value || '0', 99), 0, 99))}
             disabled={readOnly}
           />
         </div>
@@ -1252,7 +1252,7 @@ const InjuriesPanel: React.FC<{
             type="button"
             onMouseDown={(e) => e.preventDefault()}
             variant="secondary"
-            onClick={() => onChange(clamp(injuries - 1, 0, 10))}
+            onClick={() => onChange(clamp(injuries - 1, 0, 99))}
             disabled={readOnly}
           >
             −
@@ -1261,7 +1261,7 @@ const InjuriesPanel: React.FC<{
             type="button"
             onMouseDown={(e) => e.preventDefault()}
             variant="secondary"
-            onClick={() => onChange(clamp(injuries + 1, 0, 10))}
+            onClick={() => onChange(clamp(injuries + 1, 0, 99))}
             disabled={readOnly}
           >
             +
