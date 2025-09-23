@@ -1760,7 +1760,11 @@ useEffect(() => {
                   <option>Penthouse</option>
                 </select>
               </div>
-              <div className="grid gap-1.5 md:col-span-1">
+            </CardContent>
+          </Card>
+                    <Card className="shadow-sm">
+            <CardContent className="grid gap-4 p-4">
+              <div className="grid gap-1.5">
                 <Label>Upgrades</Label>
                 <div className="space-y-2">
                   {(char.housing?.upgrades ?? []).map((u, i) => (
@@ -1781,6 +1785,7 @@ useEffect(() => {
                           </option>
                         ))}
                       </select>
+
                       <Button
                         type="button"
                         variant="ghost"
@@ -1801,6 +1806,7 @@ useEffect(() => {
                       </Button>
                     </div>
                   ))}
+
                   <Button
                     type="button"
                     size="sm"
@@ -1816,6 +1822,7 @@ useEffect(() => {
               </div>
             </CardContent>
           </Card>
+
         </TabsContent>
 
         {/* Conditions */}
