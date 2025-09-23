@@ -48,7 +48,7 @@ export type MissionLogEntry = {
 };
 
 export type DebtEntry = { id: string; creditor: string; amount: number; notes?: string };
-export type RecurringFrequency = 'per-mission' | 'Every other mission' | 'monthly' | 'quarterly' | 'yearly';
+export type RecurringFrequency = 'Per-mission' | 'Every other mission' | 'Monthly' | 'Quarterly' | 'Yearly';
 export type PaymentEvent = { paidAtISO: string; amount: number; note?: string };
 export type RecurringCostEntry = {
   id: string;
@@ -637,11 +637,11 @@ const ResourcesPanel: React.FC<{
                     }}
                     disabled={readOnly}
                   >
-                    <option value="per-mission">Per mission</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                    <option value="yearly">Yearly</option>
+                    <option value="Per-mission">Per mission</option>
+                    <option value="Every other mission">Every other mission</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Quarterly">Quarterly</option>
+                    <option value="Yearly">Yearly</option>
                   </select>
                   <Input
                     className="sm:col-span-2"
