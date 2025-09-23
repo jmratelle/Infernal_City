@@ -2,7 +2,35 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+1. Install Node.js
+
+Go to https://nodejs.org
+
+Download the LTS version (Long Term Support, usually recommended for apps).
+
+Install it with the default settings.
+
+2. Verify installation
+
+After install restart your computer and then open your terminal and check versions:
+
+node -v
+
+3. Then follow with your app setup
+
+Once Node is installed, you can run the project setup from earlier:
+
+npx create-next-app@latest infernal-sheet --typescript --eslint --tailwind
+cd infernal-sheet
+
+npx shadcn@latest init
+npm install framer-motion lucide-react
+
+npx shadcn@latest add card button input label textarea tabs
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+Run the development server:
 
 ```bash
 npm run dev
