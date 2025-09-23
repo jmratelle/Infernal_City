@@ -698,7 +698,7 @@ const ItemsTable: React.FC<{
       <CardContent className="p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-sm font-medium text-muted-foreground">{title}</div>
-          <Button type="button" size="sm" onClick={addRow} disabled={readOnly}>
+          <Button type="button" size="sm" onClick={addRow} onMouseDown={(e) => e.preventDefault()} disabled={readOnly}>
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
         </div>
@@ -737,6 +737,7 @@ const ItemsTable: React.FC<{
                   ))}
                   <td className="px-2 py-2 text-right">
                     <Button
+                      onMouseDown={(e) => e.preventDefault()}
                       type="button"
                       variant="ghost"
                       size="icon"
@@ -1395,8 +1396,9 @@ const LevelUpPanel: React.FC<{
         <div className="mb-2 text-sm font-medium text-muted-foreground">{title}</div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
           {items.map((def) => (
-            <label key={def.id} className="flex items-center gap-2 text-sm">
+            <label key={def.id} className="flex items-center gap-2 text-sm" onMouseDown={(e) => e.preventDefault()}>
               <input
+                onMouseDown={(e) => e.preventDefault()}
                 type="checkbox"
                 className="h-4 w-4 accent-foreground"
                 checked={!!ticked[def.id]}
@@ -1787,6 +1789,7 @@ useEffect(() => {
                       </select>
 
                       <Button
+                        onMouseDown={(e) => e.preventDefault()}
                         type="button"
                         variant="ghost"
                         size="icon"
@@ -1810,6 +1813,7 @@ useEffect(() => {
                   <Button
                     type="button"
                     size="sm"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       const next = [...(char.housing?.upgrades ?? []), HIDEOUT_UPGRADES[0] as string];
                       onChange(set(char, 'housing', { ...(char.housing ?? {}), upgrades: next }));
