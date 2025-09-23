@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useId, useEffect } from 'react';
+import React, { useMemo, useState, useId, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -182,6 +182,8 @@ export type CharacterSheetProps = {
 const SKILL_REROLL_THRESHOLD = 3;
 const SKILL_REROLL_MIN = 0;
 const SKILL_REROLL_MAX = 9;
+const STORAGE_KEY = 'characterSheet:v1';
+
 
 const HIDEOUT_UPGRADES = [
   'Bedroom',
@@ -1557,6 +1559,21 @@ const DEFAULT_CHARACTER: Character = {
 // ---------- Main Component ----------
 export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) {
   const [char, setChar] = useState<Character>(props.value ?? DEFAULT_CHARACTER);
+   // Load saved character once on mount if parent didn't provide one
+   useEffect(() => {
+     try {
+       if (!props.value) {
+         const raw = localStorage.getItem(STORAGE_KEY);
+         if (raw) {
+           const saved = JSON.parse(raw) as Character;
+           setChar(saved);
+         }
+       }
+     } catch {
+       // ignore malformed storage
+     }
+   }, []);
+
 // Tracks previous attribute levels so we can detect increases for tally consumption
 const prevAttrsRef = React.useRef<Record<string, number>>(char.attributes);
 
@@ -1588,6 +1605,15 @@ useEffect(() => {
   prevAttrsRef.current = next;
 }, [char.attributes, char.missionHistory, char.tallySpent]);
 
+   // Autosave on any change
+   useEffect(() => {
+     try {
+       localStorage.setItem(STORAGE_KEY, JSON.stringify(char));
+     } catch {
+       // storage full or blocked; ignore
+     }
+   }, [char]);
+
   const registry = useMemo(() => props.registry ?? DEFAULT_REGISTRY, [props.registry]);
   const onChange = props.onChange ?? setChar;
   const readOnly = props.readOnly ?? false;
@@ -1617,7 +1643,52 @@ useEffect(() => {
   const history = [...(char.missionHistory ?? []), entry];
   onChange({ ...char, missionHistory: history, currentMissionSkills: {} });
 };
+  // Save/Load helpers
+  const fileRef = useRef<HTMLInputElement>(null);
 
+  const handleExportCharacter = () => {
+    try {
+      const blob = new Blob([JSON.stringify(char, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'character.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleImportClick = () => {
+    fileRef.current?.click();
+  };
+
+  const handleImportFile: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const text = await f.text();
+      const data = JSON.parse(text) as Character;
+      // update state and persist
+      onChange(data);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch {}
+    } catch {
+      // ignore malformed files
+    } finally {
+      // reset input so selecting the same file again will trigger onChange
+      e.target.value = '';
+    }
+  };
+
+  const handleResetSave = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    onChange(DEFAULT_CHARACTER);
+  };
   return (
     <div className="mx-auto grid max-w-6xl gap-4 p-4">
 
@@ -1875,6 +1946,44 @@ useEffect(() => {
             <summary className="cursor-pointer select-none">Debug: Character JSON</summary>
             <pre className="mt-2 whitespace-pre-wrap break-words">{JSON.stringify(char, null, 2)}</pre>
           </details>
+        </CardContent>
+      </Card>
+      {/* Save/Load controls */}
+      <Card className="mt-4">
+        <CardContent className="flex flex-wrap items-center gap-2 p-4">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+
+          <Button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleExportCharacter}
+          >
+            Export Character
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleImportClick}
+          >
+            Import Character
+          </Button>
+
+          <Button
+            type="button"
+            variant="destructive"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleResetSave}
+          >
+            Reset Save
+          </Button>
         </CardContent>
       </Card>
     </div>
