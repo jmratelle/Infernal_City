@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useId } from 'react';
+import React, { useMemo, useState, useId, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -126,7 +126,7 @@ export type Character = {
   race?: string;
   origin?: string;
   money?: number;
-
+  tallySpent?: Record<string, number>;      // NEW: tallies consumed by level-ups
   attributes: Record<string, number>;
   resources: Record<string, number>;
   items: Array<Record<string, string | number>>;
@@ -227,6 +227,34 @@ function formatDate(iso: string) {
 }
 function makeId(prefix = 'id') {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function tallyFromHistory(history: MissionLogEntry[]): Record<string, number> {
+  const totals: Record<string, number> = {};
+  for (const entry of history || []) {
+    for (const skillId of entry.successes) {
+      totals[skillId] = (totals[skillId] || 0) + 1;
+    }
+  }
+  return totals;
+}
+
+function effectiveTallies(history: MissionLogEntry[], spent: Record<string, number> = {}): Record<string, number> {
+  const totals = tallyFromHistory(history);
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(totals)) {
+    out[k] = Math.max(0, v - (spent[k] || 0));
+  }
+  for (const k of Object.keys(spent)) {
+    if (!(k in out)) out[k] = 0;
+  }
+  return out;
+}
+
+function makeTallyVisual(n: number) {
+  const blocks = Math.floor(n / 5);
+  const remainder = n % 5;
+  return '▮'.repeat(blocks) + '|'.repeat(remainder);
 }
 
 // ---------- Subcomponents ----------
@@ -1348,8 +1376,11 @@ const LevelUpPanel: React.FC<{
   onToggle: (skillId: string, val: boolean) => void;
   onCommit: () => void;
   history: MissionLogEntry[];
+  spent?: Record<string, number>;
   readOnly?: boolean;
-}> = ({ defs, ticked, onToggle, onCommit, history, readOnly }) => {
+}> = ({ defs, ticked, onToggle, onCommit, history, spent = {}, readOnly }) => {
+  const totals = effectiveTallies(history || [], spent);
+
   const groups = groupBy(defs);
   const Section = ({ title, items }: { title: string; items: AttributeDef[] }) => (
     <Card className="shadow-sm">
@@ -1366,7 +1397,10 @@ const LevelUpPanel: React.FC<{
                 disabled={readOnly}
                 aria-label={`${def.label} current mission`}
               />
-              <span>{def.label} — Current Mission</span>
+              <span>
+                {def.label} — Current Mission
+                {(totals[def.id] ?? 0) > 0 ? ` (x${totals[def.id]})` : ''}
+</span>
             </label>
           ))}
         </div>
@@ -1499,6 +1533,7 @@ const DEFAULT_CHARACTER: Character = {
   skillRerolls: {},
   currentMissionSkills: {},
   missionHistory: [],
+  tallySpent: {},                   // NEW
   injuries: 0,
   conditions: [],
   debt: [],
@@ -1508,9 +1543,97 @@ const DEFAULT_CHARACTER: Character = {
   secrets: '',
 };
 
+const MissionHistoryPanel: React.FC<{
+  defs: AttributeDef[];
+  history: MissionLogEntry[];
+  spent?: Record<string, number>;
+}> = ({ defs, history, spent = {} }) => {
+  const totals = effectiveTallies(history || [], spent);
+  const groups = groupBy(defs);
+
+  const TotalsSection = ({ title, items }: { title: string; items: AttributeDef[] }) => (
+    <Card className="shadow-sm">
+      <CardContent className="p-4">
+        <div className="mb-2 text-sm font-medium text-muted-foreground">{title} — Tallies</div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {items.map((def) => {
+            const n = totals[def.id] || 0;
+            return (
+              <div key={def.id} className="grid gap-1">
+                <div className="text-sm">{def.label}</div>
+                <div className="text-xs text-muted-foreground">
+                  {n} <span aria-hidden>({makeTallyVisual(n)})</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="grid gap-4">
+
+      <Card className="shadow-sm">
+        <CardContent className="p-4">
+          <div className="mb-2 text-sm font-medium text-muted-foreground">Missions</div>
+          {history.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No missions committed yet.</div>
+          ) : (
+            <ol className="space-y-2">
+              {history.map((m, idx) => (
+                <li key={m.missionId} className="rounded-xl bg-muted/30 p-3">
+                  <div className="text-sm font-medium">
+                    Mission {idx + 1} — {formatDate(m.dateISO)}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {m.successes.length} skill(s) marked
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 // ---------- Main Component ----------
 export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) {
   const [char, setChar] = useState<Character>(props.value ?? DEFAULT_CHARACTER);
+// Tracks previous attribute levels so we can detect increases for tally consumption
+const prevAttrsRef = React.useRef<Record<string, number>>(char.attributes);
+
+// When any attribute goes up, consume all effective tallies for that skill
+useEffect(() => {
+  const prev = prevAttrsRef.current || {};
+  const next = char.attributes || {};
+
+  const spent = { ...(char.tallySpent ?? {}) };
+  const eff = effectiveTallies(char.missionHistory ?? [], spent);
+
+  let changed = false;
+  for (const id of Object.keys(next)) {
+    const before = prev[id] ?? 0;
+    const after = next[id] ?? 0;
+    if (after > before) {
+      const e = eff[id] ?? 0;
+      if (e > 0) {
+        spent[id] = (spent[id] || 0) + e;
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) {
+    onChange({ ...char, tallySpent: spent });
+  }
+
+  prevAttrsRef.current = next;
+}, [char.attributes, char.missionHistory, char.tallySpent]);
+
   const registry = useMemo(() => props.registry ?? DEFAULT_REGISTRY, [props.registry]);
   const onChange = props.onChange ?? setChar;
   const readOnly = props.readOnly ?? false;
@@ -1524,19 +1647,22 @@ export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) 
   };
 
   const commitMission = () => {
-    const successes = Object.entries(char.currentMissionSkills ?? {})
-      .filter(([, v]) => !!v)
-      .map(([k]) => k);
-    const seq = (char.missionHistory?.length ?? 0) + 1;
-    const now = new Date();
-    const entry: MissionLogEntry = {
-      missionId: `Mission ${seq} (${now.toLocaleDateString()})`,
-      dateISO: now.toISOString(),
-      successes,
-    };
-    const history = [...(char.missionHistory ?? []), entry];
-    onChange(set(set(char, 'missionHistory', history), 'currentMissionSkills', {}));
+  const successes = Object.entries(char.currentMissionSkills ?? {})
+    .filter(([, v]) => !!v)
+    .map(([k]) => k);
+
+  const seq = (char.missionHistory?.length ?? 0) + 1;
+  const now = new Date();
+
+  const entry: MissionLogEntry = {
+    missionId: `Mission ${seq} (${now.toLocaleDateString()})`,
+    dateISO: now.toISOString(),
+    successes,
   };
+
+  const history = [...(char.missionHistory ?? []), entry];
+  onChange({ ...char, missionHistory: history, currentMissionSkills: {} });
+};
 
   return (
     <div className="mx-auto grid max-w-6xl gap-4 p-4">
@@ -1767,6 +1893,7 @@ export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) 
             onToggle={toggleCurrentMission}
             onCommit={commitMission}
             history={char.missionHistory ?? []}
+            spent={char.tallySpent ?? {}}
             readOnly={readOnly}
           />
         </TabsContent>
