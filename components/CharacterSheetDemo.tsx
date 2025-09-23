@@ -106,9 +106,9 @@ export type DamageType =
 
 export type ArmorAV = Record<DamageType, number>;
 export type ArmorSlots = {
-  head: { name: string; av: ArmorAV };
-  body: { name: string; av: ArmorAV };
-  lining: { name: string; av: ArmorAV };
+  head: { name: string};
+  body: { name: string};
+  lining: { name: string};
 };
 
 export type VehicleEntry = {
@@ -1529,9 +1529,9 @@ const DEFAULT_CHARACTER: Character = {
   items: [],
   stash: [],
   armor: {
-    head: { name: '', av: emptyAV() },
-    body: { name: '', av: emptyAV() },
-    lining: { name: '', av: emptyAV() },
+    head: { name: ''},
+    body: { name: ''},
+    lining: { name: ''},
   },
   totalArmor: emptyAV(),
   accessories: [],
