@@ -1715,7 +1715,7 @@ useEffect(() => {
         {/* Stats */}
         <TabsContent value="stats" className="grid gap-4">
           {/*: Edit Skills toggle */}
-          <div className="flex justify-end">
+          <div className="flex justify-start">
             <Button
               type="button"
               variant={editSkills ? "secondary" : "default"}
