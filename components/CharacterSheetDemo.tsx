@@ -48,7 +48,7 @@ export type MissionLogEntry = {
 };
 
 export type DebtEntry = { id: string; creditor: string; amount: number; notes?: string };
-export type RecurringFrequency = 'per-mission' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type RecurringFrequency = 'per-mission' | 'Every other mission' | 'monthly' | 'quarterly' | 'yearly';
 export type PaymentEvent = { paidAtISO: string; amount: number; note?: string };
 export type RecurringCostEntry = {
   id: string;
