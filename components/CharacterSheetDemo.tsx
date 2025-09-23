@@ -357,6 +357,7 @@ const GroupedSkillsGrid: React.FC<{
                   <div className="flex gap-1">
                     <Button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       variant="secondary"
                       size="sm"
                       onClick={() =>
@@ -368,6 +369,7 @@ const GroupedSkillsGrid: React.FC<{
                     </Button>
                     <Button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       variant="secondary"
                       size="sm"
                       onClick={() =>
@@ -425,6 +427,26 @@ const ResourcesPanel: React.FC<{
   readOnly,
 }) => {
   const groups = groupBy(skillDefs);
+    // Auto-initialize per-skill rerolls to match skill level when a box first appears
+  useEffect(() => {
+    const next: Record<string, number> = {};
+    let changed = false;
+
+    for (const def of skillDefs) {
+      const level = skillValues[def.id] ?? (def.min ?? 1);
+      const eligible = level >= SKILL_REROLL_THRESHOLD;
+      const current = skillRerolls[def.id];
+      if (eligible && (current === undefined || current === null)) {
+        next[def.id] = clamp(level, SKILL_REROLL_MIN, SKILL_REROLL_MAX);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      onChangeSkillRerolls({ ...skillRerolls, ...next });
+    }
+  }, [skillDefs, skillValues, skillRerolls, onChangeSkillRerolls]);
+
   const addDebt = () =>
     onChangeDebt([...(debt || []), { id: makeId('debt'), creditor: '', amount: 0 }]);
   const removeDebt = (id: string) =>
@@ -479,8 +501,29 @@ const ResourcesPanel: React.FC<{
       {/* Per-skill rerolls */}
       <Card className="shadow-sm">
         <CardContent className="p-4">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">
-            Skill Rerolls
+                    <div className="mb-2 flex items-center justify-between">
+            <div className="text-sm font-medium text-muted-foreground">Skill Rerolls</div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                const next: Record<string, number> = { ...skillRerolls };
+                (['combat','magic','specialized'] as SkillGroup[]).forEach((grp) => {
+                  groups[grp].forEach((def) => {
+                    const level = skillValues[def.id] ?? (def.min ?? 1);
+                    if (level >= SKILL_REROLL_THRESHOLD) {
+                      next[def.id] = clamp(level, SKILL_REROLL_MIN, SKILL_REROLL_MAX);
+                    }
+                  });
+                });
+                onChangeSkillRerolls(next);
+              }}
+              disabled={readOnly}
+            >
+              Reset to Skill Level
+            </Button>
           </div>
           {(['combat', 'magic', 'specialized'] as SkillGroup[]).map((grp) => {
             const skills = groups[grp].filter(
@@ -580,6 +623,7 @@ const ResourcesPanel: React.FC<{
                   <div className="sm:col-span-1 flex items-center justify-end">
                     <Button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       variant="ghost"
                       size="icon"
                       onClick={() => onChangeDebt((debt || []).filter((x) => x.id !== d.id))}
@@ -591,14 +635,14 @@ const ResourcesPanel: React.FC<{
                   </div>
                 </div>
               ))}
-              <Button type="button" size="sm" onClick={addDebt} disabled={readOnly}>
+              <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={addDebt} disabled={readOnly}>
                 <Plus className="mr-1 h-4 w-4" /> Add Debt
               </Button>
             </div>
           </div>
 
           <div>
-            <div className="mb-2 text-sm font-medium text-muted-foreground">Recurring Costs</div>
+            <div className="mb-2 text-sm font-medium text-muted-foreground">Recurring Costs & Diet</div>
             <div className="space-y-2">
               {(recurring || []).map((r, i) => (
                 <div key={r.id} className="grid grid-cols-1 gap-2 sm:grid-cols-12">
@@ -659,6 +703,7 @@ const ResourcesPanel: React.FC<{
                   <div className="sm:col-span-1 flex items-center justify-end">
                     <Button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       variant="ghost"
                       size="icon"
                       onClick={() => onChangeRecurring((recurring || []).filter((x) => x.id !== r.id))}
@@ -670,7 +715,7 @@ const ResourcesPanel: React.FC<{
                   </div>
                 </div>
               ))}
-              <Button type="button" size="sm" onClick={addRecurring} disabled={readOnly}>
+              <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={addRecurring} disabled={readOnly}>
                 <Plus className="mr-1 h-4 w-4" /> Add Recurring
               </Button>
             </div>
@@ -817,6 +862,7 @@ const EquippedGear: React.FC<{
             </div>
             <Button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               size="sm"
               onClick={addAccessory}
               disabled={readOnly || accessories.length >= 4}
@@ -839,6 +885,7 @@ const EquippedGear: React.FC<{
                 />
                 <Button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   variant="ghost"
                   size="icon"
                   onClick={() => removeAccessory(i)}
@@ -865,6 +912,7 @@ const EquippedGear: React.FC<{
             </div>
             <Button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               size="sm"
               onClick={addWeapon}
               disabled={readOnly || weapons.length >= 2}
@@ -976,6 +1024,7 @@ const EquippedGear: React.FC<{
                   <div className="flex items-center justify-between">
                     <Button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       variant="secondary"
                       size="sm"
                       onClick={() => reloadWeapon(w.id)}
@@ -985,6 +1034,7 @@ const EquippedGear: React.FC<{
                     </Button>
                     <Button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       variant="ghost"
                       size="icon"
                       onClick={() => removeWeapon(w.id)}
@@ -1095,7 +1145,7 @@ const VehiclesPanel: React.FC<{
       <CardContent className="p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-sm font-medium text-muted-foreground">Vehicles</div>
-          <Button type="button" size="sm" onClick={add} disabled={readOnly}>
+          <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={add} disabled={readOnly}>
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
         </div>
@@ -1157,6 +1207,7 @@ const VehiclesPanel: React.FC<{
               <div className="mt-2 flex justify-end">
                 <Button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   variant="ghost"
                   size="icon"
                   onClick={() => remove(v.id)}
@@ -1199,6 +1250,7 @@ const InjuriesPanel: React.FC<{
         <div className="flex gap-2">
           <Button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             variant="secondary"
             onClick={() => onChange(clamp(injuries - 1, 0, 10))}
             disabled={readOnly}
@@ -1207,6 +1259,7 @@ const InjuriesPanel: React.FC<{
           </Button>
           <Button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             variant="secondary"
             onClick={() => onChange(clamp(injuries + 1, 0, 10))}
             disabled={readOnly}
@@ -1250,7 +1303,7 @@ const ConditionsPanel: React.FC<{
       <CardContent className="p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-sm font-medium text-muted-foreground">Conditions</div>
-          <Button type="button" size="sm" onClick={add} disabled={readOnly}>
+          <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={add} disabled={readOnly}>
             <Plus className="mr-1 h-4 w-4" /> Add Condition
           </Button>
         </div>
@@ -1304,6 +1357,7 @@ const ConditionsPanel: React.FC<{
               <div className="md:col-span-1 flex items-center justify-end">
                 <Button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   variant="ghost"
                   size="icon"
                   onClick={() => remove(e.id)}
@@ -1426,7 +1480,7 @@ const LevelUpPanel: React.FC<{
       <Section title="Specialized" items={groups.specialized} />
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={onCommit} disabled={readOnly}>
+        <Button type="button" onMouseDown={(e) => e.preventDefault()} variant="secondary" onClick={onCommit} disabled={readOnly}>
           Commit Mission
         </Button>
       </div>
@@ -1718,6 +1772,7 @@ useEffect(() => {
           <div className="flex justify-start">
             <Button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               variant={editSkills ? "secondary" : "default"}
               onClick={() => setEditSkills(!editSkills)}
             >
