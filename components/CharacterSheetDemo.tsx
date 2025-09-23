@@ -251,12 +251,6 @@ function effectiveTallies(history: MissionLogEntry[], spent: Record<string, numb
   return out;
 }
 
-function makeTallyVisual(n: number) {
-  const blocks = Math.floor(n / 5);
-  const remainder = n % 5;
-  return '▮'.repeat(blocks) + '|'.repeat(remainder);
-}
-
 // ---------- Subcomponents ----------
 const IdentitySection: React.FC<{
   value: Character;
@@ -1543,62 +1537,6 @@ const DEFAULT_CHARACTER: Character = {
   secrets: '',
 };
 
-const MissionHistoryPanel: React.FC<{
-  defs: AttributeDef[];
-  history: MissionLogEntry[];
-  spent?: Record<string, number>;
-}> = ({ defs, history, spent = {} }) => {
-  const totals = effectiveTallies(history || [], spent);
-  const groups = groupBy(defs);
-
-  const TotalsSection = ({ title, items }: { title: string; items: AttributeDef[] }) => (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <div className="mb-2 text-sm font-medium text-muted-foreground">{title} — Tallies</div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {items.map((def) => {
-            const n = totals[def.id] || 0;
-            return (
-              <div key={def.id} className="grid gap-1">
-                <div className="text-sm">{def.label}</div>
-                <div className="text-xs text-muted-foreground">
-                  {n} <span aria-hidden>({makeTallyVisual(n)})</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  return (
-    <div className="grid gap-4">
-
-      <Card className="shadow-sm">
-        <CardContent className="p-4">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">Missions</div>
-          {history.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No missions committed yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {history.map((m, idx) => (
-                <li key={m.missionId} className="rounded-xl bg-muted/30 p-3">
-                  <div className="text-sm font-medium">
-                    Mission {idx + 1} — {formatDate(m.dateISO)}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {m.successes.length} skill(s) marked
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
 
 // ---------- Main Component ----------
 export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) {
