@@ -126,13 +126,14 @@ export type Character = {
   race?: string;
   origin?: string;
   money?: number;
-  tallySpent?: Record<string, number>;      // NEW: tallies consumed by level-ups
+  tallySpent?: Record<string, number>;      // tallies consumed by level-ups
   attributes: Record<string, number>;
   resources: Record<string, number>;
   items: Array<Record<string, string | number>>;
   stash?: Array<Record<string, string | number>>;
 
   armor: ArmorSlots;
+  totalArmor?: ArmorAV;            // user-entered totals (no auto calc)
   accessories?: string[];
   weapons?: WeaponEntry[];
 
@@ -1021,27 +1022,6 @@ const ArmorSlotsBox: React.FC<{
             disabled={readOnly}
           />
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {DAMAGE_TYPES.map((dt) => (
-            <div key={dt} className="grid gap-1">
-              <Label className="text-xs">{dt}</Label>
-              <Input
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={slot.av[dt]}
-                onChange={(e) => {
-                  const n = clamp(parseInt(e.target.value || '0', 10), 0, 99);
-                  onChange({
-                    ...armor,
-                    [k]: { ...slot, av: { ...slot.av, [dt]: n } },
-                  });
-                }}
-                disabled={readOnly}
-                className="w-20"
-              />
-            </div>
-          ))}
-        </div>
       </div>
     );
   };
@@ -1059,6 +1039,39 @@ const ArmorSlotsBox: React.FC<{
     </Card>
   );
 };
+
+const ArmorTotalsBox: React.FC<{
+  av: ArmorAV;
+  onChange: (next: ArmorAV) => void;
+  readOnly?: boolean;
+}> = ({ av, onChange, readOnly }) => {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="p-4">
+        <div className="mb-2 text-sm font-medium text-muted-foreground">Armor Values (Total)</div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {DAMAGE_TYPES.map((dt) => (
+            <div key={dt} className="grid gap-1">
+              <Label className="text-xs">{dt}</Label>
+              <Input
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={av[dt] ?? 0}
+                onChange={(e) => {
+                  const n = clamp(parseInt(e.target.value || '0', 10), 0, 99);
+                  onChange({ ...av, [dt]: n });
+                }}
+                disabled={readOnly}
+                className="w-20"
+              />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 
 const VehiclesPanel: React.FC<{
   vehicles: VehicleEntry[];
@@ -1113,7 +1126,7 @@ const VehiclesPanel: React.FC<{
                   <Input
                     value={v.topSpeed}
                     onChange={(e) => patch(v.id, { topSpeed: e.target.value })}
-                    placeholder="e.g., 180 km/h"
+                    placeholder="e.g., 20 Units"
                     disabled={readOnly}
                   />
                 </div>
@@ -1520,6 +1533,7 @@ const DEFAULT_CHARACTER: Character = {
     body: { name: '', av: emptyAV() },
     lining: { name: '', av: emptyAV() },
   },
+  totalArmor: emptyAV(),
   accessories: [],
   weapons: [],
   vehicles: [],
@@ -1527,7 +1541,7 @@ const DEFAULT_CHARACTER: Character = {
   skillRerolls: {},
   currentMissionSkills: {},
   missionHistory: [],
-  tallySpent: {},                   // NEW
+  tallySpent: {},                   // 
   injuries: 0,
   conditions: [],
   debt: [],
@@ -1576,7 +1590,7 @@ useEffect(() => {
   const onChange = props.onChange ?? setChar;
   const readOnly = props.readOnly ?? false;
 
-  // NEW: track edit state for skills
+  // track edit state for skills
   const [editSkills, setEditSkills] = useState(false);
 
   const toggleCurrentMission = (skillId: string, v: boolean) => {
@@ -1627,7 +1641,7 @@ useEffect(() => {
 
         {/* Stats */}
         <TabsContent value="stats" className="grid gap-4">
-          {/* NEW: Edit Skills toggle */}
+          {/*: Edit Skills toggle */}
           <div className="flex justify-end">
             <Button
               type="button"
@@ -1664,10 +1678,16 @@ useEffect(() => {
         {/* Items */}
         <TabsContent value="items" className="grid gap-4">
           <ArmorSlotsBox
-            armor={char.armor}
-            onChange={(next) => onChange(set(char, 'armor', next))}
-            readOnly={readOnly}
+             armor={char.armor}
+             onChange={(next) => onChange(set(char, 'armor', next))}
+             readOnly={readOnly}
+           />
+          <ArmorTotalsBox
+             av={char.totalArmor ?? emptyAV()}
+             onChange={(next) => onChange(set(char, 'totalArmor', next))}
+             readOnly={readOnly}
           />
+
 
           <EquippedGear
             accessories={char.accessories ?? []}
