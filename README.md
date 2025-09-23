@@ -16,17 +16,9 @@ After install restart your computer and then open your terminal and check versio
 
 node -v
 
-3. Then follow with your app setup
+3. Then run the following commands in "Windows Powershell"
 
-Once Node is installed, you can run the project setup from earlier:
-
-npx create-next-app@latest infernal-sheet --typescript --eslint --tailwind
 cd infernal-sheet
-
-npx shadcn@latest init
-npm install framer-motion lucide-react
-
-npx shadcn@latest add card button input label textarea tabs
 
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
