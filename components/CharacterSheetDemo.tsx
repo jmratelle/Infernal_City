@@ -262,8 +262,8 @@ const IdentitySection: React.FC<{
 }> = ({ value, onChange, readOnly }) => {
   const idBase = useId();
   return (
-    <Card className="shadow-sm">
-      <CardContent className="grid gap-4 p-4 md:grid-cols-4">
+    <Card className="shadow-sm bg-red-900">
+      <CardContent className="grid gap-4 p-4 md:grid-cols-4 text-white">
         <div className="grid gap-2">
           <Label htmlFor={`${idBase}-name`}>Name</Label>
           <Input
@@ -331,8 +331,8 @@ const GroupedSkillsGrid: React.FC<{
     setOpen((o) => ({ ...o, [g]: !o[g] }));
 
   const Section = ({ grp, title, items }: { grp: SkillGroup; title: string; items: AttributeDef[] }) => (
-  <Card className="shadow-sm">
-    <CardContent className="p-4">
+  <Card className="shadow-sm bg-red-900">
+    <CardContent className="p-4 text-white">
       <div className="mb-2 flex items-center justify-between">
         <div className="text-sm font-medium text-muted-foreground">{title}</div>
         <Button
@@ -411,7 +411,7 @@ const GroupedSkillsGrid: React.FC<{
 );
 
   return (
-  <div className="grid gap-4">
+  <div className="grid gap-4 text-white">
     <Section grp="combat" title="Combat" items={groups.combat} />
     <Section grp="magic" title="Magic" items={groups.magic} />
     <Section grp="specialized" title="Specialized" items={groups.specialized} />
@@ -484,9 +484,9 @@ const ResourcesPanel: React.FC<{
   return (
     <div className="grid gap-4">
       {/* Global resources */}
-      <Card className="shadow-sm">
-        <CardContent className="p-4">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">Resources</div>
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="p-4 text-white">
+          <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Resources</div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {resourceDefs.map((def) => {
               const min = def.min ?? 0;
@@ -520,10 +520,10 @@ const ResourcesPanel: React.FC<{
       </Card>
 
       {/* Per-skill rerolls */}
-      <Card className="shadow-sm">
-        <CardContent className="p-4">
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="p-4 text-white">
                     <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium text-muted-foreground">Skill Rerolls</div>
+            <div className="text-sm font-medium text-muted-foreground text-white">Skill Rerolls</div>
             <Button
               type="button"
               variant="secondary"
@@ -596,10 +596,10 @@ const ResourcesPanel: React.FC<{
       </Card>
 
       {/* Debt & Recurring Costs */}
-      <Card className="shadow-sm">
-        <CardContent className="p-4 space-y-4">
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="p-4 space-y-4 text-white">
           <div>
-            <div className="mb-2 text-sm font-medium text-muted-foreground">Debt</div>
+            <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Debt</div>
             <div className="space-y-2">
               {(debt || []).map((d, i) => (
                 <div key={d.id} className="grid grid-cols-1 gap-2 sm:grid-cols-12">
@@ -663,7 +663,7 @@ const ResourcesPanel: React.FC<{
           </div>
 
           <div>
-            <div className="mb-2 text-sm font-medium text-muted-foreground">Recurring Costs & Diet</div>
+            <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Recurring Costs & Diet</div>
             <div className="space-y-2">
               {(recurring || []).map((r, i) => (
                 <div key={r.id} className="grid grid-cols-1 gap-2 sm:grid-cols-12">
@@ -762,10 +762,10 @@ const ItemsTable: React.FC<{
     ]);
   const removeRow = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4">
         <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-medium text-muted-foreground">{title}</div>
+          <div className="text-sm font-medium text-muted-foreground text-white">{title}</div>
           <Button type="button" size="sm" onClick={addRow} onMouseDown={(e) => e.preventDefault()} disabled={readOnly}>
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
@@ -773,7 +773,7 @@ const ItemsTable: React.FC<{
         <div className="overflow-x-auto">
           <table className="w-full table-fixed border-separate border-spacing-y-2">
             <thead>
-              <tr className="text-left text-xs text-muted-foreground">
+              <tr className="text-left text-xs text-muted-foreground text-white">
                 {fields.map((f) => (
                   <th key={f.id} className="px-2 font-medium">
                     {f.label}
@@ -820,7 +820,7 @@ const ItemsTable: React.FC<{
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td className="px-2 py-4 text-sm text-muted-foreground" colSpan={fields.length + 1}>
+                  <td className="px-2 py-4 text-sm text-muted-foreground text-white" colSpan={fields.length + 1}>
                     No items yet.
                   </td>
                 </tr>
@@ -875,11 +875,11 @@ const EquippedGear: React.FC<{
   return (
     <div className="grid gap-4">
       {/* Accessories */}
-      <Card className="shadow-sm">
-        <CardContent className="p-4">
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="p-4 text-white">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium text-muted-foreground">
-              Accessories <span className="ml-2 text-xs">{accessories.length} / 4</span>
+            <div className="text-sm font-medium text-muted-foreground text-white">
+              Accessories <span className="ml-2 text-xs text-white">{accessories.length} / 4</span>
             </div>
             <Button
               type="button"
@@ -918,18 +918,18 @@ const EquippedGear: React.FC<{
               </div>
             ))}
             {accessories.length === 0 && (
-              <div className="text-sm text-muted-foreground">No accessories equipped.</div>
+              <div className="text-sm text-muted-foreground text-white">No accessories equipped.</div>
             )}
           </div>
         </CardContent>
       </Card>
 
       {/* Weapons as cards */}
-      <Card className="shadow-sm">
-        <CardContent className="p-4">
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="p-4 text-white">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium text-muted-foreground">
-              Weapons <span className="ml-2 text-xs">{weapons.length} / 2</span>
+            <div className="text-sm font-medium text-muted-foreground text-white">
+              Weapons <span className="ml-2 text-xs text-white">{weapons.length} / 2</span>
             </div>
             <Button
               type="button"
@@ -1069,7 +1069,7 @@ const EquippedGear: React.FC<{
               </div>
             ))}
             {weapons.length === 0 && (
-              <div className="text-sm text-muted-foreground">No weapons added.</div>
+              <div className="text-sm text-muted-foreground text-white">No weapons added.</div>
             )}
           </div>
         </CardContent>
@@ -1101,10 +1101,10 @@ const ArmorSlotsBox: React.FC<{
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <div className="mb-2 text-sm font-medium text-muted-foreground">Armor Slots</div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <Card className="shadow-sm bg-red-900">
+      <CardContent className="p-4 text-whtie">
+        <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Armor Slots</div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-white">
           <Slot k="head" label="Head" />
           <Slot k="body" label="Body" />
           <Slot k="lining" label="Lining" />
@@ -1120,9 +1120,9 @@ const ArmorTotalsBox: React.FC<{
   readOnly?: boolean;
 }> = ({ av, onChange, readOnly }) => {
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <div className="mb-2 text-sm font-medium text-muted-foreground">Armor Values (Total)</div>
+    <Card className="shadow-sm bg-red-900">
+      <CardContent className="p-4 text-white">
+        <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Armor Values (Total)</div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {DAMAGE_TYPES.map((dt) => (
             <div key={dt} className="grid gap-1">
@@ -1162,10 +1162,10 @@ const VehiclesPanel: React.FC<{
   const remove = (id: string) => onChange(vehicles.filter((v) => v.id !== id));
 
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
+    <Card className="shadow-sm bg-red-900">
+      <CardContent className="p-4 text-white">
         <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-medium text-muted-foreground">Vehicles</div>
+          <div className="text-sm font-medium text-muted-foreground text-white">Vehicles</div>
           <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={add} disabled={readOnly}>
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
@@ -1241,7 +1241,7 @@ const VehiclesPanel: React.FC<{
             </div>
           ))}
           {vehicles.length === 0 && (
-            <div className="text-sm text-muted-foreground">No vehicles listed.</div>
+            <div className="text-sm text-muted-foreground text-white">No vehicles listed.</div>
           )}
         </div>
       </CardContent>
@@ -1254,9 +1254,9 @@ const InjuriesPanel: React.FC<{
   onChange: (n: number) => void;
   readOnly?: boolean;
 }> = ({ injuries, onChange, readOnly }) => (
-  <Card className="shadow-sm">
-    <CardContent className="p-4">
-      <div className="mb-2 text-sm font-medium text-muted-foreground">Injuries</div>
+  <Card className="shadow-sm bg-red-900">
+    <CardContent className="p-4 text-white">
+      <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Injuries</div>
       <div className="grid max-w-xs grid-cols-2 items-end gap-2">
         <div className="grid gap-1">
           <Label>Count</Label>
@@ -1320,10 +1320,10 @@ const ConditionsPanel: React.FC<{
   ];
 
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-medium text-muted-foreground">Conditions</div>
+    <Card className="shadow-sm bg-red-900">
+      <CardContent className="p-4 text-white">
+        <div className="mb-2 flex items-center justify-between text-white">
+          <div className="text-sm font-medium text-muted-foreground text-white">Conditions</div>
           <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={add} disabled={readOnly}>
             <Plus className="mr-1 h-4 w-4" /> Add Condition
           </Button>
@@ -1332,7 +1332,7 @@ const ConditionsPanel: React.FC<{
           {(entries || []).map((e, i) => (
             <div key={e.id} className="grid grid-cols-1 gap-2 md:grid-cols-12">
               <select
-                className="md:col-span-4 rounded-md border bg-background px-3 py-2 text-sm"
+                className="md:col-span-4 rounded-md border bg-background px-3 py-2 text-sm text-white"
                 value={e.name}
                 onChange={(ev) => {
                   const name = ev.target.value as ConditionName;
@@ -1392,7 +1392,7 @@ const ConditionsPanel: React.FC<{
           ))}
 
           {(entries || []).length === 0 && (
-            <div className="text-sm text-muted-foreground">No conditions.</div>
+            <div className="text-sm text-muted-foreground text-white">No conditions.</div>
           )}
         </div>
       </CardContent>
@@ -1410,8 +1410,8 @@ const NotesPanel: React.FC<{
   const idBase = useId();
   return (
     <div className="grid gap-4">
-      <Card className="shadow-sm">
-        <CardContent className="grid gap-2 p-4">
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="grid gap-2 p-4 text-white">
           <Label htmlFor={`${idBase}-notes`}>Notes</Label>
           <Textarea
             id={`${idBase}-notes`}
@@ -1424,8 +1424,8 @@ const NotesPanel: React.FC<{
         </CardContent>
       </Card>
 
-      <Card className="shadow-sm">
-        <CardContent className="grid gap-2 p-4">
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="grid gap-2 p-4 text-white">
           <Label htmlFor={`${idBase}-people`}>People Met</Label>
           <Textarea
             id={`${idBase}-people`}
@@ -1438,8 +1438,8 @@ const NotesPanel: React.FC<{
         </CardContent>
       </Card>
 
-      <Card className="shadow-sm">
-        <CardContent className="grid gap-2 p-4">
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="grid gap-2 p-4 text-white">
           <Label htmlFor={`${idBase}-secrets`}>Secrets</Label>
           <Textarea
             id={`${idBase}-secrets`}
@@ -1468,10 +1468,10 @@ const LevelUpPanel: React.FC<{
 
   const groups = groupBy(defs);
   const Section = ({ title, items }: { title: string; items: AttributeDef[] }) => (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <div className="mb-2 text-sm font-medium text-muted-foreground">{title}</div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+    <Card className="shadow-sm bg-red-900">
+      <CardContent className="p-4 text-white">
+        <div className="mb-2 text-sm font-medium text-muted-foreground text-white">{title}</div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 text-white">
           {items.map((def) => (
             <label key={def.id} className="flex items-center gap-2 text-sm" onMouseDown={(e) => e.preventDefault()}>
               <input
@@ -1506,11 +1506,11 @@ const LevelUpPanel: React.FC<{
         </Button>
       </div>
 
-      <Card className="shadow-sm">
-        <CardContent className="p-4">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">Mission History</div>
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="p-4 text-white">
+          <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Mission History</div>
           {history.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No missions committed yet.</div>
+            <div className="text-sm text-muted-foreground text-white">No missions committed yet.</div>
           ) : (
             <ol className="space-y-2">
               {history.map((m, idx) => (
@@ -1826,7 +1826,7 @@ useEffect(() => {
         </TabsContent>
 
         {/* Items */}
-        <TabsContent value="items" className="grid gap-4">
+        <TabsContent value="items" className="grid gap-4 text-white">
           <ArmorSlotsBox
              armor={char.armor}
              onChange={(next) => onChange(set(char, 'armor', next))}
@@ -1871,8 +1871,8 @@ useEffect(() => {
 
         {/* Housing */}
         <TabsContent value="housing" className="grid gap-4">
-          <Card className="shadow-sm">
-            <CardContent className="grid gap-4 p-4 md:grid-cols-3">
+          <Card className="shadow-sm bg-red-900">
+            <CardContent className="grid gap-4 p-4 md:grid-cols-3 text-white">
               <div className="grid gap-1.5">
                 <Label>Rent Cost (Goldbacks)</Label>
                 <Input
@@ -1912,8 +1912,8 @@ useEffect(() => {
               </div>
             </CardContent>
           </Card>
-                    <Card className="shadow-sm">
-            <CardContent className="grid gap-4 p-4">
+                    <Card className="shadow-sm bg-red-900">
+            <CardContent className="grid gap-4 p-4 text-white">
               <div className="grid gap-1.5">
                 <Label>Upgrades</Label>
                 <div className="space-y-2">
@@ -2018,7 +2018,7 @@ useEffect(() => {
 
       {/* Debug JSON */}
       <Card>
-        <CardContent className="p-4 text-xs text-muted-foreground">
+        <CardContent className="p-4 text-xs text-muted-foreground bg-red-900">
           <details>
             <summary className="cursor-pointer select-none">Debug: Character JSON</summary>
             <pre className="mt-2 whitespace-pre-wrap break-words">{JSON.stringify(char, null, 2)}</pre>
@@ -2027,7 +2027,7 @@ useEffect(() => {
       </Card>
       {/* Save/Load controls */}
       <Card className="mt-4">
-        <CardContent className="flex flex-wrap items-center gap-2 p-4">
+        <CardContent className="flex flex-wrap items-center gap-2 p-4 bg-red-900">
           <input
             ref={fileRef}
             type="file"
