@@ -322,11 +322,31 @@ const GroupedSkillsGrid: React.FC<{
   readOnly?: boolean;
 }> = ({ defs, values, onChange, readOnly }) => {
   const groups = groupBy(defs);
+  const [open, setOpen] = useState<Record<SkillGroup, boolean>>({
+    combat: true,
+    magic: true,
+    specialized: true,
+  });
+  const toggle = (g: SkillGroup) =>
+    setOpen((o) => ({ ...o, [g]: !o[g] }));
 
-  const Section = ({ title, items }: { title: string; items: AttributeDef[] }) => (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <div className="mb-2 text-sm font-medium text-muted-foreground">{title}</div>
+  const Section = ({ grp, title, items }: { grp: SkillGroup; title: string; items: AttributeDef[] }) => (
+  <Card className="shadow-sm">
+    <CardContent className="p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-sm font-medium text-muted-foreground">{title}</div>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => toggle(grp)}
+        >
+          {open[grp] ? 'Hide' : 'Show'}
+        </Button>
+      </div>
+
+      {open[grp] && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {items.map((def) => {
             const min = def.min ?? 1;
@@ -385,17 +405,18 @@ const GroupedSkillsGrid: React.FC<{
             );
           })}
         </div>
-      </CardContent>
-    </Card>
-  );
+      )}
+    </CardContent>
+  </Card>
+);
 
   return (
-    <div className="grid gap-4">
-      <Section title="Combat" items={groups.combat} />
-      <Section title="Magic" items={groups.magic} />
-      <Section title="Specialized" items={groups.specialized} />
-    </div>
-  );
+  <div className="grid gap-4">
+    <Section grp="combat" title="Combat" items={groups.combat} />
+    <Section grp="magic" title="Magic" items={groups.magic} />
+    <Section grp="specialized" title="Specialized" items={groups.specialized} />
+  </div>
+);
 };
 
 
