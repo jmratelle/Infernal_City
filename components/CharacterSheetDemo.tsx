@@ -554,8 +554,8 @@ const ResourcesPanel: React.FC<{
             const title = grp === 'combat' ? 'Combat' : grp === 'magic' ? 'Magic' : 'Specialized';
             return (
               <div key={grp} className="mb-3">
-                <div className="mb-1 text-xs font-medium ">{title}</div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                <div className="mb-1 text-xs font-medium text-white">{title}</div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 text-white">
                   {skills.map((def) => {
                     const cur = clamp(
                       skillRerolls[def.id] ?? 0,
