@@ -2012,7 +2012,7 @@ useEffect(() => {
         </TabsContent>
 
         {/* Level Up */}
-        <TabsContent value="levelup" className="grid gap-4" forceMount>
+        <TabsContent value="levelup" className="grid gap-4">
           <LevelUpPanel
             defs={registry.attributes}
             ticked={char.currentMissionSkills ?? {}}
@@ -2100,4 +2100,3 @@ useEffect(() => {
     </div>
   );
 }
-
