@@ -2,14 +2,31 @@
 @import "tw-animate-css";
 
 /* globals.css */
+/* Make the container a positioning context and use modern viewport units */
 .app-background {
-  background-image: url('./assets/background.jpg'); /* relative to globals.css */
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-  min-height: 100vh; /* cover full viewport */
+  position: relative;
+  min-height: 100dvh; /* prevents iOS toolbar resizing from causing jumps */
   width: 100%;
 }
+
+/* Fixed, GPU-friendly background layer that doesn't resize with content */
+.app-background::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url('./assets/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: translateZ(0);        /* nudge GPU accel */
+  will-change: transform;
+}
+
+/* Optional: keep a vertical scrollbar to avoid layout width shifts */
+html, body { min-height: 100%; }
+body { overflow-y: scroll; }
+
 
 input,
 textarea,
