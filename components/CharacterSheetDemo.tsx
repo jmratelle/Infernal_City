@@ -334,7 +334,7 @@ const GroupedSkillsGrid: React.FC<{
   <Card className="shadow-sm bg-red-900">
     <CardContent className="p-4 text-white">
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-sm font-medium text-muted-foreground">{title}</div>
+        <div className="text-sm font-medium text-white">{title}</div>
         <Button
           type="button"
           size="sm"
@@ -521,9 +521,9 @@ const ResourcesPanel: React.FC<{
 
       {/* Per-skill rerolls */}
       <Card className="shadow-sm bg-red-900">
-        <CardContent className="p-4 text-white">
+        <CardContent className="p-4">
                     <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium text-muted-foreground text-white">Skill Rerolls</div>
+            <div className="text-sm font-medium text-white">Skill Rerolls</div>
             <Button
               type="button"
               variant="secondary"
@@ -554,7 +554,7 @@ const ResourcesPanel: React.FC<{
             const title = grp === 'combat' ? 'Combat' : grp === 'magic' ? 'Magic' : 'Specialized';
             return (
               <div key={grp} className="mb-3">
-                <div className="mb-1 text-xs font-medium text-muted-foreground">{title}</div>
+                <div className="mb-1 text-xs font-medium ">{title}</div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                   {skills.map((def) => {
                     const cur = clamp(
@@ -1473,9 +1473,18 @@ const LevelUpPanel: React.FC<{
         <div className="mb-2 text-sm font-medium text-muted-foreground text-white">{title}</div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 text-white">
           {items.map((def) => (
-            <label key={def.id} className="flex items-center gap-2 text-sm" onMouseDown={(e) => e.preventDefault()}>
+              <label
+                key={def.id}
+                className="flex items-center gap-2 text-sm"
+                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={(e) => e.preventDefault()}
+                tabIndex={-1}
+              >
               <input
                 onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={(e) => e.stopPropagation()}
                 type="checkbox"
                 className="h-4 w-4 accent-foreground"
                 checked={!!ticked[def.id]}
@@ -1518,13 +1527,13 @@ const LevelUpPanel: React.FC<{
                   <div className="text-sm font-medium">
                     Mission {idx + 1} — {formatDate(m.dateISO)}
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
+                  <div className="mt-1 text-xs text-muted-foreground text-white">
                     {m.successes.length} skill(s) marked
                   </div>
                   {m.successes.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {m.successes.map((sid) => (
-                        <span key={sid} className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                        <span key={sid} className="rounded-full bg-black px-2 py-0.5 text-xs">
                           {defs.find((d) => d.id === sid)?.label ?? sid}
                         </span>
                       ))}
@@ -2003,7 +2012,7 @@ useEffect(() => {
         </TabsContent>
 
         {/* Level Up */}
-        <TabsContent value="levelup" className="grid gap-4">
+        <TabsContent value="levelup" className="grid gap-4" forceMount>
           <LevelUpPanel
             defs={registry.attributes}
             ticked={char.currentMissionSkills ?? {}}
