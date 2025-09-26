@@ -544,14 +544,10 @@ const ResourcesPanel: React.FC<{
               );
             })}
           </div>
-        </CardContent>
-      </Card>
 
       {/* Per-skill rerolls */}
-      <Card className="shadow-sm bg-red-900">
-        <CardContent className="p-4">
                     <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium text-white">Skill Rerolls</div>
+            <div className="mt-4 text-sm font-medium text-white">Skill Rerolls</div>
             <Button
               type="button"
               variant="secondary"
