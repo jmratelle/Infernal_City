@@ -347,7 +347,7 @@ const GroupedSkillsGrid: React.FC<{
       </div>
 
       {open[grp] && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        <div className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
           {items.map((def) => {
             const min = def.min ?? 1;
             const max = def.max ?? 5;
@@ -368,7 +368,7 @@ const GroupedSkillsGrid: React.FC<{
                     step={step}
                     // Prevent typing; rely on the − / + buttons
                     readOnly
-                    className="w-20"
+                    className="w-15"
                     disabled={readOnly}
                     aria-describedby={`attr-${def.id}-help`}
                    />
@@ -486,7 +486,7 @@ const ResourcesPanel: React.FC<{
         <CardContent className="p-4 text-white">
           <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Resources</div>
           
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 justify-center">
             {resourceDefs.map((def) => {
               const min = def.min ?? 0;
               const max = def.max ?? 9;
@@ -504,7 +504,7 @@ const ResourcesPanel: React.FC<{
               max={max}
               step={1}
               readOnly   // ← prevent typing
-              className="w-24"
+              className="w-15"
               disabled={readOnly}
               aria-label={`${def.label} value`}
             />
@@ -599,7 +599,7 @@ const ResourcesPanel: React.FC<{
                             id={`reroll-${def.id}`}
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            className="w-20"
+                            className="w-15"
                             value={cur}
                             min={SKILL_REROLL_MIN}
                             max={SKILL_REROLL_MAX}
@@ -1244,7 +1244,7 @@ const ArmorTotalsBox: React.FC<{
                     pattern="[0-9]*"
                     value={val}
                     readOnly
-                    className="w-20"
+                    className="w-15"
                     disabled={readOnly}
                     aria-label={`${dt} value`}
                   />
