@@ -181,7 +181,7 @@ export type CharacterSheetProps = {
 // ---------- Constants ----------
 const SKILL_REROLL_THRESHOLD = 3;
 const SKILL_REROLL_MIN = 0;
-const SKILL_REROLL_MAX = 9;
+const SKILL_REROLL_MAX = 5;
 const STORAGE_KEY = 'characterSheet:v1';
 
 
@@ -366,14 +366,12 @@ const GroupedSkillsGrid: React.FC<{
                     min={min}
                     max={max}
                     step={step}
-                    onChange={(e) => {
-                      const n = clamp(parseInt(e.target.value || '0', 10), min, max);
-                      onChange({ ...values, [def.id]: n });
-                    }}
+                    // Prevent typing; rely on the − / + buttons
+                    readOnly
                     className="w-20"
                     disabled={readOnly}
                     aria-describedby={`attr-${def.id}-help`}
-                  />
+                   />
                   <div className="flex gap-1">
                     <Button
                       type="button"
@@ -494,25 +492,56 @@ const ResourcesPanel: React.FC<{
               const val = resourceValues[def.id] ?? min;
               return (
                 <div key={def.id} className="grid items-center gap-1.5">
-                  <Label htmlFor={`res-${def.id}`}>{def.label}</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      id={`res-${def.id}`}
-                      value={val}
-                      min={min}
-                      max={max}
-                      step={1}
-                      onChange={(e) => {
-                        const n = clamp(parseInt(e.target.value || '0', 10), min, max);
-                        onChangeResources({ ...resourceValues, [def.id]: n });
-                      }}
-                      className="w-24"
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
+                <Label htmlFor={`res-${def.id}`}>{def.label}</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      const min = def.min ?? 0;
+                      const max = def.max ?? 9;
+                      const cur = resourceValues[def.id] ?? min;
+                      onChangeResources({ ...resourceValues, [def.id]: clamp(cur - 1, min, max) });
+                    }}
+                    disabled={readOnly}
+                    aria-label={`${def.label} decrement`}
+                  >
+                    −
+                  </Button>
+            <Input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              id={`res-${def.id}`}
+              value={val}
+              min={min}
+              max={max}
+              step={1}
+              readOnly   // ← prevent typing
+              className="w-24"
+              disabled={readOnly}
+              aria-label={`${def.label} value`}
+            />
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                const min = def.min ?? 0;
+                const max = def.max ?? 9;
+                const cur = resourceValues[def.id] ?? min;
+                onChangeResources({ ...resourceValues, [def.id]: clamp(cur + 1, min, max) });
+              }}
+              disabled={readOnly}
+              aria-label={`${def.label} increment`}
+            >
+              +
+            </Button>
+          </div>
+        </div>
               );
             })}
           </div>
@@ -567,24 +596,50 @@ const ResourcesPanel: React.FC<{
                         <Label htmlFor={`reroll-${def.id}`} className="text-xs">
                           {def.label} Rerolls
                         </Label>
-                        <Input
-                          id={`reroll-${def.id}`}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          className="w-20"
-                          value={cur}
-                          min={SKILL_REROLL_MIN}
-                          max={SKILL_REROLL_MAX}
-                          onChange={(e) => {
-                            const n = clamp(
-                              parseInt(e.target.value || '0', 10),
-                              SKILL_REROLL_MIN,
-                              SKILL_REROLL_MAX
-                            );
-                            onChangeSkillRerolls({ ...skillRerolls, [def.id]: n });
-                          }}
-                          disabled={readOnly}
-                        />
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              const cur = clamp(skillRerolls[def.id] ?? 0, SKILL_REROLL_MIN, SKILL_REROLL_MAX);
+                              onChangeSkillRerolls({ ...skillRerolls, [def.id]: clamp(cur - 1, SKILL_REROLL_MIN, SKILL_REROLL_MAX) });
+                            }}
+                            disabled={readOnly}
+                            aria-label={`${def.label} rerolls decrement`}
+                          >
+                            −
+                          </Button>
+
+                          <Input
+                            id={`reroll-${def.id}`}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className="w-20"
+                            value={cur}
+                            min={SKILL_REROLL_MIN}
+                            max={SKILL_REROLL_MAX}
+                            readOnly  // ← prevent typing
+                            disabled={readOnly}
+                            aria-label={`${def.label} rerolls value`}
+                          />
+
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              const cur = clamp(skillRerolls[def.id] ?? 0, SKILL_REROLL_MIN, SKILL_REROLL_MAX);
+                              onChangeSkillRerolls({ ...skillRerolls, [def.id]: clamp(cur + 1, SKILL_REROLL_MIN, SKILL_REROLL_MAX) });
+                            }}
+                            disabled={readOnly}
+                            aria-label={`${def.label} rerolls increment`}
+                          >
+                            +
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -721,6 +776,35 @@ const ResourcesPanel: React.FC<{
                     }}
                     disabled={readOnly}
                   />
+                  {/* Log Payment + last paid display */}
+                  <div className="sm:col-span-2 flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        const next = [...(recurring || [])];
+                        const ev: PaymentEvent = {
+                          paidAtISO: new Date().toISOString(),
+                          amount: r.amount ?? 0,
+                          note: r.notes ?? '',
+                        };
+                        next[i] = {
+                          ...r,
+                          lastPaidISO: ev.paidAtISO,
+                          history: [ ...(r.history ?? []), ev ],
+                        };
+                        onChangeRecurring(next);
+                      }}
+                      disabled={readOnly}
+                    >
+                      Log Payment
+                    </Button>
+                    <span className="text-xs text-white/80">
+                      {r.lastPaidISO ? `Last paid: ${formatDate(r.lastPaidISO)}` : 'Not paid yet'}
+                    </span>
+                  </div>
                   <div className="sm:col-span-1 flex items-center justify-end">
                     <Button
                       type="button"
@@ -739,6 +823,28 @@ const ResourcesPanel: React.FC<{
               <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={addRecurring} disabled={readOnly}>
                 <Plus className="mr-1 h-4 w-4" /> Add Recurring
               </Button>
+              {/* Payment History (per recurring item) */}
+              {(recurring || []).some((r) => (r.history?.length ?? 0) > 0) && (
+                <div className="mt-4">
+                  <div className="mb-2 text-sm font-medium text-white">Payment History</div>
+                  <ol className="space-y-2">
+                    {(recurring || []).map((r) => (
+                      (r.history?.length ?? 0) > 0 && (
+                        <li key={r.id} className="rounded-xl bg-black/20 p-3">
+                          <div className="text-sm font-medium">{r.name || 'Untitled Cost'}</div>
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/80">
+                            {(r.history ?? []).map((ev, idx) => (
+                              <span key={`${r.id}-${idx}`} className="rounded-full bg-black/40 px-2 py-0.5">
+                                {formatDate(ev.paidAtISO)} — {ev.amount} GB
+                              </span>
+                            ))}
+                          </div>
+                        </li>
+                      )
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
