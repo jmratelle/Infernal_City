@@ -784,7 +784,7 @@ const ItemsTable: React.FC<{
             </thead>
             <tbody>
               {rows.map((row, i) => (
-                <tr key={`${idBase}-row-${i}`} className="rounded-xl bg-muted/30">
+                <tr key={`${idBase}-row-${i}`} className="rounded-xl">
                   {fields.map((f) => (
                     <td key={f.id} className="px-2 py-2">
                       <Input
@@ -2026,7 +2026,7 @@ useEffect(() => {
       </Tabs>
 
       {/* Debug JSON */}
-      <Card>
+      <Card className="mt-4 bg-red-900 border border-white-900">
         <CardContent className="p-4 text-xs text-muted-foreground bg-red-900">
           <details>
             <summary className="cursor-pointer select-none">Debug: Character JSON</summary>
@@ -2035,7 +2035,7 @@ useEffect(() => {
         </CardContent>
       </Card>
       {/* Save/Load controls */}
-      <Card className="mt-4">
+      <Card className="mt-4 bg-red-900 border border-white-900">
         <CardContent className="flex flex-wrap items-center gap-2 p-4 bg-red-900">
           <input
             ref={fileRef}
