@@ -1220,37 +1220,72 @@ const ArmorSlotsBox: React.FC<{
   );
 };
 
+// Replace the existing ArmorTotalsBox with this version
 const ArmorTotalsBox: React.FC<{
   av: ArmorAV;
   onChange: (next: ArmorAV) => void;
   readOnly?: boolean;
 }> = ({ av, onChange, readOnly }) => {
+  const MIN = 0;
+  const MAX = 9;
+
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
-        <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Armor Values (Total)</div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {DAMAGE_TYPES.map((dt) => (
-            <div key={dt} className="grid gap-1">
-              <Label className="text-xs">{dt}</Label>
-              <Input
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={av[dt] ?? 0}
-                onChange={(e) => {
-                  const n = clamp(parseInt(e.target.value || '0', 10), 0, 99);
-                  onChange({ ...av, [dt]: n });
-                }}
-                disabled={readOnly}
-                className="w-20"
-              />
-            </div>
-          ))}
+        <div className="mb-2 text-sm font-medium text-muted-foreground text-white">
+          Armor Values (Total)
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {DAMAGE_TYPES.map((dt) => {
+            const val = clamp(av[dt] ?? 0, MIN, MAX);
+            return (
+              <div key={dt} className="grid gap-1">
+                <Label className="text-xs">{dt}</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onChange({ ...av, [dt]: clamp(val - 1, MIN, MAX) })}
+                    disabled={readOnly}
+                    aria-label={`${dt} decrement`}
+                  >
+                    −
+                  </Button>
+
+                  <Input
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={val}
+                    readOnly
+                    className="w-20"
+                    disabled={readOnly}
+                    aria-label={`${dt} value`}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onChange({ ...av, [dt]: clamp(val + 1, MIN, MAX) })}
+                    disabled={readOnly}
+                    aria-label={`${dt} increment`}
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
   );
 };
+
 
 
 const VehiclesPanel: React.FC<{
