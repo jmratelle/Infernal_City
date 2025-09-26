@@ -1777,6 +1777,7 @@ const DEFAULT_CHARACTER: Character = {
 
 // ---------- Main Component ----------
 export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) {
+  const [tabValue, setTabValue] = useState("stats");
   const [char, setChar] = useState<Character>(props.value ?? DEFAULT_CHARACTER);
    // Load saved character once on mount if parent didn't provide one
    useEffect(() => {
@@ -1914,38 +1915,43 @@ useEffect(() => {
 
       <IdentitySection value={char} onChange={onChange} readOnly={readOnly} />
 
-      <Tabs defaultValue="stats" className="w-full">
-        <TabsList
-          className="
-            mb-3 flex gap-2 overflow-x-auto whitespace-nowrap
-            [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-            [&>button]:shrink-0 sticky top-0 z-10 bg-background/95
-            backdrop-blur supports-[backdrop-filter]:bg-background/60
-            px-1 py-1 rounded-md
-          "
-        >
-          <TabsTrigger value="stats">Stats</TabsTrigger>
-          <TabsTrigger value="items">Items</TabsTrigger>
-          <TabsTrigger value="housing">Housing</TabsTrigger>
-          <TabsTrigger value="conditions">Conditions</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="levelup">Level Up</TabsTrigger>
-        </TabsList>
+      <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
+        {/* Row with tabs + right-side button */}
+        <div className="mb-3 flex items-center justify-between">
+          <TabsList
+            className="
+              flex gap-2 overflow-x-auto whitespace-nowrap
+              [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+              [&>button]:shrink-0
+              sticky top-0 z-10 bg-background/95
+              backdrop-blur supports-[backdrop-filter]:bg-background/60
+              px-1 py-1 rounded-md
+            "
+          >
+            <TabsTrigger value="stats">Stats</TabsTrigger>
+            <TabsTrigger value="items">Items</TabsTrigger>
+            <TabsTrigger value="housing">Housing</TabsTrigger>
+            <TabsTrigger value="conditions">Conditions</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="levelup">Level Up</TabsTrigger>
+          </TabsList>
 
-        {/* Stats */}
-        <TabsContent value="stats" className="grid gap-4">
-          {/*: Edit Skills toggle */}
-          <div className="flex justify-start">
+          {/* Button only shows when Stats tab is selected */}
+          {tabValue === "stats" && (
             <Button
               type="button"
-              onMouseDown={(e) => e.preventDefault()}
               variant={editSkills ? "secondary" : "default"}
+              size="sm"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => setEditSkills(!editSkills)}
             >
               {editSkills ? "Lock Skills" : "Edit Skills"}
             </Button>
-          </div>
+          )}
+        </div>
 
+        {/* Stats */}
+        <TabsContent value="stats" className="grid gap-4">
           <GroupedSkillsGrid
             defs={registry.attributes}
             values={char.attributes}
