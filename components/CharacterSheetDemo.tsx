@@ -494,6 +494,19 @@ const ResourcesPanel: React.FC<{
                 <div key={def.id} className="grid items-center gap-1.5">
                 <Label htmlFor={`res-${def.id}`}>{def.label}</Label>
                 <div className="flex items-center gap-2">
+            <Input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              id={`res-${def.id}`}
+              value={val}
+              min={min}
+              max={max}
+              step={1}
+              readOnly   // ← prevent typing
+              className="w-24"
+              disabled={readOnly}
+              aria-label={`${def.label} value`}
+            />
                   <Button
                     type="button"
                     variant="secondary"
@@ -510,20 +523,6 @@ const ResourcesPanel: React.FC<{
                   >
                     −
                   </Button>
-            <Input
-              inputMode="numeric"
-              pattern="[0-9]*"
-              id={`res-${def.id}`}
-              value={val}
-              min={min}
-              max={max}
-              step={1}
-              readOnly   // ← prevent typing
-              className="w-24"
-              disabled={readOnly}
-              aria-label={`${def.label} value`}
-            />
-
             <Button
               type="button"
               variant="secondary"
@@ -597,6 +596,19 @@ const ResourcesPanel: React.FC<{
                           {def.label} Rerolls
                         </Label>
                         <div className="flex items-center gap-2">
+
+                          <Input
+                            id={`reroll-${def.id}`}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className="w-20"
+                            value={cur}
+                            min={SKILL_REROLL_MIN}
+                            max={SKILL_REROLL_MAX}
+                            readOnly  // ← prevent typing
+                            disabled={readOnly}
+                            aria-label={`${def.label} rerolls value`}
+                          />
                           <Button
                             type="button"
                             variant="secondary"
@@ -611,20 +623,6 @@ const ResourcesPanel: React.FC<{
                           >
                             −
                           </Button>
-
-                          <Input
-                            id={`reroll-${def.id}`}
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            className="w-20"
-                            value={cur}
-                            min={SKILL_REROLL_MIN}
-                            max={SKILL_REROLL_MAX}
-                            readOnly  // ← prevent typing
-                            disabled={readOnly}
-                            aria-label={`${def.label} rerolls value`}
-                          />
-
                           <Button
                             type="button"
                             variant="secondary"
@@ -1243,6 +1241,15 @@ const ArmorTotalsBox: React.FC<{
               <div key={dt} className="grid gap-1">
                 <Label className="text-xs">{dt}</Label>
                 <div className="flex items-center gap-2">
+                  <Input
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={val}
+                    readOnly
+                    className="w-20"
+                    disabled={readOnly}
+                    aria-label={`${dt} value`}
+                  />
                   <Button
                     type="button"
                     variant="secondary"
@@ -1254,17 +1261,6 @@ const ArmorTotalsBox: React.FC<{
                   >
                     −
                   </Button>
-
-                  <Input
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={val}
-                    readOnly
-                    className="w-20"
-                    disabled={readOnly}
-                    aria-label={`${dt} value`}
-                  />
-
                   <Button
                     type="button"
                     variant="secondary"
