@@ -2160,15 +2160,6 @@ useEffect(() => {
         </TabsContent>
       </Tabs>
 
-      {/* Debug JSON */}
-      <Card className="mt-4 bg-red-900 border border-white-900">
-        <CardContent className="p-4 text-xs text-muted-foreground bg-red-900">
-          <details>
-            <summary className="cursor-pointer select-none">Debug: Character JSON</summary>
-            <pre className="mt-2 whitespace-pre-wrap break-words">{JSON.stringify(char, null, 2)}</pre>
-          </details>
-        </CardContent>
-      </Card>
       {/* Save/Load controls */}
       <Card className="mt-4 bg-red-900 border border-white-900">
         <CardContent className="flex flex-wrap items-center gap-2 p-4 bg-red-900">
