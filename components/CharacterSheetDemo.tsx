@@ -485,6 +485,7 @@ const ResourcesPanel: React.FC<{
       <Card className="shadow-sm bg-red-900">
         <CardContent className="p-4 text-white">
           <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Resources</div>
+          
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {resourceDefs.map((def) => {
               const min = def.min ?? 0;
@@ -566,6 +567,7 @@ const ResourcesPanel: React.FC<{
                 onChangeSkillRerolls(next);
               }}
               disabled={readOnly}
+              className="bg-black text-white hover:bg-black/80"
             >
               Reset to Skill Level
             </Button>
@@ -913,7 +915,7 @@ const ItemsTable: React.FC<{
                       onClick={() => removeRow(i)}
                       disabled={readOnly}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-white" />
                     </Button>
                   </td>
                 </tr>
@@ -1368,7 +1370,7 @@ const VehiclesPanel: React.FC<{
                   disabled={readOnly}
                   aria-label="Remove vehicle"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 text-white" />
                 </Button>
               </div>
             </div>
