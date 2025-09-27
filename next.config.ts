@@ -1,7 +1,31 @@
-import type { NextConfig } from "next";
+// next.config.ts
+import type { NextConfig } from 'next';
+import withPWA from 'next-pwa';
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const runtimeCaching: any[] = [
+  // Cache HTML documents so "/" loads offline
+  {
+    urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
+    handler: 'NetworkFirst',
+    options: {
+      cacheName: 'html-cache',
+      expiration: { maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 },
+    },
+  },
+  // JS & CSS
+  { urlPattern: /^https?.*\.(?:js|css)$/, handler: 'StaleWhileRevalidate', options: { cacheName: 'static-resources' } },
+  // Images & fonts
+  { urlPattern: /^https?.*\.(?:png|jpg|jpeg|svg|webp|woff2?)$/, handler: 'StaleWhileRevalidate', options: { cacheName: 'assets' } },
+];
 
-export default nextConfig;
+const nextConfig: NextConfig = { reactStrictMode: true };
+
+export default withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development', // SW only in prod
+  runtimeCaching,
+  // Optional but helpful: serve a static offline page when totally offline
+  fallbacks: { document: '/offline' },
+})(nextConfig);

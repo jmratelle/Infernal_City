@@ -154,7 +154,7 @@ export type Character = {
   missionHistory?: MissionLogEntry[];
 
   // Housing (existing)
-  housing?: {
+  housing: {
     rentCost?: number;
     apartmentTier?:
       | 'Wasteland Hovel'
@@ -424,7 +424,7 @@ const ResourcesPanel: React.FC<{
   onChangeResources: (next: Record<string, number>) => void;
   skillDefs: AttributeDef[];
   skillValues: Record<string, number>;
-  skillRerolls: Record<string, number | undefined>;
+  skillRerolls: Record<string, number>;
   onChangeSkillRerolls: (next: Record<string, number>) => void;
   debt: DebtEntry[];
   onChangeDebt: (next: DebtEntry[]) => void;
@@ -468,16 +468,16 @@ const ResourcesPanel: React.FC<{
 
   const addDebt = () =>
     onChangeDebt([...(debt || []), { id: makeId('debt'), creditor: '', amount: 0 }]);
-  const removeDebt = (id: string) =>
-    onChangeDebt((debt || []).filter((d) => d.id !== id));
+  /*const removeDebt = (id: string) =>
+    onChangeDebt((debt || []).filter((d) => d.id !== id));*/ //Commented this out as it in unused currently. Leaving in case I want it again
 
   const addRecurring = () =>
     onChangeRecurring([
       ...(recurring || []),
-      { id: makeId('rc'), name: '', amount: 0, frequency: 'monthly' },
+      { id: makeId('rc'), name: '', amount: 0, frequency: 'Monthly' },
     ]);
-  const removeRecurring = (id: string) =>
-    onChangeRecurring((recurring || []).filter((r) => r.id !== id));
+  /*const removeRecurring = (id: string) =>
+    onChangeRecurring((recurring || []).filter((r) => r.id !== id));*/ //Commented this out as it in unused currently. Leaving in case I want it again
 
   return (
     <div className="grid gap-4">
@@ -1904,12 +1904,12 @@ useEffect(() => {
     }
   };
 
-  const handleResetSave = () => {
+  /*const handleResetSave = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {}
     onChange(DEFAULT_CHARACTER);
-  };
+  };*/ //Commented this out as it in unused currently. Leaving in case I want it again
   return (
     <div className="mx-auto grid max-w-6xl gap-4 p-4">
 
