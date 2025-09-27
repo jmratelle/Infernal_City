@@ -5,13 +5,10 @@ import withPWA from 'next-pwa';
 const runtimeCaching: any[] = [
   // Cache HTML documents so "/" loads offline
   {
-    urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
-    handler: 'NetworkFirst',
-    options: {
-      cacheName: 'html-cache',
-      expiration: { maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 },
-    },
-  },
+  urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
+  handler: 'NetworkFirst',
+  options: { cacheName: 'html-cache' },
+},
   // JS & CSS
   { urlPattern: /^https?.*\.(?:js|css)$/, handler: 'StaleWhileRevalidate', options: { cacheName: 'static-resources' } },
   // Images & fonts
@@ -26,6 +23,4 @@ export default withPWA({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development', // SW only in prod
   runtimeCaching,
-  // Optional but helpful: serve a static offline page when totally offline
-  fallbacks: { document: '/offline' },
 })(nextConfig);
