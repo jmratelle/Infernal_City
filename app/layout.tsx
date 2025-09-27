@@ -1,16 +1,7 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SWRegistrar from './sw-registrar';
+import type { ReactNode } from 'react';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata = {
   title: 'Infernal City Character Sheet',
@@ -19,12 +10,17 @@ export const metadata = {
   manifest: '/manifest.json',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
         <SWRegistrar />
-        {children}
+        <div
+          className="min-h-screen bg-cover bg-center"
+          style={{ backgroundImage: "url(/background.jpg)" }}
+        >
+          {children}
+        </div>
       </body>
     </html>
   );
