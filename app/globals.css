@@ -9,18 +9,16 @@
   width: 100%;
 }
 
-/* Fixed, GPU-friendly background layer that doesn't resize with content */
-.app-background::before {
-  content: "";
+/* Fixed background layer above the body, below content */
+.app-bg {
   position: fixed;
   inset: 0;
-  z-index: -1;
-  background-image: url('/background.jpg');
+  z-index: 0;                         
+  background-image: url('/background.jpg'); /* file must be in /public */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transform: translateZ(0);        /* nudge GPU accel */
-  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* --- iOS viewport + safe areas --- */
@@ -31,10 +29,12 @@ html, body {
 /* Optional: keep a vertical scrollbar to avoid layout width shifts */
 body { overflow-y: scroll; }
 
-/* Content wrapper that uses dynamic viewport units */
+/* Content wrapper sits above the bg */
 .app-root {
-  min-height: 100dvh;                        /* modern, handles mobile bars */
-  min-height: -webkit-fill-available;        /* iOS fallback */
+  position: relative;
+  z-index: 1;                         /* content above .app-bg */
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
 }
 
 /* Extra padding for notches when running as an installed PWA */

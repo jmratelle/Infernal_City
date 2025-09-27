@@ -1,4 +1,3 @@
-import "./globals.css";
 import type { ReactNode } from 'react';
 import SWRegistrar from './sw-registrar';
 
@@ -14,8 +13,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <SWRegistrar />
-        <div className="app-bg" aria-hidden />   {/* fixed background layer */}
-        <div className="app-root">{children}</div>
+        <div className="app-bg" aria-hidden />
+        <div className="app-root">
+          {children}
+        </div>
       </body>
     </html>
   );
