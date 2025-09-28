@@ -226,7 +226,7 @@ function groupBy<T extends { group: SkillGroup }>(arr: T[]): Record<SkillGroup, 
 }
 function formatDate(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+  return d.toISOString().slice(0, 10); // stable YYYY-MM-DD
 }
 function makeId(prefix = 'id') {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
@@ -348,7 +348,7 @@ const GroupedSkillsGrid: React.FC<{
 
       {open[grp] && (
         <div className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
-          {items.map((def) => {
+          {[...items].sort((a, b) => a.label.localeCompare(b.label)).map((def) => {
             const min = def.min ?? 1;
             const max = def.max ?? 5;
             const step = def.step ?? 1;
@@ -1592,13 +1592,14 @@ const NotesPanel: React.FC<{
 
 const LevelUpPanel: React.FC<{
   defs: AttributeDef[];
+  values: Record<string, number>;
   ticked: Record<string, boolean>;
   onToggle: (skillId: string, val: boolean) => void;
   onCommit: () => void;
   history: MissionLogEntry[];
   spent?: Record<string, number>;
   readOnly?: boolean;
-}> = ({ defs, ticked, onToggle, onCommit, history, spent = {}, readOnly }) => {
+}> = ({ defs, values, ticked, onToggle, onCommit, history, spent = {}, readOnly }) => {
   const totals = effectiveTallies(history || [], spent);
 
   const groups = groupBy(defs);
@@ -1628,9 +1629,11 @@ const LevelUpPanel: React.FC<{
                 aria-label={`${def.label} current mission`}
               />
               <span>
-                {def.label} — Current Mission
-                {(totals[def.id] ?? 0) > 0 ? ` (x${totals[def.id]})` : ''}
-              </span>
+              {def.label} — Current Mission
+              {(totals[def.id] ?? 0) > 0
+  ? ` (x${totals[def.id]}) [Lvl ${values[def.id] ?? def.min ?? 0}]`
+  : ''}
+            </span>
             </label>
           ))}
         </div>
@@ -2159,6 +2162,7 @@ useEffect(() => {
         <TabsContent value="levelup" className="grid gap-4">
           <LevelUpPanel
             defs={registry.attributes}
+            values={char.attributes}
             ticked={char.currentMissionSkills ?? {}}
             onToggle={toggleCurrentMission}
             onCommit={commitMission}
