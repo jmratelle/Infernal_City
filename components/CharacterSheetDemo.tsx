@@ -1690,23 +1690,25 @@ const DEFAULT_REGISTRY: RulesRegistry = {
     // Combat
     { id: 'automatics', label: 'Automatics', group: 'combat', min: 1, max: 5 },
     { id: 'droneOperation', label: 'Drone Operation', group: 'combat', min: 1, max: 5 },
-    { id: 'pistols', label: 'Pistols', group: 'combat', min: 1, max: 5 },
+    { id: 'martialArts', label: 'Martial Arts', group: 'combat', min: 1, max: 5 },
     { id: 'marksman', label: 'Marksman', group: 'combat', min: 1, max: 5 },
     { id: 'meleeWeapons', label: 'Melee Weapons', group: 'combat', min: 1, max: 5 },
+    { id: 'pistols', label: 'Pistols', group: 'combat', min: 1, max: 5 },
+    { id: 'propellants', label: 'Propellants', group: 'combat', min: 1, max: 5 },
     { id: 'shotguns', label: 'Shotguns', group: 'combat', min: 1, max: 5 },
     { id: 'shurikens', label: 'Shurikens', group: 'combat', min: 1, max: 5 },
-    { id: 'martialArts', label: 'Martial Arts', group: 'combat', min: 1, max: 5 },
-    { id: 'propellants', label: 'Propellants', group: 'combat', min: 1, max: 5 },
+
     // Magic
     { id: 'arcane', label: 'Arcane', group: 'magic', min: 1, max: 5 },
     { id: 'demonology', label: 'Demonology', group: 'magic', min: 1, max: 5 },
+    { id: 'envy', label: 'Envy', group: 'magic', min: 1, max: 5 },
+    { id: 'gluttony', label: 'Gluttony', group: 'magic', min: 1, max: 5 },
+    { id: 'greed', label: 'Greed', group: 'magic', min: 1, max: 5 },
     { id: 'lust', label: 'Lust', group: 'magic', min: 1, max: 5 },
     { id: 'pride', label: 'Pride', group: 'magic', min: 1, max: 5 },
-    { id: 'envy', label: 'Envy', group: 'magic', min: 1, max: 5 },
-    { id: 'greed', label: 'Greed', group: 'magic', min: 1, max: 5 },
-    { id: 'wrath', label: 'Wrath', group: 'magic', min: 1, max: 5 },
     { id: 'sloth', label: 'Sloth', group: 'magic', min: 1, max: 5 },
-    { id: 'gluttony', label: 'Gluttony', group: 'magic', min: 1, max: 5 },
+    { id: 'wrath', label: 'Wrath', group: 'magic', min: 1, max: 5 },
+
     // Specialized
     { id: 'bluff', label: 'Bluff', group: 'specialized', min: 1, max: 5 },
     { id: 'bodybuilding', label: 'Bodybuilding', group: 'specialized', min: 1, max: 5 },
@@ -1723,6 +1725,7 @@ const DEFAULT_REGISTRY: RulesRegistry = {
     { id: 'reflex', label: 'Reflex', group: 'specialized', min: 1, max: 5 },
     { id: 'survivability', label: 'Survivability', group: 'specialized', min: 1, max: 5 },
     { id: 'thievery', label: 'Thievery', group: 'specialized', min: 1, max: 5 },
+
   ],
   resources: [
     { id: 'rerolls', label: 'Generic Rerolls', min: 0, max: 9 },
