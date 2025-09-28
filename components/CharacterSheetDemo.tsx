@@ -1630,7 +1630,7 @@ const LevelUpPanel: React.FC<{
               <span>
                 {def.label} — Current Mission
                 {(totals[def.id] ?? 0) > 0 ? ` (x${totals[def.id]})` : ''}
-</span>
+              </span>
             </label>
           ))}
         </div>
