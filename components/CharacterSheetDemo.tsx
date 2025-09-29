@@ -71,7 +71,12 @@ export type RecurringCostEntry = {
 };
 
 // Races
-export type RaceAbilityDef = { name: string; desc: string };
+export type RaceAbilityDef = {
+  name: string;
+  desc: string;
+  group?: string;     // e.g. "mutation" for Abomination base picks
+  oneOf?: string;     // e.g. "altered-core" for Electrokinesis/Perfect Reflexes/ESP
+};
 export type RaceName =
   | 'Abomination'
   | 'Altered'
@@ -84,6 +89,10 @@ export type RaceName =
   | 'Outsiders'
   | 'Rat Kings'
   | 'Succubus/Incubus';
+
+type RaceRule =
+  | { type: 'atLeastAtMost'; label: string; names: string[]; min: number; max: number }
+  | { type: 'exactlyOne';   label: string; names: string[] };
 
 export type ConditionName =
   | 'Addiction Tremors'
@@ -282,12 +291,51 @@ const RACE_OPTIONS: RaceName[] = [
   'Succubus/Incubus',
 ];
 
-export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
+const RACE_RULES: Partial<Record<RaceName, RaceRule[]>> = {
   Abomination: [
     {
-      name: 'Emerging Mutation',
-      desc: `You may select another mutation ability from the Abomination’s starting abilities. This ability may be selected more than once to choose an additional mutation. Each new mutation adds to your Mutant Madness.\nRequirement: Abomination race.`,
+      type: 'atLeastAtMost',
+      label: 'Mutations',
+      names: [
+        'Additional Arms',
+        'Additional Legs',
+        'Compound Eyes',
+        'Chromatophores',
+        'Flesh-Rending Claws',
+        'Toxic Skin',
+        'Regeneration',
+        'Heat Vision',
+        'Quills',
+        'Exoskeleton',
+      ],
+      min: 1,
+      max: 3,
     },
+  ],
+  Altered: [
+    {
+      type: 'exactlyOne',
+      label: 'Starting Ability',
+      names: ['Electrokinesis', 'Perfect Reflexes', 'ESP'],
+    },
+  ],
+};
+
+export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
+  Abomination: [
+    { name: 'Mutant Madness', desc: `While in combat, at the end of each turn gain Madness (X) where X = 1 + your number of mutations.` },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.` },
+    { name: 'Emerging Mutation',      desc: `You may select another mutation ability from the Abomination’s starting abilities. This ability may be selected more than once to choose an additional mutation. Each new mutation adds to your Mutant Madness.\nRequirement: Abomination race.`,},
+    { name: 'Additional Arms',        desc: 'Mutation: You may have one additional weapon equipped at a time.', group: 'mutation' },
+    { name: 'Additional Legs',        desc: 'Mutation: You may move an additional Unit when spending AP on Movement.', group: 'mutation' },
+    { name: 'Compound Eyes',          desc: 'Mutation: You can see 360° around you at all times. You gain one Die Level on Observation DCs.', group: 'mutation' },
+    { name: 'Chromatophores',         desc: 'Mutation: You can change the color of your skin at will, allowing you to blend into the background of your environment to help with Hide DCs, or flash colorful patterns across your skin to intimidate enemies, or send visual messages. You gain one Die Level on Hide DCs.', group: 'mutation' },
+    { name: 'Flesh-Rending Claws',    desc: 'Mutation: Martial arts attacks gain the slash damage-type and ArP one.', group: 'mutation' },
+    { name: 'Toxic Skin',             desc: 'Mutation: Anyone who hits you with a melee attack, regardless of armor saves, gains the Poisoned (4) condition.', group: 'mutation' },
+    { name: 'Regeneration',           desc: 'Mutation: If you gain the Critical condition, you automatically recover from the condition after your second Critical Condition DC.', group: 'mutation' },
+    { name: 'Heat Vision',            desc: 'Mutation: You can sense infrared heat, allowing you to see warm-blooded creatures and heat signatures in the dark and obscuring conditions such as smoke. This allows you to ignore any negative modifiers from such conditions. ', group: 'mutation' },
+    { name: 'Quills',                 desc: 'Mutation: Anytime an attack is made against you from an adjacent space, if that attack misses or is blocked by an Armor Save, you create an automatic ArP one piercing hit against them that deals one injury.', group: 'mutation' },
+    { name: 'Exoskeleton',            desc: 'Mutation: You gain one innate Armor Value against all damage types except Curse.', group: 'mutation' },
     {
       name: 'Anger Management',
       desc: `Reduce the X received each turn as part of your Mutant Madness ability by one.\nRequirement: Abomination race.`,
@@ -313,6 +361,10 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 
   Altered: [
+    { name: 'Unique Physiology', desc: `All medical costs are doubled.` },
+    { name: 'Electrokinesis',   desc: '…', oneOf: 'altered-core' },
+    { name: 'Perfect Reflexes', desc: '…', oneOf: 'altered-core' },
+    { name: 'ESP',              desc: '…', oneOf: 'altered-core' },
     {
       name: 'Perfect Conduit',
       desc: `Increase your innate Electric Armor Value to six.\nRequirement: Requires Electrokinesis ability; Altered race.`,
@@ -1485,7 +1537,7 @@ const ArmorSlotsBox: React.FC<{
 
   return (
     <Card className="shadow-sm bg-red-900">
-      <CardContent className="p-4 text-whtie">
+      <CardContent className="p-4 text-white">
         <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Armor Slots</div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-white">
           <Slot k="head" label="Head" />
@@ -1837,37 +1889,114 @@ const AbilitiesPanel: React.FC<{
 
   const add = (entry: AbilityEntry) => onChange([...(abilities ?? []), entry]);
   const remove = (id: string) => onChange((abilities ?? []).filter(a => a.id !== id));
-  const patch = (id: string, p: Partial<AbilityEntry>) =>
+  const patch  = (id: string, p: Partial<AbilityEntry>) =>
     onChange((abilities ?? []).map(a => (a.id === id ? { ...a, ...p } : a)));
 
-  const skillUnlocks = (abilities ?? []).filter(a => a.kind === 'skill');
+  const skillUnlocks   = (abilities ?? []).filter(a => a.kind === 'skill');
   const generalUnlocks = (abilities ?? []).filter(a => a.kind === 'general');
-  const raceUnlocks = (abilities ?? []).filter(a => a.kind === 'race');
+  const raceUnlocks    = (abilities ?? []).filter(a => a.kind === 'race');
 
   const raceDefs: RaceAbilityDef[] = raceName ? (RACE_ABILITIES[raceName] ?? []) : [];
-  const raceNames = raceDefs.map(d => d.name);
+  const byName = new Map(raceDefs.map(d => [d.name, d]));
   const hasRaceAbility = (name: string) => raceUnlocks.some(a => a.name === name);
+
+  // ---- Rule checks ----
+  const abomMutationCount =
+    raceName === 'Abomination'
+      ? raceUnlocks.filter(a => byName.get(a.name)?.group === 'mutation').length
+      : 0;
+
+  const alteredCoreCount =
+    raceName === 'Altered'
+      ? raceUnlocks.filter(a => byName.get(a.name)?.oneOf === 'altered-core').length
+      : 0;
+
+  const abomOK    = raceName !== 'Abomination' || (abomMutationCount >= 1 && abomMutationCount <= 3);
+  const alteredOK = raceName !== 'Altered'     || alteredCoreCount === 1;
+
+  // Can we add a given race ability without breaking rules?
+  const canAddName = (name: string) => {
+    if (!raceName) return false;
+    if (hasRaceAbility(name)) return false;
+    const def = byName.get(name);
+    if (!def) return false;
+
+    if (raceName === 'Abomination' && def.group === 'mutation' && abomMutationCount >= 3) {
+      return false; // would exceed 3
+    }
+    if (raceName === 'Altered' && def.oneOf === 'altered-core' && alteredCoreCount >= 1) {
+      return false; // would exceed 1
+    }
+    return true;
+  };
 
   const startAddRaceAbility = () => {
     if (!raceName || raceDefs.length === 0) return;
-    const firstAvailable = raceNames.find(n => !hasRaceAbility(n)) ?? raceNames[0] ?? '';
-    setDraftRaceAbility(firstAvailable);
+    const first = raceDefs.find(d => canAddName(d.name))?.name ?? '';
+    if (!first) return; // nothing addable under current constraints
+    setDraftRaceAbility(first);
     setPickingRace(true);
   };
+
   const confirmAddRaceAbility = () => {
-    if (!draftRaceAbility) return setPickingRace(false);
-    if (hasRaceAbility(draftRaceAbility)) { setPickingRace(false); setShowKindPicker(false); return; }
+    if (!draftRaceAbility) { setPickingRace(false); return; }
+    if (!canAddName(draftRaceAbility)) { setPickingRace(false); setShowKindPicker(false); return; }
     add({ id: makeId('ab'), kind: 'race', name: draftRaceAbility });
     setPickingRace(false);
     setShowKindPicker(false);
   };
-  const cancelPickers = () => { setPickingRace(false); setShowKindPicker(false); };
+
+  const cancelPickers = () => {
+    setPickingRace(false);
+    setShowKindPicker(false);
+  };
+
+  // for the row <select>: disable options that would BREAK rules when chosen
+  const optionDisabled = (currentName: string, candidate: string) => {
+    if (!raceName) return false;
+    if (hasRaceAbility(candidate) && candidate !== currentName) return true;
+
+    const candidateDef = byName.get(candidate);
+    const currentDef   = byName.get(currentName);
+
+    if (raceName === 'Abomination' && candidateDef?.group === 'mutation') {
+      const currentIsMutation = currentDef?.group === 'mutation';
+      // allow swap mutation->mutation (count unchanged), but block non-mutation -> mutation if already at 3
+      if (!currentIsMutation && abomMutationCount >= 3) return true;
+    }
+
+    if (raceName === 'Altered' && candidateDef?.oneOf === 'altered-core') {
+      const currentIsCore = currentDef?.oneOf === 'altered-core';
+      // allow swap core->core (still 1), but block non-core -> core if already 1
+      if (!currentIsCore && alteredCoreCount >= 1) return true;
+    }
+    return false;
+  };
+
+  // Is there anything addable right now?
+  const anyAddable = !!raceName && raceDefs.some(d => canAddName(d.name));
+
+  // Small helper UI
+  const StatusPill: React.FC<{ ok: boolean; text: string }> = ({ ok, text }) => (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] ${ok ? 'bg-emerald-600/30 text-emerald-200' : 'bg-amber-600/30 text-amber-100'}`}>
+      {text}
+    </span>
+  );
 
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm font-medium">Abilities</div>
+          <div className="flex items-center gap-2">
+            <div className="text-sm font-medium">Abilities</div>
+            {raceName === 'Abomination' && (
+              <StatusPill ok={abomOK} text={`Mutations ${abomMutationCount}/1–3`} />
+            )}
+            {raceName === 'Altered' && (
+              <StatusPill ok={alteredOK} text={`Core Power ${alteredCoreCount}/1`} />
+            )}
+          </div>
+
           {!showKindPicker ? (
             <Button
               type="button"
@@ -1906,8 +2035,8 @@ const AbilitiesPanel: React.FC<{
                 variant="secondary"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={startAddRaceAbility}
-                disabled={readOnly || !raceName || raceDefs.length === 0}
-                title={!raceName ? 'Select a race first' : (raceDefs.length === 0 ? 'No abilities for this race' : '')}
+                disabled={readOnly || !raceName || !anyAddable}
+                title={!raceName ? 'Select a race first' : (!anyAddable ? 'No addable abilities under current constraints' : '')}
               >
                 Race Acquired
               </Button>
@@ -1934,11 +2063,14 @@ const AbilitiesPanel: React.FC<{
                 value={draftRaceAbility}
                 onChange={(e) => setDraftRaceAbility(e.target.value)}
               >
-                {raceDefs.map((d) => (
-                  <option key={d.name} value={d.name} disabled={hasRaceAbility(d.name)}>
-                    {hasRaceAbility(d.name) ? `${d.name} (already added)` : d.name}
-                  </option>
-                ))}
+                {raceDefs.map((d) => {
+                  const disabled = !canAddName(d.name);
+                  return (
+                    <option key={d.name} value={d.name} disabled={disabled}>
+                      {disabled ? `${d.name} (not available)` : d.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div className="flex gap-2 md:justify-end">
@@ -1948,7 +2080,7 @@ const AbilitiesPanel: React.FC<{
                 variant="secondary"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={confirmAddRaceAbility}
-                disabled={!draftRaceAbility}
+                disabled={!draftRaceAbility || !canAddName(draftRaceAbility)}
               >
                 Add
               </Button>
@@ -1965,22 +2097,17 @@ const AbilitiesPanel: React.FC<{
           </div>
         )}
 
-        {/* RACE ACQUIRED (top, list-driven, shows description) */}
+        {/* RACE ACQUIRED */}
         <div className="space-y-2">
           <div className="text-xs font-semibold uppercase text-white/80">Race Acquired</div>
 
-          {!raceName && (
-            <div className="text-sm text-white/70">Select a race to use race abilities.</div>
-          )}
-
-          {raceName && raceUnlocks.length === 0 && (
-            <div className="text-sm text-white/70">No race abilities added yet.</div>
-          )}
+          {!raceName && <div className="text-sm text-white/70">Select a race to use race abilities.</div>}
+          {raceName && raceUnlocks.length === 0 && <div className="text-sm text-white/70">No race abilities added yet.</div>}
 
           {raceName && raceUnlocks.length > 0 && (
             <div className="grid gap-2">
               {raceUnlocks.map((a) => {
-                const def = raceDefs.find(d => d.name === a.name);
+                const def     = byName.get(a.name);
                 const options = raceDefs.map(d => d.name);
                 const notInList = !!a.name && !options.includes(a.name);
                 const displayOptions = notInList ? [a.name, ...options] : options;
@@ -1996,11 +2123,16 @@ const AbilitiesPanel: React.FC<{
                           onChange={(e) => patch(a.id, { name: e.target.value })}
                           disabled={readOnly || displayOptions.length === 0}
                         >
-                          {displayOptions.map((n, idx) => (
-                            <option key={`${a.id}-${idx}-${n}`} value={n} disabled={notInList && idx === 0}>
-                              {notInList && idx === 0 ? `${n} (not in ${raceName})` : n}
-                            </option>
-                          ))}
+                          {displayOptions.map((n, idx) => {
+                            const dis = notInList && idx === 0
+                              ? true // keep stale value visible but not selectable
+                              : optionDisabled(a.name, n);
+                            return (
+                              <option key={`${a.id}-${idx}-${n}`} value={n} disabled={dis}>
+                                {notInList && idx === 0 ? `${n} (not in ${raceName})` : n}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
                       <div className="flex justify-end">
@@ -2027,15 +2159,122 @@ const AbilitiesPanel: React.FC<{
               })}
             </div>
           )}
+
+          {/* Rule warnings */}
+          {raceName === 'Abomination' && !abomOK && (
+            <div className="text-xs text-amber-200/90">
+              Abomination rule: choose <b>1–3</b> abilities from the Mutations list.
+            </div>
+          )}
+          {raceName === 'Altered' && !alteredOK && (
+            <div className="text-xs text-amber-200/90">
+              Altered rule: choose <b>exactly 1</b> core power (Electrokinesis, Perfect Reflexes, or ESP).
+            </div>
+          )}
         </div>
 
         {/* SKILL UNLOCKS (unchanged) */}
-        {/* ...keep your existing Skill Unlock + General Unlock sections here... */}
+        <div className="mt-4 space-y-2">
+          <div className="text-xs font-semibold uppercase text-white/80">Skill Unlock</div>
+          {skillUnlocks.length === 0 && <div className="text-sm text-white/70">No skill unlocks.</div>}
+          {skillUnlocks.map((a) => (
+            <div key={a.id} className="rounded-xl border border-white/10 p-3">
+              <div className="grid gap-2 md:grid-cols-3">
+                <div className="grid gap-1">
+                  <Label>Ability Name</Label>
+                  <Input
+                    value={a.name}
+                    onChange={(e) => patch(a.id, { name: e.target.value })}
+                    placeholder="e.g., Advanced Marksman Drills"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <Label>Linked Skill</Label>
+                  <select
+                    className="rounded-md border bg-background px-3 py-2 text-sm"
+                    value={a.linkedSkillId ?? ''}
+                    onChange={(e) => patch(a.id, { linkedSkillId: e.target.value })}
+                    disabled={readOnly}
+                  >
+                    {skillDefs.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-end justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => remove(a.id)}
+                    disabled={readOnly}
+                    aria-label="Remove ability"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label>Notes</Label>
+                <Textarea
+                  value={a.notes ?? ''}
+                  onChange={(e) => patch(a.id, { notes: e.target.value })}
+                  placeholder="Optional description or rules text…"
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* GENERAL UNLOCKS (unchanged) */}
+        <div className="mt-4 space-y-2">
+          <div className="text-xs font-semibold uppercase text-white/80">General Unlock</div>
+          {generalUnlocks.length === 0 && <div className="text-sm text-white/70">No general unlocks.</div>}
+          {generalUnlocks.map((a) => (
+            <div key={a.id} className="rounded-xl border border-white/10 p-3">
+              <div className="grid gap-2 md:grid-cols-3">
+                <div className="grid gap-1 md:col-span-2">
+                  <Label>Ability Name</Label>
+                  <Input
+                    value={a.name}
+                    onChange={(e) => patch(a.id, { name: e.target.value })}
+                    placeholder="e.g., Night Vision Training"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div className="flex items-end justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => remove(a.id)}
+                    disabled={readOnly}
+                    aria-label="Remove ability"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label>Notes</Label>
+                <Textarea
+                  value={a.notes ?? ''}
+                  onChange={(e) => patch(a.id, { notes: e.target.value })}
+                  placeholder="Optional description or rules text…"
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
 };
-
 
 const NotesPanel: React.FC<{
   notes: string;
