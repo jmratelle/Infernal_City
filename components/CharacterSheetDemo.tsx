@@ -184,6 +184,63 @@ const SKILL_REROLL_MIN = 0;
 const SKILL_REROLL_MAX = 5;
 const STORAGE_KEY = 'characterSheet:v1';
 
+// ---------- Condition reference ----------
+const CONDITION_TEXT: Record<ConditionName, (x?: number) => string> = {
+  'Addiction Tremors': () =>
+    'Reduce the Die Level of all DCs by one until you take another hit of the addictive substance or one day has passed.',
+
+  'Bleeding': (x = 1) =>
+    `While under this condition, the target receives one injury at the end of their turn. A Cumulative Medical Skill DC can be made to reduce this condition by ${x}. When ${x} is equal to or less than zero, remove this condition.`,
+
+  'Bonded Destiny': () =>
+    'Both targets under the effect of this condition will share any received injuries and conditions they receive in the future. At the end of each of their turns, any of the targets may attempt a Contested Envy DC with the caster to end this condition.',
+
+  'Bound': () =>
+    'While under the effect of this condition, the target remains magically or physically trapped within the source that gave the target this condition. At the beginning of each of its turns the target may make a cumulative DC, with the skill being determined by the ability or source that inflicted the condition, to attempt to escape. If they fail, they remain trapped and cannot move or perform any actions.',
+
+  'Burning': (x = 1) =>
+    `At the beginning of the target's turn they must make a burn Armor DC. If they fail or cannot make a burn Armor DC, they take one injury. The target or another PC or NPC may spend two AP to reduce this condition’s X value by one by batting out the flames. This condition’s X value is reduced by one at the end of the target’s turn. If ${x} is equal to zero, remove this condition.`,
+
+  'Crippled': (x = 1) =>
+    `While under this condition, the target receives a negative ${x} modifier to all DCs made by that target. If the target’s Crippled condition is four or greater, they gain the Unconscious condition at the start of each turn until they remove this condition. This condition can only be removed at a clinic or hospital.`,
+
+  'Corroded': (x = 1) =>
+    `While under this condition, reduce all the target’s Armor Values by ${x}. The (X) value can be reduced by a cumulative Engineering DC. This condition is removed between missions.`,
+
+  'Disoriented': (x = 1) =>
+    `At the beginning of each of their turns, the target must make a cumulative Fortitude DC with ${x} as the target number. If they fail, they lose three AP from their AP pool for that turn. At the end of each turn, the ${x} value decreases by one. When ${x} is equal to or less than zero, remove this condition.`,
+
+  'Enthralled': () =>
+    'The target becomes enamored with the source of their enthrallment. Their actions are controlled by the GM and they will generally listen to their enthraller, potentially turning on former comrades, but not doing anything that would cause immediate self-harm. If the target would receive an injury they must make an immediate DC (skill determined by the source). On success, remove this condition. If the source attacks or injures the target, or is destroyed, this condition immediately ends.',
+
+  'Frightened': (x = 1) =>
+    `At the beginning of each of their turns, the target must make a cumulative Fortitude check with ${x} as the target number. On a fail, they must spend all AP to move as far away as possible from the source.`,
+
+  'Impaled': (x = 1) =>
+    `The target has been impaled by a physical object. Movement is reduced by ${x} Units per AP spent. A target may spend 1 AP to remove the object and reduce this condition's X by the X caused by the object. When ${x} is equal to or less than zero, remove this condition.`,
+
+  'Madness': (x = 1) =>
+    `At the beginning of each of their turns, the target must make a cumulative Fortitude DC equal to ${x}. On a fail, they must spend their initial AP to move and attack the nearest PC or NPC (friend or foe) once. If no weapon, use the strongest Martial Arts attack available.`,
+
+  'Paralysis': (x = 1) =>
+    `Movement allowed from spending AP is reduced by ${x} Units per AP. The Reflex Skill is reduced by ${x} Die Levels. Another character may make a Cumulative Medical Skill DC to reduce this condition by ${x}. When ${x} is equal to or less than zero, remove this condition.`,
+
+  'Poisoned': (x = 1) =>
+    `At the beginning of each of their turns, the target must make a Cumulative Survivability DC with ${x} as the target number. On a fail, they receive one injury. At the end of each turn, ${x} decreases by one. If ${x} is equal to zero, remove this condition.`,
+
+  'Poisoned (Deadly)': (x = 1) =>
+    `At the beginning of each of their turns, the target must make a Cumulative Survivability DC with ${x} as the target number. On a fail, they receive two injuries. At the end of each turn, ${x} decreases by one. If ${x} is equal to zero, remove this condition.`,
+
+  'Transformed': (x = 1) =>
+    `While under this condition, the target is transformed into a small animal (e.g., mouse, hedgehog, chicken). At the end of each turn, reduce ${x} by one; when ${x} is zero, remove this condition. All equipment disappears until the transformation ends. Lose all skills/abilities; use: Reflex 3, all other skills 1. Injuries transfer to the actual form. If the target dies while transformed, they die and immediately regain original form.`,
+
+  'Unconscious': () =>
+    'The target cannot spend any AP. Remove this condition at the end of the target’s subsequent turn. All attacks against unconscious targets automatically hit, and the Reflex save result is considered a one for crit purposes.',
+
+  'Critical': () =>
+    'A PC must make a Critical Condition DC at the end of their turn; an NPC must make it at the beginning of their turn after all other beginning-of-turn effects. Another adjacent character can remove this condition with a Medical DC.',
+};
+
 
 const HIDEOUT_UPGRADES = [
   'Bedroom',
@@ -228,6 +285,18 @@ function formatDate(iso: string) {
   const d = new Date(iso);
   return d.toISOString().slice(0, 10); // stable YYYY-MM-DD
 }
+
+function renderConditionText(name: ConditionName, severity?: number) {
+  const fn = CONDITION_TEXT[name];
+  if (!fn) {
+    // Defensive: show a visible fallback if a key ever mismatches
+    return `No rules text found for "${name}".`;
+  }
+  // For (X) conditions, many entries use `x` in the copy; default to 1 if omitted
+  return fn(severity ?? 1);
+}
+
+
 function makeId(prefix = 'id') {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -761,17 +830,37 @@ const ResourcesPanel: React.FC<{
                     <option value="Quarterly">Quarterly</option>
                     <option value="Yearly">Yearly</option>
                   </select>
-                  <Input
-                    className="sm:col-span-2"
-                    placeholder="Notes"
-                    value={r.notes ?? ''}
-                    onChange={(e) => {
-                      const next = [...(recurring || [])];
-                      next[i] = { ...r, notes: e.target.value };
-                      onChangeRecurring(next);
-                    }}
-                    disabled={readOnly}
-                  />
+                  <div className="md:col-span-5">
+  <div className="rounded-lg border border-white/10 bg-black/30 p-3 shadow-sm">
+    <div className="mb-2 flex items-center justify-between">
+      <span className="text-[10px] uppercase tracking-wider text-white/60">Rules</span>
+      {(
+  e.name === 'Bleeding' ||
+  e.name === 'Bound' ||
+  e.name === 'Burning' ||
+  e.name === 'Crippled' ||
+  e.name === 'Corroded' ||
+  e.name === 'Disoriented' ||
+  e.name === 'Frightened' ||
+  e.name === 'Impaled' ||
+  e.name === 'Madness' ||
+  e.name === 'Paralysis' ||
+  e.name === 'Poisoned' ||
+  e.name === 'Poisoned (Deadly)' ||
+  e.name === 'Transformed'
+) && (
+  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
+    X: {e.severity ?? 1}
+  </span>
+)}
+
+    </div>
+    <p className="text-xs leading-relaxed text-white/90 whitespace-pre-line">
+      {renderConditionText(e.name, e.severity)}
+    </p>
+  </div>
+</div>
+
                   {/* Log Payment + last paid display */}
                   <div className="sm:col-span-2 flex items-center gap-2">
                     <Button
@@ -1448,83 +1537,91 @@ const ConditionsPanel: React.FC<{
     name === 'Poisoned (Deadly)' ||
     name === 'Transformed';
 
-  const add = () => onChange([...(entries || []), { id: makeId('cond'), name: 'Bleeding', severity: 1 }]);
+  const add = () =>
+    onChange([...(entries || []), { id: makeId('cond'), name: 'Bleeding', severity: 1 }]);
   const remove = (id: string) => onChange((entries || []).filter((e) => e.id !== id));
+
   const ALL: ConditionName[] = [
-    'Addiction Tremors','Bleeding','Bonded Destiny','Bound','Burning','Crippled','Corroded','Disoriented','Enthralled','Frightened','Impaled','Madness','Paralysis','Poisoned','Poisoned (Deadly)','Transformed','Unconscious','Critical'
+    'Addiction Tremors','Bleeding','Bonded Destiny','Bound','Burning','Crippled',
+    'Corroded','Disoriented','Enthralled','Frightened','Impaled','Madness',
+    'Paralysis','Poisoned','Poisoned (Deadly)','Transformed','Unconscious','Critical'
   ];
 
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
         <div className="mb-2 flex items-center justify-between text-white">
-          <div className="text-sm font-medium text-muted-foreground text-white">Conditions</div>
-          <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={add} disabled={readOnly}>
+          <div className="text-sm font-medium">Conditions</div>
+          <Button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            size="sm"
+            onClick={add}
+            disabled={readOnly}
+          >
             <Plus className="mr-1 h-4 w-4" /> Add Condition
           </Button>
         </div>
-        <div className="space-y-2">
-          {(entries || []).map((e, i) => (
-            <div key={e.id} className="grid grid-cols-1 gap-2 md:grid-cols-12">
-              <select
-                className="md:col-span-4 rounded-md border bg-background px-3 py-2 text-sm text-white"
-                value={e.name}
-                onChange={(ev) => {
-                  const name = ev.target.value as ConditionName;
-                  const next = [...(entries || [])];
-                  next[i] = { ...e, name, severity: isX(name) ? (e.severity ?? 1) : undefined };
-                  onChange(next);
-                }}
-                disabled={readOnly}
-              >
-                {ALL.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
 
-              {isX(e.name) && (
-                <Input
-                  className="md:col-span-2"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="X"
-                  value={String(e.severity ?? 1)}
+        <div className="space-y-4">
+          {(entries || []).map((e, i) => (
+            <div key={e.id} className="space-y-2 rounded-md bg-black/20 p-3">
+              {/* First row: select + X + remove */}
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-7 items-center">
+                <select
+                  className="md:col-span-4 rounded-md border bg-background px-3 py-2 text-sm text-white"
+                  value={e.name}
                   onChange={(ev) => {
+                    const name = ev.target.value as ConditionName;
                     const next = [...(entries || [])];
-                    next[i] = { ...e, severity: clamp(parseInt(ev.target.value || '0', 10), 0, 99) };
+                    next[i] = { ...e, name, severity: isX(name) ? (e.severity ?? 1) : undefined };
                     onChange(next);
                   }}
                   disabled={readOnly}
-                />
-              )}
-
-              <Input
-                className="md:col-span-5"
-                placeholder="Notes"
-                value={e.notes ?? ''}
-                onChange={(ev) => {
-                  const next = [...(entries || [])];
-                  next[i] = { ...e, notes: ev.target.value };
-                  onChange(next);
-                }}
-                disabled={readOnly}
-              />
-
-              <div className="md:col-span-1 flex items-center justify-end">
-                <Button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => remove(e.id)}
-                  disabled={readOnly}
-                  aria-label="Remove condition"
                 >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  {ALL.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+
+                {isX(e.name) && (
+                  <Input
+                    className="md:col-span-2"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="X"
+                    value={String(e.severity ?? 1)}
+                    onChange={(ev) => {
+                      const next = [...(entries || [])];
+                      next[i] = { ...e, severity: clamp(parseInt(ev.target.value || '0', 10), 0, 99) };
+                      onChange(next);
+                    }}
+                    disabled={readOnly}
+                  />
+                )}
+
               </div>
+
+              {/* Second row: rules description */}
+              <div className="rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
+                {renderConditionText(e.name as ConditionName, e.severity)}
+              </div>
+              <div className="md:col-span-1 flex justify-end">
+                  <Button
+                    type="button"
+                    onMouseDown={(ev) => ev.preventDefault()}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => remove(e.id)}
+                    disabled={readOnly}
+                    aria-label="Remove condition"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
             </div>
           ))}
+          
 
           {(entries || []).length === 0 && (
             <div className="text-sm text-muted-foreground text-white">No conditions.</div>
@@ -1534,6 +1631,7 @@ const ConditionsPanel: React.FC<{
     </Card>
   );
 };
+
 
 const NotesPanel: React.FC<{
   notes: string;
@@ -1629,11 +1727,14 @@ const LevelUpPanel: React.FC<{
                 aria-label={`${def.label} current mission`}
               />
               <span>
-              {def.label} — Current Mission
-              {(totals[def.id] ?? 0) > 0
-  ? ` (x${totals[def.id]}) [Lvl ${values[def.id] ?? def.min ?? 0}]`
-  : ''}
-            </span>
+                {def.label} — Current Mission
+                {(totals[def.id] ?? 0) > 0 ? ` (x${totals[def.id]})` : ''}
+
+                {((ticked[def.id] || (totals[def.id] ?? 0) > 0) && (values[def.id] ?? def.min ?? 0))
+                  ? ` [Lvl ${values[def.id]}]`
+                  : ''}
+              </span>
+
             </label>
           ))}
         </div>
