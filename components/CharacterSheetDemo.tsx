@@ -21,6 +21,16 @@ import { Plus, Trash2 } from 'lucide-react';
 
 // ---------- Types ----------
 export type SkillGroup = 'combat' | 'magic' | 'specialized';
+export type AbilityKind = 'skill' | 'general' | 'race';
+
+export type AbilityEntry = {
+  id: string;
+  kind: AbilityKind;
+  name: string;
+  linkedSkillId?: string; // optional; only used for 'skill' unlocks
+  notes?: string;
+};
+
 
 export type AttributeDef = {
   id: string;
@@ -59,6 +69,20 @@ export type RecurringCostEntry = {
   history?: PaymentEvent[];
   notes?: string;
 };
+
+// Races
+export type RaceName =
+  | 'Abomination'
+  | 'Altered'
+  | 'Ascended'
+  | 'Demonkin'
+  | 'Draconum'
+  | 'Fireborne'
+  | 'Liches'
+  | 'Maggot Lords'
+  | 'Outsiders'
+  | 'Rat Kings'
+  | 'Succubus/Incubus';
 
 export type ConditionName =
   | 'Addiction Tremors'
@@ -126,6 +150,7 @@ export type Character = {
   race?: string;
   origin?: string;
   money?: number;
+  abilities?: AbilityEntry[];
   tallySpent?: Record<string, number>;      // tallies consumed by level-ups
   attributes: Record<string, number>;
   resources: Record<string, number>;
@@ -241,6 +266,34 @@ const CONDITION_TEXT: Record<ConditionName, (x?: number) => string> = {
     'A PC must make a Critical Condition DC at the end of their turn; an NPC must make it at the beginning of their turn after all other beginning-of-turn effects. Another adjacent character can remove this condition with a Medical DC.',
 };
 
+const RACE_OPTIONS: RaceName[] = [
+  'Abomination',
+  'Altered',
+  'Ascended',
+  'Demonkin',
+  'Draconum',
+  'Fireborne',
+  'Liches',
+  'Maggot Lords',
+  'Outsiders',
+  'Rat Kings',
+  'Succubus/Incubus',
+];
+
+// Predefined abilities per race (I will fill these arrays later)
+const RACE_ABILITIES: Record<RaceName, string[]> = {
+  Abomination: [],
+  Altered: [],
+  Ascended: [],
+  Demonkin: [],
+  Draconum: [],
+  Fireborne: [],
+  Liches: [],
+  'Maggot Lords': [],
+  Outsiders: [],
+  'Rat Kings': [],
+  'Succubus/Incubus': [],
+};
 
 const HIDEOUT_UPGRADES = [
   'Bedroom',
@@ -334,7 +387,7 @@ const IdentitySection: React.FC<{
     <Card className="shadow-sm bg-red-900">
       <CardContent className="grid gap-4 p-4 md:grid-cols-4 text-white">
         <div className="grid gap-2">
-          <Label htmlFor={`${idBase}-name`}>Name</Label>
+          <Label htmlFor={`${idBase}-name`}>Name/Alias</Label>
           <Input
             id={`${idBase}-name`}
             value={value.name}
@@ -1154,18 +1207,49 @@ const EquippedGear: React.FC<{
                   <div className="grid grid-cols-2 gap-2">
                     <div className="grid gap-1">
                       <Label>Current Ammo</Label>
-                      <Input
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={w.currentAmmo}
-                        onChange={(e) =>
-                          patchWeapon(w.id, {
-                            currentAmmo: clamp(parseInt(e.target.value || '0', 10), 0, 9999),
-                          })
-                        }
-                        disabled={readOnly}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={w.currentAmmo}
+                          readOnly                               // disallows typing
+                          className="w-12"                       // makes the box size. change number if too big or small :D
+                          disabled={readOnly}
+                          aria-label="Current ammo"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() =>
+                            patchWeapon(w.id, {
+                              currentAmmo: clamp((w.currentAmmo ?? 0) - 1, 0, w.maxAmmo),
+                            })
+                          }
+                          disabled={readOnly}
+                          aria-label="Decrement current ammo"
+                        >
+                          −
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() =>
+                            patchWeapon(w.id, {
+                              currentAmmo: clamp((w.currentAmmo ?? 0) + 1, 0, w.maxAmmo),
+                            })
+                          }
+                          disabled={readOnly}
+                          aria-label="Increment current ammo"
+                        >
+                          +
+                        </Button>
+                      </div>
                     </div>
+
                     <div className="grid gap-1">
                       <Label>Max Ammo</Label>
                       <Input
@@ -1604,6 +1688,247 @@ const ConditionsPanel: React.FC<{
   );
 };
 
+const AbilitiesPanel: React.FC<{
+  abilities: AbilityEntry[];
+  skillDefs: AttributeDef[];
+  onChange: (next: AbilityEntry[]) => void;
+  readOnly?: boolean;
+}> = ({ abilities, skillDefs, onChange, readOnly }) => {
+  const [showKindPicker, setShowKindPicker] = React.useState(false);
+
+  const addAbility = (kind: AbilityKind) => {
+    const base: AbilityEntry = {
+      id: makeId('ab'),
+      kind,
+      name: '',
+      linkedSkillId: kind === 'skill' ? skillDefs[0]?.id : undefined,
+      notes: ''
+    };
+    onChange([...(abilities ?? []), base]);
+    setShowKindPicker(false);
+  };
+
+  const removeAbility = (id: string) =>
+    onChange((abilities ?? []).filter(a => a.id !== id));
+
+  const patchAbility = (id: string, p: Partial<AbilityEntry>) =>
+    onChange((abilities ?? []).map(a => (a.id === id ? { ...a, ...p } : a)));
+
+  const skills = (abilities ?? []).filter(a => a.kind === 'skill');
+  const generals = (abilities ?? []).filter(a => a.kind === 'general');
+  const races = (abilities ?? []).filter(a => a.kind === 'race');
+
+  return (
+    <Card className="shadow-sm bg-red-900">
+      <CardContent className="p-4 text-white">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-sm font-medium">Abilities</div>
+          {!showKindPicker ? (
+            <Button
+              type="button"
+              size="sm"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setShowKindPicker(true)}
+              disabled={readOnly}
+            >
+              + Add Ability
+            </Button>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => addAbility('skill')}
+                disabled={readOnly}
+              >
+                Skill Unlock
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => addAbility('general')}
+                disabled={readOnly}
+              >
+                General Unlock
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => addAbility('race')}
+                disabled={readOnly}
+              >
+                Race Acquired
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setShowKindPicker(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Skill Unlocks */}
+        <div className="space-y-2">
+          <div className="text-xs font-semibold uppercase text-white/80">Skill Unlock</div>
+          {skills.length === 0 && (
+            <div className="text-sm text-white/70">No skill unlocks.</div>
+          )}
+          {skills.map((a) => (
+            <div key={a.id} className="rounded-xl border border-white/10 p-3">
+              <div className="grid gap-2 md:grid-cols-3">
+                <div className="grid gap-1">
+                  <Label>Ability Name</Label>
+                  <Input
+                    value={a.name}
+                    onChange={(e) => patchAbility(a.id, { name: e.target.value })}
+                    placeholder="e.g., Advanced Marksman Drills"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <Label>Linked Skill</Label>
+                  <select
+                    className="rounded-md border bg-background px-3 py-2 text-sm"
+                    value={a.linkedSkillId ?? ''}
+                    onChange={(e) => patchAbility(a.id, { linkedSkillId: e.target.value })}
+                    disabled={readOnly}
+                  >
+                    {skillDefs.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-end justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => removeAbility(a.id)}
+                    disabled={readOnly}
+                    aria-label="Remove ability"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label>Notes</Label>
+                <Textarea
+                  value={a.notes ?? ''}
+                  onChange={(e) => patchAbility(a.id, { notes: e.target.value })}
+                  placeholder="Optional description or rules text…"
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* General Unlocks */}
+        <div className="mt-4 space-y-2">
+          <div className="text-xs font-semibold uppercase text-white/80">General Unlock</div>
+          {generals.length === 0 && (
+            <div className="text-sm text-white/70">No general unlocks.</div>
+          )}
+          {generals.map((a) => (
+            <div key={a.id} className="rounded-xl border border-white/10 p-3">
+              <div className="grid gap-2 md:grid-cols-3">
+                <div className="grid gap-1 md:col-span-2">
+                  <Label>Ability Name</Label>
+                  <Input
+                    value={a.name}
+                    onChange={(e) => patchAbility(a.id, { name: e.target.value })}
+                    placeholder="e.g., Night Vision Training"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div className="flex items-end justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => removeAbility(a.id)}
+                    disabled={readOnly}
+                    aria-label="Remove ability"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label>Notes</Label>
+                <Textarea
+                  value={a.notes ?? ''}
+                  onChange={(e) => patchAbility(a.id, { notes: e.target.value })}
+                  placeholder="Optional description or rules text…"
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Race Acquired */}
+        <div className="mt-4 space-y-2">
+          <div className="text-xs font-semibold uppercase text-white/80">Race Acquired</div>
+          {races.length === 0 && (
+            <div className="text-sm text-white/70">No race-acquired abilities.</div>
+          )}
+          {races.map((a) => (
+            <div key={a.id} className="rounded-xl border border-white/10 p-3">
+              <div className="grid gap-2 md:grid-cols-3">
+                <div className="grid gap-1 md:col-span-2">
+                  <Label>Ability Name</Label>
+                  <Input
+                    value={a.name}
+                    onChange={(e) => patchAbility(a.id, { name: e.target.value })}
+                    placeholder="e.g., Darkvision, Natural Claws"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div className="flex items-end justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => removeAbility(a.id)}
+                    disabled={readOnly}
+                    aria-label="Remove ability"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label>Notes</Label>
+                <Textarea
+                  value={a.notes ?? ''}
+                  onChange={(e) => patchAbility(a.id, { notes: e.target.value })}
+                  placeholder="Optional description or rules text…"
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const NotesPanel: React.FC<{
   notes: string;
@@ -1826,6 +2151,7 @@ const DEFAULT_CHARACTER: Character = {
   race: '',
   origin: '',
   money: 0,
+  abilities: [],
   attributes: DEFAULT_ATTRIBUTES,
   resources: { rerolls: 0 },
   items: [],
@@ -2008,6 +2334,7 @@ useEffect(() => {
             "
           >
             <TabsTrigger value="stats">Stats</TabsTrigger>
+            <TabsTrigger value="abilities">Abilities</TabsTrigger>
             <TabsTrigger value="items">Items</TabsTrigger>
             <TabsTrigger value="housing">Housing</TabsTrigger>
             <TabsTrigger value="conditions">Conditions</TabsTrigger>
@@ -2050,6 +2377,16 @@ useEffect(() => {
             onChangeDebt={(next) => onChange(set(char, 'debt', next))}
             recurring={char.recurringCosts ?? []}
             onChangeRecurring={(next) => onChange(set(char, 'recurringCosts', next))}
+            readOnly={readOnly}
+          />
+        </TabsContent>
+
+        {/* Abilities */}
+        <TabsContent value="abilities" className="grid gap-4">
+          <AbilitiesPanel
+            abilities={char.abilities ?? []}
+            skillDefs={registry.attributes}
+            onChange={(next) => onChange({ ...char, abilities: next })}
             readOnly={readOnly}
           />
         </TabsContent>
