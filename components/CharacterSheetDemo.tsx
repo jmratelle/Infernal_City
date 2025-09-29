@@ -831,34 +831,6 @@ const ResourcesPanel: React.FC<{
                     <option value="Yearly">Yearly</option>
                   </select>
                   <div className="md:col-span-5">
-  <div className="rounded-lg border border-white/10 bg-black/30 p-3 shadow-sm">
-    <div className="mb-2 flex items-center justify-between">
-      <span className="text-[10px] uppercase tracking-wider text-white/60">Rules</span>
-      {(
-  e.name === 'Bleeding' ||
-  e.name === 'Bound' ||
-  e.name === 'Burning' ||
-  e.name === 'Crippled' ||
-  e.name === 'Corroded' ||
-  e.name === 'Disoriented' ||
-  e.name === 'Frightened' ||
-  e.name === 'Impaled' ||
-  e.name === 'Madness' ||
-  e.name === 'Paralysis' ||
-  e.name === 'Poisoned' ||
-  e.name === 'Poisoned (Deadly)' ||
-  e.name === 'Transformed'
-) && (
-  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
-    X: {e.severity ?? 1}
-  </span>
-)}
-
-    </div>
-    <p className="text-xs leading-relaxed text-white/90 whitespace-pre-line">
-      {renderConditionText(e.name, e.severity)}
-    </p>
-  </div>
 </div>
 
                   {/* Log Payment + last paid display */}
