@@ -76,13 +76,14 @@ export type RaceAbilityDef = {
   desc: string;
   group?: string;     // e.g. "mutation" for Abomination base picks
   oneOf?: string;     // e.g. "altered-core" for Electrokinesis/Perfect Reflexes/ESP
+  auto?: boolean;     // default/starting ability for the race
 };
 export type RaceName =
   | 'Abomination'
   | 'Altered'
   | 'Ascended'
   | 'Demonkin'
-  | 'Draconum'
+  | 'Draconem'
   | 'Fireborne'
   | 'Liches'
   | 'Maggot Lords'
@@ -282,7 +283,7 @@ const RACE_OPTIONS: RaceName[] = [
   'Altered',
   'Ascended',
   'Demonkin',
-  'Draconum',
+  'Draconem',
   'Fireborne',
   'Liches',
   'Maggot Lords',
@@ -291,41 +292,11 @@ const RACE_OPTIONS: RaceName[] = [
   'Succubus/Incubus',
 ];
 
-const RACE_RULES: Partial<Record<RaceName, RaceRule[]>> = {
-  Abomination: [
-    {
-      type: 'atLeastAtMost',
-      label: 'Mutations',
-      names: [
-        'Additional Arms',
-        'Additional Legs',
-        'Compound Eyes',
-        'Chromatophores',
-        'Flesh-Rending Claws',
-        'Toxic Skin',
-        'Regeneration',
-        'Heat Vision',
-        'Quills',
-        'Exoskeleton',
-      ],
-      min: 1,
-      max: 3,
-    },
-  ],
-  Altered: [
-    {
-      type: 'exactlyOne',
-      label: 'Starting Ability',
-      names: ['Electrokinesis', 'Perfect Reflexes', 'ESP'],
-    },
-  ],
-};
-
 export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   Abomination: [
-    { name: 'Mutant Madness', desc: `While in combat, at the end of each turn gain Madness (X) where X = 1 + your number of mutations.` },
-    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.` },
-    { name: 'Emerging Mutation',      desc: `You may select another mutation ability from the Abomination’s starting abilities. This ability may be selected more than once to choose an additional mutation. Each new mutation adds to your Mutant Madness.\nRequirement: Abomination race.`,},
+    { name: 'Mutant Madness', desc: `While in combat, at the end of each turn gain Madness (X) where X = 1 + your number of mutations.`, auto: true },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
+    { name: 'Emerging Mutation',      desc: `You may select another mutation ability from the Abomination’s starting abilities. This ability may be selected more than once to choose an additional mutation. Each new mutation adds to your Mutant Madness.\nRequirement: Abomination race.`, auto: true},
     { name: 'Additional Arms',        desc: 'Mutation: You may have one additional weapon equipped at a time.', group: 'mutation' },
     { name: 'Additional Legs',        desc: 'Mutation: You may move an additional Unit when spending AP on Movement.', group: 'mutation' },
     { name: 'Compound Eyes',          desc: 'Mutation: You can see 360° around you at all times. You gain one Die Level on Observation DCs.', group: 'mutation' },
@@ -361,10 +332,11 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 
   Altered: [
-    { name: 'Unique Physiology', desc: `All medical costs are doubled.` },
-    { name: 'Electrokinesis',   desc: '…', oneOf: 'altered-core' },
-    { name: 'Perfect Reflexes', desc: '…', oneOf: 'altered-core' },
-    { name: 'ESP',              desc: '…', oneOf: 'altered-core' },
+    { name: 'Unique Physiology', desc: `All medical costs are doubled.`, auto: true },
+    { name: 'Electrokinesis',   desc: 'When using martial arts or an attack with a conductive melee weapon, you may add the electric damage type. You may short circuit any electronics you can touch, causing them to malfunction. You also gain three innate Armor Value vs the Electric damage-type. This armor value cannot be reduced by ArP or any means that would reduce Armor Values.', oneOf: 'altered-core' },
+    { name: 'Perfect Reflexes', desc: 'You gain one Die Level whenever you make a reflex DC.', oneOf: 'altered-core' },
+    { name: 'ESP',              desc: 'You gain the ability to read the thoughts of other mortals as long as you are within one Unit of them. Surface level thoughts and the target’s current preoccupations are immediately apparent to you. Gathering knowledge on a specific topic not at the forefront of the target’s thoughts may require you to spend some time near them in order to bring the knowledge you seek to the forefront of their thoughts through conversation or suggestion.', oneOf: 'altered-core' },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
     {
       name: 'Perfect Conduit',
       desc: `Increase your innate Electric Armor Value to six.\nRequirement: Requires Electrokinesis ability; Altered race.`,
@@ -400,6 +372,8 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 
   Ascended: [
+    { name: 'Winged Flight', desc: `You can fly; may move vertically as part of movement. While flying, unaffected by terrain hazards and falling as long as you can spend AP on movement.`, auto: true },
+    { name: 'Weak Survivability', desc: `Your Survivability skill starts at Level 1.`, auto: true },
     { name: 'Falcon Speed', desc: `You may now move two additional Units per AP spent to move while flying.\nRequirement: Ascended race.` },
     { name: 'Aerial Dive', desc: `You may move twice as many Units per AP if flying and traveling downward.\nRequirement: Ascended race.` },
     { name: 'Death From Above', desc: `Add one ArP to an attack for each Unit you descended that turn (max 5) prior to making the attack.\nRequirement: Ascended race.` },
@@ -408,6 +382,9 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 
   Demonkin: [
+    { name: 'The Thirst', desc: `You must drink/receive blood as part of your diet. Start with 5 blood points. Lose 1 per day; at 0, you gain an injury (cannot be healed except by fresh blood). May spend blood points to use demonic abilities.`, auto: true },
+    { name: 'Shapeshift', desc: `(1 blood point, 2 AP) Take on the form of any mortal (or a human-like Demon) for 1 hour. Focus ability.`, auto: true },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
     { name: 'Crimson Call', desc: `For two AP, sense the heartbeat of all living creatures within five Units (even if hidden) and read basic emotions (fear, anger, excitement).\nRequirement: Demonkin race.` },
     { name: 'Blood Bullet', desc: `For one blood point and two AP, fire three blood bullets at up to three targets within 10 Units. Make a Shurikens or Pistols attack for each. All considered ideal range, piercing damage, ArP 1.\nRequirement: Demonkin race.` },
     { name: 'Blood Blade', desc: `For one blood point and 2 AP, form a scythe of blood that attacks all adjacent targets using Slashing Melee skill. Slash damage, ArP 2.\nRequirement: Demonkin race.` },
@@ -420,14 +397,20 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
     { name: 'Extra Tendrils', desc: `May be selected up to four times. Increase the number of tendrils (and therefore targets) of Blood Tendril by one.\nRequirement: Requires Blood Tendril; Demonkin race.` },
   ],
 
-  Draconum: [
-    { name: 'Enhanced Hoard', desc: `Your Dragon Hoard can grant 4 innate Armor Value if you have ≥ 50,000 Goldbacks, and 5 if ≥ 100,000.\nRequirement: Draconum race.` },
-    { name: 'Golden Aura', desc: `You may increase the Die Level of a DC by reducing all innate Armor Values granted by your dragon hoard by one.\nRequirement: Draconum race.` },
-    { name: 'Miserly Intuition', desc: `Reduce monthly costs of food and housing by 25% (rounded down).\nRequirement: Draconum race.` },
-    { name: 'Dragon Breath', desc: `Once per day (2 AP), exhale molten metal in a straight line five Units long. The attack’s Die Level and ArP equal your hoard’s innate Armor Value bonus. Burning damage.\nRequirement: Draconum race.` },
+  Draconem: [
+    { name: 'Dragon Hoard', desc: `+1 innate AV vs all damage at ≥500 Goldbacks; +2 at ≥5,000; +3 at ≥15,000. Must sleep on hoard within last 24h to gain bonus. Goldbacks must be set aside and are not spendable without reducing bonus.`, auto: true },
+    { name: 'Gold Addiction', desc: `You can sense the presence of gold. When you gain gold/Goldbacks, make one Addiction DC (Fortitude): 4+ no effect; 1–3: gain Addiction Tremors.`, auto: true },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
+    { name: 'Enhanced Hoard', desc: `Your Dragon Hoard can grant 4 innate Armor Value if you have ≥ 50,000 Goldbacks, and 5 if ≥ 100,000.\nRequirement: Draconem race.` },
+    { name: 'Golden Aura', desc: `You may increase the Die Level of a DC by reducing all innate Armor Values granted by your dragon hoard by one.\nRequirement: Draconem race.` },
+    { name: 'Miserly Intuition', desc: `Reduce monthly costs of food and housing by 25% (rounded down).\nRequirement: Draconem race.` },
+    { name: 'Dragon Breath', desc: `Once per day (2 AP), exhale molten metal in a straight line five Units long. The attack’s Die Level and ArP equal your hoard’s innate Armor Value bonus. Burning damage.\nRequirement: Draconem race.` },
   ],
 
   Fireborne: [
+    { name: 'Fireproof', desc: `+4 innate Burn Armor Value.`, auto: true },
+    { name: 'Burning Strikes', desc: `Your Martial Arts and Melee attacks gain Burn. On hit (regardless of saves), you may inflict Burning (X) up to your innate Burn AV. If you do, you also gain Burning with the same X.`, auto: true },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
     { name: 'Heat Training', desc: `Gain +2 innate Armor Value versus the Burn damage type.\nRequirement: Fireborne race.` },
     { name: 'Overheat', desc: `Expend all innate Burn Armor Values to attack all adjacent targets, inflicting Burning (X) where X equals AV expended. AV restores between missions.\nRequirement: Fireborne race.` },
     { name: 'Heat Transfer', desc: `Add the Burn damage type to attacks with ranged weapons.\nRequirement: Fireborne race.` },
@@ -435,6 +418,9 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 
   Liches: [
+    { name: 'Hollow', desc: `You do not need to breathe or consume food; cannot gain diet bonuses; no food budgeting required.`, auto: true },
+    { name: 'Fleshy Prison', desc: `+1 Die Level to all Survivability DCs, including Critical Condition DCs.`, auto: true },
+    { name: 'High Survivability', desc: `Your Survivability skill starts at Level 3.`, auto: true },
     { name: 'Being of Decay', desc: `You are immune to the Poisoned and Poisoned (Deadly) conditions.\nRequirement: Lich race.` },
     { name: 'Rigor Mortis', desc: `Anytime you would receive a condition other than Crippled or Critical, you may instead choose to take one injury.\nRequirement: Lich race.` },
     { name: 'Defibrillator', desc: `If hit by Electric damage (even if no damage is dealt), gain +1 bonus AP for your next turn. Stacks.\nRequirement: Lich race.` },
@@ -442,6 +428,11 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 
   'Maggot Lords': [
+    { name: 'Mouths to Feed', desc: `Your food costs are doubled.`, auto: true },
+    { name: 'Cannibal Carnage', desc: `(4 AP) Devour a dead/incapacitated target: recover up to 3 injuries; observers must make Gluttony DC or gain Frightened (4). 1/day.`, auto: true },
+    { name: 'Giant’s Strength', desc: `+1 Die Level to all Bodybuilding DCs.`, auto: true },
+    { name: 'Large Form', desc: `Takes 2 capacity in vehicles; when forced to move, move half Units (rounded down).`, auto: true },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
     { name: 'Rot Eaters', desc: `You can eat anything without ill effects and cannot be poisoned by anything you devour.\nRequirement: Maggot Lord race.` },
     { name: 'Maggot Retaliation', desc: `When attacked from an adjacent space, the maggots inside you make a free retaliatory attack: Die Level 2, Slash damage, ArP 1. May be taken up to three times; each time increases ArP by 1 and Die Level by 1.\nRequirement: Maggot Lord race.` },
     { name: 'Immovable Object', desc: `You are immune to abilities that force you to move.\nRequirement: Maggot Lord race.` },
@@ -449,12 +440,17 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 
   Outsiders: [
+    { name: 'Pure Soul', desc: `At the beginning of every mission you gain three generic re-rolls usable any time during that mission. They do not stack between missions.`, auto: true },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
     { name: 'Human Perseverance', desc: `Once per mission, you may make two rolls for a DC and add the results together.\nRequirement: Outsider race.` },
     { name: 'Adaptability', desc: `Improve a skill of your choice by one level.\nRequirement: Outsider race.` },
     { name: 'Absolute Mastery', desc: `Choose one skill that is at level five and reset it to level one. You now have advantage on all DCs using this skill.\nRequirement: Must have a level five skill; Outsider race.` },
   ],
 
   'Rat Kings': [
+    { name: 'Kinship of the Reviled', desc: `Speak with/understand pests (rodents, insects, spiders, snakes). They’re friendly and can do simple tasks for food.`, auto: true },
+    { name: 'Prey Instincts', desc: `+1 Die Level to Observation DCs.`, auto: true },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
     { name: 'Overlooked and Hunted', desc: `Once per combat round, you may reroll an Evade (Reflex) DC.\nRequirement: Rat King race.` },
     { name: 'Commander of the Swarm', desc: `Focus ability (2 AP): gather a controllable swarm (flies/roaches/etc.) in an adjacent space.\nPestilent Swarm (NPC): AP 3, Reflex 4, Martial Arts 2; Flying; Move 4 Units per AP; Armor (all): 0; Overwhelm: shares a space and imposes −1 Die Level on that target’s DCs; Fragile: destroyed upon receiving an injury.\nRequirement: Rat King race.` },
     { name: 'Soul Bond', desc: `Possess and share the senses of a willing pest (mouse/spider/snake/insect). Focus—remains until you move or the host is injured/killed.\nRequirement: Rat King race.` },
@@ -463,6 +459,9 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 
   'Succubus/Incubus': [
+    { name: 'Ethereal Beauty', desc: `+1 Die Level to Negotiation DCs vs humanoid mortals.`, auto: true },
+    { name: 'Lamprey’s Kiss', desc: `(2 AP) Kiss a humanoid mortal. Recover 1 injury OR steal 2 AP. Auto vs willing/incapacitated; vs unwilling make contested Martial Arts DC. Once per turn.`, auto: true },
+    { name: 'Moderate Survivability', desc: `Your Survivability skill starts at Level 2.`, auto: true },
     { name: 'Transcendent Attraction', desc: `Your Ethereal Beauty and Lamprey’s Kiss abilities now work on Demons.\nRequirement: Succubus/Incubus race.` },
     { name: 'Paralyzing Gaze', desc: `For 2 AP, force a target to make a contested Lust skill DC. On a fail, they cannot use AP on movement on their next turn.\nRequirement: Succubus/Incubus race.` },
     { name: 'Draining Touch', desc: `You may apply the effects of Lamprey’s Kiss to any physical touch, including Martial Arts attacks.\nRequirement: Succubus/Incubus race.` },
@@ -1886,6 +1885,54 @@ const AbilitiesPanel: React.FC<{
   const [showKindPicker, setShowKindPicker] = React.useState(false);
   const [pickingRace, setPickingRace] = React.useState(false);
   const [draftRaceAbility, setDraftRaceAbility] = React.useState<string>('');
+  const compactSelect =
+  "h-8 w-51 text-xs px-2 py-0.5 leading-tight rounded-md border border-white/20 bg-background focus:outline-none focus-visible:ring-0";
+
+
+  // Auto-populate defaults whenever the selected race changes
+  const prevRaceRef = React.useRef<RaceName | undefined>(undefined);
+
+  React.useEffect(() => {
+    if (!raceName) {
+      prevRaceRef.current = raceName;
+      return;
+    }
+
+    const defs = RACE_ABILITIES[raceName] ?? [];
+    const autoNow = new Set(defs.filter(d => d.auto).map(d => d.name));
+
+    const prevRace = prevRaceRef.current;
+    const prevAuto = new Set<string>(
+      prevRace ? (RACE_ABILITIES[prevRace] ?? []).filter(d => d.auto).map(d => d.name) : []
+    );
+
+    let next = abilities ?? [];
+    let changed = false;
+
+    // If the race actually changed, remove prior race's auto abilities that aren't also auto in the new race
+    if (prevRace && prevRace !== raceName && prevAuto.size > 0) {
+      const toRemoveIds = next
+        .filter(a => a.kind === 'race' && prevAuto.has(a.name) && !autoNow.has(a.name))
+        .map(a => a.id);
+      if (toRemoveIds.length) {
+        next = next.filter(a => !toRemoveIds.includes(a.id));
+        changed = true;
+      }
+    }
+
+    // Add any missing auto abilities for the new race
+    autoNow.forEach(name => {
+      if (!next.some(a => a.kind === 'race' && a.name === name)) {
+        next = [...next, { id: makeId('ab'), kind: 'race', name }];
+        changed = true;
+      }
+    });
+
+    if (changed) onChange(next);
+    prevRaceRef.current = raceName;
+    // Intentionally ONLY depend on raceName to avoid re-adding if user removes one manually without changing race.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [raceName]);
 
   const add = (entry: AbilityEntry) => onChange([...(abilities ?? []), entry]);
   const remove = (id: string) => onChange((abilities ?? []).filter(a => a.id !== id));
@@ -2059,7 +2106,7 @@ const AbilitiesPanel: React.FC<{
             <div className="grid gap-1 md:col-span-2">
               <Label>Select Race Ability {raceName ? `for ${raceName}` : ''}</Label>
               <select
-                className="rounded-md border bg-background px-3 py-2 text-sm"
+                className={compactSelect}
                 value={draftRaceAbility}
                 onChange={(e) => setDraftRaceAbility(e.target.value)}
               >
@@ -2108,25 +2155,29 @@ const AbilitiesPanel: React.FC<{
             <div className="grid gap-2">
               {raceUnlocks.map((a) => {
                 const def     = byName.get(a.name);
+                const isAutoDefault = !!def?.auto;
                 const options = raceDefs.map(d => d.name);
                 const notInList = !!a.name && !options.includes(a.name);
                 const displayOptions = notInList ? [a.name, ...options] : options;
 
                 return (
                   <div key={a.id} className="rounded-xl border border-white/10 p-3">
-                    <div className="grid gap-2 md:grid-cols-3 items-end">
-                      <div className="grid gap-1 md:col-span-2">
-                        <Label>Ability</Label>
+                    {/* compact header row: select + default pill + trash */}
+                    <div className="grid gap-1">
+                      <Label className="text-[11px] uppercase tracking-wide text-white/60">Ability</Label>
+                      <div className="flex items-center gap-2">
                         <select
-                          className="rounded-md border bg-background px-3 py-2 text-sm"
+                          className={compactSelect}
                           value={a.name}
-                          onChange={(e) => patch(a.id, { name: e.target.value })}
-                          disabled={readOnly || displayOptions.length === 0}
+                          onChange={(e) => {
+                            if (isAutoDefault) return; // locked if default
+                            patch(a.id, { name: e.target.value });
+                          }}
+                          disabled={readOnly || isAutoDefault || displayOptions.length === 0}
+                          title={isAutoDefault ? "Default race ability (locked)" : undefined}
                         >
                           {displayOptions.map((n, idx) => {
-                            const dis = notInList && idx === 0
-                              ? true // keep stale value visible but not selectable
-                              : optionDisabled(a.name, n);
+                            const dis = notInList && idx === 0 ? true : optionDisabled(a.name, n);
                             return (
                               <option key={`${a.id}-${idx}-${n}`} value={n} disabled={dis}>
                                 {notInList && idx === 0 ? `${n} (not in ${raceName})` : n}
@@ -2134,23 +2185,31 @@ const AbilitiesPanel: React.FC<{
                             );
                           })}
                         </select>
-                      </div>
-                      <div className="flex justify-end">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => remove(a.id)}
-                          disabled={readOnly}
-                          aria-label="Remove race ability"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+
+                        {isAutoDefault && (
+                          <span className="rounded-full bg-white/10 px-1.5 py-[2px] text-[10px] leading-none">
+                            Default
+                          </span>
+                        )}
+
+                        {!isAutoDefault && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => remove(a.id)}  // or safeRemove(a.id) if you added it
+                            disabled={readOnly}
+                            aria-label="Remove race ability"
+                            title="Remove"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Auto rules text */}
+                    {/* rules text */}
                     <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
                       {def ? def.desc : `No description found for "${a.name}" in ${raceName}.`}
                     </div>
@@ -2572,6 +2631,16 @@ useEffect(() => {
   prevAttrsRef.current = next;
 }, [char.attributes, char.missionHistory, char.tallySpent]);
 
+// Autosave on any change
+useEffect(() => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(char));
+  } catch {
+    // storage full or blocked; ignore
+  }
+}, [char]);
+
+
 const registry = useMemo(() => props.registry ?? DEFAULT_REGISTRY, [props.registry]);
 const onChange = props.onChange ?? setChar;
 const readOnly = props.readOnly ?? false;
@@ -2719,7 +2788,7 @@ const commitMission = () => {
           <AbilitiesPanel
             abilities={char.abilities ?? []}
             skillDefs={registry.attributes}
-            raceName={char.race as RaceName | undefined}
+            raceName={char.race as RaceName | undefined}  // keep this
             onChange={(next) => onChange({ ...char, abilities: next })}
             readOnly={readOnly}
           />
