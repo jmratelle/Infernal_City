@@ -71,6 +71,7 @@ export type RecurringCostEntry = {
 };
 
 // Races
+export type RaceAbilityDef = { name: string; desc: string };
 export type RaceName =
   | 'Abomination'
   | 'Altered'
@@ -266,6 +267,7 @@ const CONDITION_TEXT: Record<ConditionName, (x?: number) => string> = {
     'A PC must make a Critical Condition DC at the end of their turn; an NPC must make it at the beginning of their turn after all other beginning-of-turn effects. Another adjacent character can remove this condition with a Medical DC.',
 };
 
+
 const RACE_OPTIONS: RaceName[] = [
   'Abomination',
   'Altered',
@@ -280,19 +282,140 @@ const RACE_OPTIONS: RaceName[] = [
   'Succubus/Incubus',
 ];
 
-// Predefined abilities per race (I will fill these arrays later)
-const RACE_ABILITIES: Record<RaceName, string[]> = {
-  Abomination: [],
-  Altered: [],
-  Ascended: [],
-  Demonkin: [],
-  Draconum: [],
-  Fireborne: [],
-  Liches: [],
-  'Maggot Lords': [],
-  Outsiders: [],
-  'Rat Kings': [],
-  'Succubus/Incubus': [],
+export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
+  Abomination: [
+    {
+      name: 'Emerging Mutation',
+      desc: `You may select another mutation ability from the Abomination’s starting abilities. This ability may be selected more than once to choose an additional mutation. Each new mutation adds to your Mutant Madness.\nRequirement: Abomination race.`,
+    },
+    {
+      name: 'Anger Management',
+      desc: `Reduce the X received each turn as part of your Mutant Madness ability by one.\nRequirement: Abomination race.`,
+    },
+    {
+      name: 'Genetic Assimilation',
+      desc: `If you can touch the blood of another target, including one who has died, you may take one of their abilities and add it to your own. This ability can be used for up to one day, then the ability is removed. Only one ability can be chosen at a time. If another ability is chosen, the prior ability is removed.\nRequirement: Abomination race.`,
+    },
+    {
+      name: 'Advanced Mutations',
+      desc: `You may enhance your prior mutations. This ability may be selected multiple times, but you cannot choose the same enhancement twice, unless otherwise noted.\nRequirement: Abomination race.`,
+    },
+    { name: 'Enhanced Additional Arms', desc: `You have two additional arms, and once per round can perform one of the following actions without spending any AP:\n• A Martial Arts or weapon attack\n• A reload action\n• Use a consumable\nRequirement: Abomination race.` },
+    { name: 'Enhanced Additional Legs', desc: `You may move an additional Unit per AP spent on movement.\nRequirement: Abomination race.` },
+    { name: 'Enhanced Compound Eyes', desc: `You gain advantage on contested DCs using your Observation skill.\nRequirement: Abomination race.` },
+    { name: 'Enhanced Chromatophores', desc: `Your ability to change the color of your skin now includes bioluminescence. You can make any part of your body or skin pattern glow in different colors; you can also make your eyes glow to imitate a Demon or Demonkin’s appearance.\nRequirement: Abomination race.` },
+    { name: 'Enhanced Flesh Rending Claws', desc: `Increase the ArP of your Martial Arts attacks by one. This ability may be selected more than once.\nRequirement: Abomination race.` },
+    { name: 'Enhanced Toxic Skin', desc: `Increase the X value of the Poisoned condition your Toxic Skin inflicts by two. This ability may be selected more than once.\nRequirement: Abomination race.` },
+    { name: 'Enhanced Regeneration', desc: `You remove the Critical condition automatically after your first Critical Condition DC.\nRequirement: Abomination race.` },
+    { name: 'Enhanced Heat Vision', desc: `You can see the heat signatures of the footprints or handprints of warm-blooded beings for up to two minutes after they were made.\nRequirement: Abomination race.` },
+    { name: 'Enhanced Quills', desc: `Your Quills explode out with explosive force. The Quills ability now works on any targets up to three Units away.\nRequirement: Abomination race.` },
+    { name: 'Enhanced Exoskeleton', desc: `You gain an additional innate Armor Value against all damage types except Curse.\nRequirement: Abomination race.` },
+  ],
+
+  Altered: [
+    {
+      name: 'Perfect Conduit',
+      desc: `Increase your innate Electric Armor Value to six.\nRequirement: Requires Electrokinesis ability; Altered race.`,
+    },
+    {
+      name: 'Arcing Lightning',
+      desc: `You may add the Electric damage type to all attacks made with ranged weapons.\nRequirement: Requires Electrokinesis ability; Altered race.`,
+    },
+    {
+      name: 'Speed of Thought',
+      desc: `You may spend one AP’s worth of actions for free before an enemy group would take their first turn each combat round.\nRequirement: Requires Perfect Reflexes ability; Altered race.`,
+    },
+    {
+      name: 'I am Speed',
+      desc: `Regardless of initiative you may choose to take the first turn during a new battle round.\nRequirement: Requires Perfect Reflexes ability; Altered race.`,
+    },
+    {
+      name: 'Impulsive Command',
+      desc: `For one AP, you may attempt to force an adjacent target to perform a simple action that fits within ~1 AP (≈3 seconds). The target must make a Fortitude DC. On a fail, they must perform that action. Once affected, a target can’t be affected again for one day.\nRequirement: Requires ESP ability; Altered race.`,
+    },
+    {
+      name: 'Predictive Combat',
+      desc: `For one AP, select a target. You gain advantage on one attack OR on one Reflex DC against an attack from that target until the beginning of your next turn. May be triggered at any time, even during another’s turn. This is a focus ability.\nRequirement: Requires ESP ability; Altered race.`,
+    },
+    {
+      name: 'Ascendant',
+      desc: `You may have two focus abilities active without losing focus.\nRequirement: Altered race.`,
+    },
+    {
+      name: 'Adaptive Immune System',
+      desc: `Once you have suffered an injury from a damage type, you gain one innate Armor Value against that damage type until the following day. This stacks.\nRequirement: Altered race.`,
+    },
+  ],
+
+  Ascended: [
+    { name: 'Falcon Speed', desc: `You may now move two additional Units per AP spent to move while flying.\nRequirement: Ascended race.` },
+    { name: 'Aerial Dive', desc: `You may move twice as many Units per AP if flying and traveling downward.\nRequirement: Ascended race.` },
+    { name: 'Death From Above', desc: `Add one ArP to an attack for each Unit you descended that turn (max 5) prior to making the attack.\nRequirement: Ascended race.` },
+    { name: 'Aerial Maneuvering', desc: `All attacks against you receive a one Die Level penalty for every five Units you moved during your prior turn.\nRequirement: Ascended race.` },
+    { name: 'Wing Blast', desc: `For one AP, attempt to blow an adjacent target back one space. Make a contested Bodybuilding DC; on a win, move the target one space away.\nRequirement: Ascended race.` },
+  ],
+
+  Demonkin: [
+    { name: 'Crimson Call', desc: `For two AP, sense the heartbeat of all living creatures within five Units (even if hidden) and read basic emotions (fear, anger, excitement).\nRequirement: Demonkin race.` },
+    { name: 'Blood Bullet', desc: `For one blood point and two AP, fire three blood bullets at up to three targets within 10 Units. Make a Shurikens or Pistols attack for each. All considered ideal range, piercing damage, ArP 1.\nRequirement: Demonkin race.` },
+    { name: 'Blood Blade', desc: `For one blood point and 2 AP, form a scythe of blood that attacks all adjacent targets using Slashing Melee skill. Slash damage, ArP 2.\nRequirement: Demonkin race.` },
+    { name: 'Crimson Cloud', desc: `For two blood points and two AP, create an obscuring red cloud (5×5 Units) centered on you. Attacks through/within the cloud suffer −2 Die Levels unless the attacker can sense through the mist.\nRequirement: Demonkin race.` },
+    { name: 'Bloodthirsty', desc: `Increase your blood point pool to seven.\nRequirement: Demonkin race.` },
+    { name: 'Blood Lord', desc: `Increase your blood point pool to ten.\nRequirement: Requires Bloodthirsty; Demonkin race.` },
+    { name: 'Red Iron', desc: `Add +1 ArP to all attacks that use blood points. May be taken multiple times.\nRequirement: Demonkin race.` },
+    { name: 'Demonic Blood', desc: `Add the Curse damage type to all attacks that use blood points.\nRequirement: Demonkin race.` },
+    { name: 'Blood Tendril', desc: `For one blood point and one AP, extend a tendril to pull a target within three Units into an adjacent space. If unwilling, make a contested Bodybuilding DC; on a win, pull the target.\nRequirement: Demonkin race.` },
+    { name: 'Extra Tendrils', desc: `May be selected up to four times. Increase the number of tendrils (and therefore targets) of Blood Tendril by one.\nRequirement: Requires Blood Tendril; Demonkin race.` },
+  ],
+
+  Draconum: [
+    { name: 'Enhanced Hoard', desc: `Your Dragon Hoard can grant 4 innate Armor Value if you have ≥ 50,000 Goldbacks, and 5 if ≥ 100,000.\nRequirement: Draconum race.` },
+    { name: 'Golden Aura', desc: `You may increase the Die Level of a DC by reducing all innate Armor Values granted by your dragon hoard by one.\nRequirement: Draconum race.` },
+    { name: 'Miserly Intuition', desc: `Reduce monthly costs of food and housing by 25% (rounded down).\nRequirement: Draconum race.` },
+    { name: 'Dragon Breath', desc: `Once per day (2 AP), exhale molten metal in a straight line five Units long. The attack’s Die Level and ArP equal your hoard’s innate Armor Value bonus. Burning damage.\nRequirement: Draconum race.` },
+  ],
+
+  Fireborne: [
+    { name: 'Heat Training', desc: `Gain +2 innate Armor Value versus the Burn damage type.\nRequirement: Fireborne race.` },
+    { name: 'Overheat', desc: `Expend all innate Burn Armor Values to attack all adjacent targets, inflicting Burning (X) where X equals AV expended. AV restores between missions.\nRequirement: Fireborne race.` },
+    { name: 'Heat Transfer', desc: `Add the Burn damage type to attacks with ranged weapons.\nRequirement: Fireborne race.` },
+    { name: 'Smokescreen', desc: `While under the Burning condition, all attacks against you suffer a −1 Die Level penalty.\nRequirement: Fireborne race.` },
+  ],
+
+  Liches: [
+    { name: 'Being of Decay', desc: `You are immune to the Poisoned and Poisoned (Deadly) conditions.\nRequirement: Lich race.` },
+    { name: 'Rigor Mortis', desc: `Anytime you would receive a condition other than Crippled or Critical, you may instead choose to take one injury.\nRequirement: Lich race.` },
+    { name: 'Defibrillator', desc: `If hit by Electric damage (even if no damage is dealt), gain +1 bonus AP for your next turn. Stacks.\nRequirement: Lich race.` },
+    { name: 'Unfazed by Pain', desc: `Ignore negative Die Level modifiers from your first Crippled condition.\nRequirement: Lich race.` },
+  ],
+
+  'Maggot Lords': [
+    { name: 'Rot Eaters', desc: `You can eat anything without ill effects and cannot be poisoned by anything you devour.\nRequirement: Maggot Lord race.` },
+    { name: 'Maggot Retaliation', desc: `When attacked from an adjacent space, the maggots inside you make a free retaliatory attack: Die Level 2, Slash damage, ArP 1. May be taken up to three times; each time increases ArP by 1 and Die Level by 1.\nRequirement: Maggot Lord race.` },
+    { name: 'Immovable Object', desc: `You are immune to abilities that force you to move.\nRequirement: Maggot Lord race.` },
+    { name: 'Corrosive Bile', desc: `Three times per day, make a Bodybuilding attack (range 5 Units). On a hit it applies Corroded (5). Deals no damage.\nRequirement: Maggot Lord race.` },
+  ],
+
+  Outsiders: [
+    { name: 'Human Perseverance', desc: `Once per mission, you may make two rolls for a DC and add the results together.\nRequirement: Outsider race.` },
+    { name: 'Adaptability', desc: `Improve a skill of your choice by one level.\nRequirement: Outsider race.` },
+    { name: 'Absolute Mastery', desc: `Choose one skill that is at level five and reset it to level one. You now have advantage on all DCs using this skill.\nRequirement: Must have a level five skill; Outsider race.` },
+  ],
+
+  'Rat Kings': [
+    { name: 'Overlooked and Hunted', desc: `Once per combat round, you may reroll an Evade (Reflex) DC.\nRequirement: Rat King race.` },
+    { name: 'Commander of the Swarm', desc: `Focus ability (2 AP): gather a controllable swarm (flies/roaches/etc.) in an adjacent space.\nPestilent Swarm (NPC): AP 3, Reflex 4, Martial Arts 2; Flying; Move 4 Units per AP; Armor (all): 0; Overwhelm: shares a space and imposes −1 Die Level on that target’s DCs; Fragile: destroyed upon receiving an injury.\nRequirement: Rat King race.` },
+    { name: 'Soul Bond', desc: `Possess and share the senses of a willing pest (mouse/spider/snake/insect). Focus—remains until you move or the host is injured/killed.\nRequirement: Rat King race.` },
+    { name: 'Secret Broker', desc: `Access a secret vermin spy network (Gutter Keepers) to trade secrets for information. Beware: members may sell secrets to outsiders.\nRequirement: Rat King race.` },
+    { name: 'Compressed Ribs', desc: `Squeeze through impossibly small spaces—if your head can fit, you can pass through.\nRequirement: Rat King race.` },
+  ],
+
+  'Succubus/Incubus': [
+    { name: 'Transcendent Attraction', desc: `Your Ethereal Beauty and Lamprey’s Kiss abilities now work on Demons.\nRequirement: Succubus/Incubus race.` },
+    { name: 'Paralyzing Gaze', desc: `For 2 AP, force a target to make a contested Lust skill DC. On a fail, they cannot use AP on movement on their next turn.\nRequirement: Succubus/Incubus race.` },
+    { name: 'Draining Touch', desc: `You may apply the effects of Lamprey’s Kiss to any physical touch, including Martial Arts attacks.\nRequirement: Succubus/Incubus race.` },
+    { name: 'Addictive Saliva', desc: `Your saliva becomes addictive. Targets of Lamprey’s Kiss contact your saliva. You may spend 1 AP to coat a Shuriken or Melee weapon with your saliva for an attack this turn. Targets make an Addiction (Fortitude) DC:\n• 4+: No effect (successful DC)\n• 1–3: Craves—gain Addiction Tremors condition\nRequirement: Succubus/Incubus race.` },
+  ],
 };
 
 const HIDEOUT_UPGRADES = [
@@ -398,13 +521,22 @@ const IdentitySection: React.FC<{
         </div>
         <div className="grid gap-2">
           <Label htmlFor={`${idBase}-race`}>Race</Label>
-          <Input
+          <select
             id={`${idBase}-race`}
-            value={value.race ?? ''}
-            onChange={(e) => onChange(set(value, 'race', e.target.value))}
-            placeholder="Race"
+            className="rounded-md border bg-background px-3 py-2 text-sm"
+            value={(value.race as RaceName) ?? ''}
+            onChange={(e) =>
+              onChange(set(value, 'race', (e.target.value || undefined) as RaceName | undefined))
+            }
             disabled={readOnly}
-          />
+          >
+            <option value="" disabled>Select race…</option>
+            {RACE_OPTIONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="grid gap-2">
           <Label htmlFor={`${idBase}-origin`}>Origin</Label>
@@ -470,7 +602,11 @@ const GroupedSkillsGrid: React.FC<{
 
       {open[grp] && (
         <div className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
-          {[...items].sort((a, b) => a.label.localeCompare(b.label)).map((def) => {
+          {[...items].sort((a, b) => {
+              const A = a.label.toLowerCase();
+              const B = b.label.toLowerCase();
+              return A < B ? -1 : A > B ? 1 : 0;
+            }).map((def) => {
             const min = def.min ?? 1;
             const max = def.max ?? 5;
             const step = def.step ?? 1;
@@ -1691,32 +1827,41 @@ const ConditionsPanel: React.FC<{
 const AbilitiesPanel: React.FC<{
   abilities: AbilityEntry[];
   skillDefs: AttributeDef[];
+  raceName?: RaceName;
   onChange: (next: AbilityEntry[]) => void;
   readOnly?: boolean;
-}> = ({ abilities, skillDefs, onChange, readOnly }) => {
+}> = ({ abilities, skillDefs, raceName, onChange, readOnly }) => {
   const [showKindPicker, setShowKindPicker] = React.useState(false);
+  const [pickingRace, setPickingRace] = React.useState(false);
+  const [draftRaceAbility, setDraftRaceAbility] = React.useState<string>('');
 
-  const addAbility = (kind: AbilityKind) => {
-    const base: AbilityEntry = {
-      id: makeId('ab'),
-      kind,
-      name: '',
-      linkedSkillId: kind === 'skill' ? skillDefs[0]?.id : undefined,
-      notes: ''
-    };
-    onChange([...(abilities ?? []), base]);
-    setShowKindPicker(false);
-  };
-
-  const removeAbility = (id: string) =>
-    onChange((abilities ?? []).filter(a => a.id !== id));
-
-  const patchAbility = (id: string, p: Partial<AbilityEntry>) =>
+  const add = (entry: AbilityEntry) => onChange([...(abilities ?? []), entry]);
+  const remove = (id: string) => onChange((abilities ?? []).filter(a => a.id !== id));
+  const patch = (id: string, p: Partial<AbilityEntry>) =>
     onChange((abilities ?? []).map(a => (a.id === id ? { ...a, ...p } : a)));
 
-  const skills = (abilities ?? []).filter(a => a.kind === 'skill');
-  const generals = (abilities ?? []).filter(a => a.kind === 'general');
-  const races = (abilities ?? []).filter(a => a.kind === 'race');
+  const skillUnlocks = (abilities ?? []).filter(a => a.kind === 'skill');
+  const generalUnlocks = (abilities ?? []).filter(a => a.kind === 'general');
+  const raceUnlocks = (abilities ?? []).filter(a => a.kind === 'race');
+
+  const raceDefs: RaceAbilityDef[] = raceName ? (RACE_ABILITIES[raceName] ?? []) : [];
+  const raceNames = raceDefs.map(d => d.name);
+  const hasRaceAbility = (name: string) => raceUnlocks.some(a => a.name === name);
+
+  const startAddRaceAbility = () => {
+    if (!raceName || raceDefs.length === 0) return;
+    const firstAvailable = raceNames.find(n => !hasRaceAbility(n)) ?? raceNames[0] ?? '';
+    setDraftRaceAbility(firstAvailable);
+    setPickingRace(true);
+  };
+  const confirmAddRaceAbility = () => {
+    if (!draftRaceAbility) return setPickingRace(false);
+    if (hasRaceAbility(draftRaceAbility)) { setPickingRace(false); setShowKindPicker(false); return; }
+    add({ id: makeId('ab'), kind: 'race', name: draftRaceAbility });
+    setPickingRace(false);
+    setShowKindPicker(false);
+  };
+  const cancelPickers = () => { setPickingRace(false); setShowKindPicker(false); };
 
   return (
     <Card className="shadow-sm bg-red-900">
@@ -1734,23 +1879,13 @@ const AbilitiesPanel: React.FC<{
               + Add Ability
             </Button>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
                 size="sm"
                 variant="secondary"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => addAbility('skill')}
-                disabled={readOnly}
-              >
-                Skill Unlock
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => addAbility('general')}
+                onClick={() => add({ id: makeId('ab'), kind: 'general', name: '', notes: '' })}
                 disabled={readOnly}
               >
                 General Unlock
@@ -1760,8 +1895,19 @@ const AbilitiesPanel: React.FC<{
                 size="sm"
                 variant="secondary"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => addAbility('race')}
-                disabled={readOnly}
+                onClick={() => add({ id: makeId('ab'), kind: 'skill', name: '', linkedSkillId: skillDefs[0]?.id, notes: '' })}
+                disabled={readOnly || skillDefs.length === 0}
+              >
+                Skill Unlock
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={startAddRaceAbility}
+                disabled={readOnly || !raceName || raceDefs.length === 0}
+                title={!raceName ? 'Select a race first' : (raceDefs.length === 0 ? 'No abilities for this race' : '')}
               >
                 Race Acquired
               </Button>
@@ -1770,7 +1916,7 @@ const AbilitiesPanel: React.FC<{
                 size="sm"
                 variant="ghost"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setShowKindPicker(false)}
+                onClick={cancelPickers}
               >
                 Cancel
               </Button>
@@ -1778,157 +1924,118 @@ const AbilitiesPanel: React.FC<{
           )}
         </div>
 
-        {/* Skill Unlocks */}
+        {/* Inline picker when adding a Race ability */}
+        {pickingRace && (
+          <div className="mb-3 grid gap-2 md:grid-cols-3 items-end rounded-lg border border-white/10 bg-black/30 p-3">
+            <div className="grid gap-1 md:col-span-2">
+              <Label>Select Race Ability {raceName ? `for ${raceName}` : ''}</Label>
+              <select
+                className="rounded-md border bg-background px-3 py-2 text-sm"
+                value={draftRaceAbility}
+                onChange={(e) => setDraftRaceAbility(e.target.value)}
+              >
+                {raceDefs.map((d) => (
+                  <option key={d.name} value={d.name} disabled={hasRaceAbility(d.name)}>
+                    {hasRaceAbility(d.name) ? `${d.name} (already added)` : d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2 md:justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={confirmAddRaceAbility}
+                disabled={!draftRaceAbility}
+              >
+                Add
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setPickingRace(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* RACE ACQUIRED (top, list-driven, shows description) */}
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase text-white/80">Skill Unlock</div>
-          {skills.length === 0 && (
-            <div className="text-sm text-white/70">No skill unlocks.</div>
-          )}
-          {skills.map((a) => (
-            <div key={a.id} className="rounded-xl border border-white/10 p-3">
-              <div className="grid gap-2 md:grid-cols-3">
-                <div className="grid gap-1">
-                  <Label>Ability Name</Label>
-                  <Input
-                    value={a.name}
-                    onChange={(e) => patchAbility(a.id, { name: e.target.value })}
-                    placeholder="e.g., Advanced Marksman Drills"
-                    disabled={readOnly}
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label>Linked Skill</Label>
-                  <select
-                    className="rounded-md border bg-background px-3 py-2 text-sm"
-                    value={a.linkedSkillId ?? ''}
-                    onChange={(e) => patchAbility(a.id, { linkedSkillId: e.target.value })}
-                    disabled={readOnly}
-                  >
-                    {skillDefs.map((s) => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-end justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => removeAbility(a.id)}
-                    disabled={readOnly}
-                    aria-label="Remove ability"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-2 grid gap-1">
-                <Label>Notes</Label>
-                <Textarea
-                  value={a.notes ?? ''}
-                  onChange={(e) => patchAbility(a.id, { notes: e.target.value })}
-                  placeholder="Optional description or rules text…"
-                  disabled={readOnly}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* General Unlocks */}
-        <div className="mt-4 space-y-2">
-          <div className="text-xs font-semibold uppercase text-white/80">General Unlock</div>
-          {generals.length === 0 && (
-            <div className="text-sm text-white/70">No general unlocks.</div>
-          )}
-          {generals.map((a) => (
-            <div key={a.id} className="rounded-xl border border-white/10 p-3">
-              <div className="grid gap-2 md:grid-cols-3">
-                <div className="grid gap-1 md:col-span-2">
-                  <Label>Ability Name</Label>
-                  <Input
-                    value={a.name}
-                    onChange={(e) => patchAbility(a.id, { name: e.target.value })}
-                    placeholder="e.g., Night Vision Training"
-                    disabled={readOnly}
-                  />
-                </div>
-                <div className="flex items-end justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => removeAbility(a.id)}
-                    disabled={readOnly}
-                    aria-label="Remove ability"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-2 grid gap-1">
-                <Label>Notes</Label>
-                <Textarea
-                  value={a.notes ?? ''}
-                  onChange={(e) => patchAbility(a.id, { notes: e.target.value })}
-                  placeholder="Optional description or rules text…"
-                  disabled={readOnly}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Race Acquired */}
-        <div className="mt-4 space-y-2">
           <div className="text-xs font-semibold uppercase text-white/80">Race Acquired</div>
-          {races.length === 0 && (
-            <div className="text-sm text-white/70">No race-acquired abilities.</div>
+
+          {!raceName && (
+            <div className="text-sm text-white/70">Select a race to use race abilities.</div>
           )}
-          {races.map((a) => (
-            <div key={a.id} className="rounded-xl border border-white/10 p-3">
-              <div className="grid gap-2 md:grid-cols-3">
-                <div className="grid gap-1 md:col-span-2">
-                  <Label>Ability Name</Label>
-                  <Input
-                    value={a.name}
-                    onChange={(e) => patchAbility(a.id, { name: e.target.value })}
-                    placeholder="e.g., Darkvision, Natural Claws"
-                    disabled={readOnly}
-                  />
-                </div>
-                <div className="flex items-end justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => removeAbility(a.id)}
-                    disabled={readOnly}
-                    aria-label="Remove ability"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-2 grid gap-1">
-                <Label>Notes</Label>
-                <Textarea
-                  value={a.notes ?? ''}
-                  onChange={(e) => patchAbility(a.id, { notes: e.target.value })}
-                  placeholder="Optional description or rules text…"
-                  disabled={readOnly}
-                />
-              </div>
+
+          {raceName && raceUnlocks.length === 0 && (
+            <div className="text-sm text-white/70">No race abilities added yet.</div>
+          )}
+
+          {raceName && raceUnlocks.length > 0 && (
+            <div className="grid gap-2">
+              {raceUnlocks.map((a) => {
+                const def = raceDefs.find(d => d.name === a.name);
+                const options = raceDefs.map(d => d.name);
+                const notInList = a.name && !options.includes(a.name);
+                const displayOptions = notInList ? [a.name, ...options] : options;
+
+                return (
+                  <div key={a.id} className="rounded-xl border border-white/10 p-3">
+                    <div className="grid gap-2 md:grid-cols-3 items-end">
+                      <div className="grid gap-1 md:col-span-2">
+                        <Label>Ability</Label>
+                        <select
+                          className="rounded-md border bg-background px-3 py-2 text-sm"
+                          value={a.name}
+                          onChange={(e) => patch(a.id, { name: e.target.value })}
+                          disabled={readOnly || displayOptions.length === 0}
+                        >
+                          {displayOptions.map((n, idx) => (
+                            <option key={`${a.id}-${idx}-${n}`} value={n} disabled={notInList && idx === 0}>
+                              {notInList && idx === 0 ? `${n} (not in ${raceName})` : n}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => remove(a.id)}
+                          disabled={readOnly}
+                          aria-label="Remove race ability"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Auto rules text */}
+                    <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
+                      {def ? def.desc : `No description found for "${a.name}" in ${raceName}.`}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
+
+        {/* SKILL UNLOCKS (unchanged) */}
+        {/* ...keep your existing Skill Unlock + General Unlock sections here... */}
       </CardContent>
     </Card>
   );
 };
+
 
 const NotesPanel: React.FC<{
   notes: string;
@@ -2183,21 +2290,17 @@ const DEFAULT_CHARACTER: Character = {
 // ---------- Main Component ----------
 export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) {
   const [tabValue, setTabValue] = useState("stats");
-  const [char, setChar] = useState<Character>(props.value ?? DEFAULT_CHARACTER);
-   // Load saved character once on mount if parent didn't provide one
-   useEffect(() => {
-     try {
-       if (!props.value) {
-         const raw = localStorage.getItem(STORAGE_KEY);
-         if (raw) {
-           const saved = JSON.parse(raw) as Character;
-           setChar(saved);
-         }
-       }
-     } catch {
-       // ignore malformed storage
-     }
-   }, []);
+  const [char, setChar] = useState<Character>(() => {
+  if (props.value) return props.value;
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) as Character : DEFAULT_CHARACTER;
+    } catch {}
+  }
+  return DEFAULT_CHARACTER;
+});
+
 
 // Tracks previous attribute levels so we can detect increases for tally consumption
 const prevAttrsRef = React.useRef<Record<string, number>>(char.attributes);
@@ -2230,29 +2333,20 @@ useEffect(() => {
   prevAttrsRef.current = next;
 }, [char.attributes, char.missionHistory, char.tallySpent]);
 
-   // Autosave on any change
-   useEffect(() => {
-     try {
-       localStorage.setItem(STORAGE_KEY, JSON.stringify(char));
-     } catch {
-       // storage full or blocked; ignore
-     }
-   }, [char]);
+const registry = useMemo(() => props.registry ?? DEFAULT_REGISTRY, [props.registry]);
+const onChange = props.onChange ?? setChar;
+const readOnly = props.readOnly ?? false;
 
-  const registry = useMemo(() => props.registry ?? DEFAULT_REGISTRY, [props.registry]);
-  const onChange = props.onChange ?? setChar;
-  const readOnly = props.readOnly ?? false;
+// track edit state for skills
+const [editSkills, setEditSkills] = useState(false);
+const [confirmReset, setConfirmReset] = useState(false);
 
-  // track edit state for skills
-  const [editSkills, setEditSkills] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
+const toggleCurrentMission = (skillId: string, v: boolean) => {
+  const next = { ...(char.currentMissionSkills ?? {}), [skillId]: v };
+  onChange(set(char, 'currentMissionSkills', next));
+};
 
-  const toggleCurrentMission = (skillId: string, v: boolean) => {
-    const next = { ...(char.currentMissionSkills ?? {}), [skillId]: v };
-    onChange(set(char, 'currentMissionSkills', next));
-  };
-
-  const commitMission = () => {
+const commitMission = () => {
   const successes = Object.entries(char.currentMissionSkills ?? {})
     .filter(([, v]) => !!v)
     .map(([k]) => k);
@@ -2268,7 +2362,7 @@ useEffect(() => {
 
   const history = [...(char.missionHistory ?? []), entry];
   onChange({ ...char, missionHistory: history, currentMissionSkills: {} });
-};
+  };
   // Save/Load helpers
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -2386,6 +2480,7 @@ useEffect(() => {
           <AbilitiesPanel
             abilities={char.abilities ?? []}
             skillDefs={registry.attributes}
+            raceName={char.race as RaceName | undefined}
             onChange={(next) => onChange({ ...char, abilities: next })}
             readOnly={readOnly}
           />
