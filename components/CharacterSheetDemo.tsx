@@ -1982,7 +1982,7 @@ const AbilitiesPanel: React.FC<{
               {raceUnlocks.map((a) => {
                 const def = raceDefs.find(d => d.name === a.name);
                 const options = raceDefs.map(d => d.name);
-                const notInList = a.name && !options.includes(a.name);
+                const notInList = !!a.name && !options.includes(a.name);
                 const displayOptions = notInList ? [a.name, ...options] : options;
 
                 return (
