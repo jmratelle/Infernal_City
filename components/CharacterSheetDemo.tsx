@@ -837,7 +837,888 @@ requiresSkillId: "shurikens",
 requiresMinLevel: 5,
 },
 ],
-}
+},
+// --- Magic Skill Unlock Abilities ---
+{
+  skill: "arcane",
+  level: 4,
+  choices: [
+    {
+      name: "Invisible Ink (Arcane 4)",
+      desc: "Your circles are nearly invisible to anyone passing by, and anyone trying to find your circles will require an Observation DC to spot them.",
+      requiresSkillId: "arcane",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Arcane Protection (Arcane 4)",
+      desc: "You may use the Arcane skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "arcane",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "arcane",
+  level: 5,
+  choices: [
+    {
+      name: "Overlapping Patterns (Arcane 5)",
+      desc: "You may have two magic circles occupy the same space, allowing targets to have to deal with both circles upon activation.",
+      requiresSkillId: "arcane",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Master of Magics (Arcane 5)",
+      desc: "Targets making contested Arcane DCs caused by your circles or Arcane spells roll with disadvantage.",
+      requiresSkillId: "arcane",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+{
+  skill: "envy",
+  level: 4,
+  choices: [
+    {
+      name: "Envy Protection (Envy 4)",
+      desc: "You may use the Envy skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "envy",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Spite (Envy 4)",
+      desc: "Whenever a target would roll a higher die on a Contested DC using your Envy skill, increase your Die Level by one.",
+      requiresSkillId: "envy",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "envy",
+  level: 5,
+  choices: [
+    {
+      name: "Going Down Together (Envy 5)",
+      desc: "Whenever a target would roll a higher die on a Contested DC using your Envy skill, decrease their Die Level by one.",
+      requiresSkillId: "envy",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Frustration (Envy 5)",
+      desc: "Any time you fail an Envy DC, gain advantage on your next Envy DC.",
+      requiresSkillId: "envy",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+{
+  skill: "gluttony",
+  level: 4,
+  choices: [
+    {
+      name: "Glutty Protection (Gluttony 4)",
+      desc: "You may use the Gluttony skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "gluttony",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Pack Master (Gluttony 4)",
+      desc: "You may summon an additional Hungering Hound without disrupting your focus. Each hound makes separate Unpredictable Servant rolls.",
+      requiresSkillId: "gluttony",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "gluttony",
+  level: 5,
+  choices: [
+    {
+      name: "Feast (Gluttony 5)",
+      desc: "Anytime you would recover an injury or gain an AP from a gluttony spell, you may recover/gain one more.",
+      requiresSkillId: "gluttony",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Alpha’s Call (Gluttony 5)",
+      desc: "You may summon an additional Hungering Hound without disrupting your focus. Each hound makes separate Unpredictable Servant rolls.",
+      requiresSkillId: "gluttony",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+{
+  skill: "greed",
+  level: 4,
+  choices: [
+    {
+      name: "Greed Protection (Greed 4)",
+      desc: "You may use the Greed skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "greed",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Offering of Gold (Greed 4)",
+      desc: "You may spend 100 Goldbacks worth of gold to increase the Die Level of a Greed DC by one.",
+      requiresSkillId: "greed",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "greed",
+  level: 5,
+  choices: [
+    {
+      name: "Master of Avarice (Greed 5)",
+      desc: "Targets making contested Greed DCs caused by your Greed spells roll with disadvantage.",
+      requiresSkillId: "greed",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Possessive Power (Greed 5)",
+      desc: "All Greed spells, except “Magnetism” and “Soften Metal,” increase the size of their effect by one Unit. (E.g., Phosphorus Cloud fills 4x4 Units, Midas Touch always targets all available adjacent targets, Everyman for Himself now affects a 4x4 Unit range.)",
+      requiresSkillId: "greed",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+{
+  skill: "lust",
+  level: 4,
+  choices: [
+    {
+      name: "Lust Protection (Lust 4)",
+      desc: "You may use the Lust skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "lust",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Master of Lechery (Lust 4)",
+      desc: "Targets making contested Lust DCs caused by your Lust spells roll with disadvantage.",
+      requiresSkillId: "lust",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "lust",
+  level: 5,
+  choices: [
+    {
+      name: "Mass Hallucination (Lust 5)",
+      desc: "You can increase your Hallucination spell to target up to five targets at once. Each target makes the Spell Effect DC separately.",
+      requiresSkillId: "lust",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Adoring Fans (Lust 5)",
+      desc: "If using the Enthrall Ability, you may have two targets enthralled at once without breaking focus.",
+      requiresSkillId: "lust",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+{
+  skill: "pride",
+  level: 4,
+  choices: [
+    {
+      name: "Pride Protection (Pride 4)",
+      desc: "You may use the Pride skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "pride",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Ego (Pride 4)",
+      desc: "Any time you fail an Envy DC you gain advantage on your next Pride DC.",
+      requiresSkillId: "pride",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "pride",
+  level: 5,
+  choices: [
+    {
+      name: "Better than You (Pride 5)",
+      desc: "If you fail a re-roll on a Pride spell, you may attempt to re-roll it once despite the limitation imposed by the spell’s temptation condition.",
+      requiresSkillId: "pride",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Failure is Not an Option (Pride 5)",
+      desc: "Reduce the cost of all Pride spells by one AP, but you now face the temptation consequence for any failed Pride DC for those spells. They may still be re-rolled once if a re-roll is available.",
+      requiresSkillId: "pride",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+{
+  skill: "sloth",
+  level: 4,
+  choices: [
+    {
+      name: "Sloth Protection (Sloth 4)",
+      desc: "You may use the Sloth skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "sloth",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Time Lord (Sloth 4)",
+      desc: "Every time you succeed a Sloth DC for your spell gain one AP.",
+      requiresSkillId: "sloth",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "sloth",
+  level: 5,
+  choices: [
+    {
+      name: "Pull of the Void (Sloth 5)",
+      desc: "Add four to the cumulative DCs set by your Sloth spells.",
+      requiresSkillId: "sloth",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Master of Time and Space (Sloth 5)",
+      desc: "When using the “Rewind” spell you no longer need to return to the space you occupied at the beginning of your last turn, instead you may move to any space within ten Units of your current position as long as you have line of sight on that location.",
+      requiresSkillId: "sloth",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+{
+  skill: "wrath",
+  level: 4,
+  choices: [
+    {
+      name: "Wrath Protection (Wrath 4)",
+      desc: "You may use the Wrath skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "wrath",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Hellfire (Wrath 4)",
+      desc: "Any target that is hit by one of your wrath spells gains the Burning (1) condition.",
+      requiresSkillId: "wrath",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "wrath",
+  level: 5,
+  choices: [
+    {
+      name: "Inferno (Wrath 5)",
+      desc: "Any target that is hit by one of your wrath spells gains the Burning (1) condition.",
+      requiresSkillId: "wrath",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Industrial Heat (Wrath 5)",
+      desc: "Any target making an Armor Save against a Burning condition while within five units of you, reduces their Armor Value for that save by one.",
+      requiresSkillId: "wrath",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+{
+  skill: "demonology",
+  level: 4,
+  choices: [
+    {
+      name: "Demonic Protection (Demonology 4)",
+      desc: "You may use the Demonology skill rather than the listed one when you are forced to make a Contested DC by another’s spell.",
+      requiresSkillId: "demonology",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Soulless Eyes (Demonology 4)",
+      desc: "You can automatically identify based on the complexity of light in a Demon’s eyes what rank that Demon is.",
+      requiresSkillId: "demonology",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "demonology",
+  level: 5,
+  choices: [
+    {
+      name: "Summoner’s Pact (Demonology 5)",
+      desc: "If you know the name of a Demon or Damned you can call out their name across infinite distances. The entity you call will hear your voice and know the general direction and distance you are to them, if they so choose they can converse with you telepathically.",
+      requiresSkillId: "demonology",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Infernal Chorus (Demonology 5)",
+      desc: "Any of your Demonology spells now affect all Demons and Damned within earshot. Each target will make separate contested DCs for your spell.",
+      requiresSkillId: "demonology",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+// specialized skill abilities unlocks
+{
+  skill: "bluff",
+  level: 4,
+  choices: [
+    {
+      name: "Tell (Bluff 4)",
+      desc: "Whenever you successfully pass a Bluff DC to determine the honesty of an NPC, you gain one Die Level to all Bluff DCs involving the NPC in the future.",
+      requiresSkillId: "bluff",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Play It Off (Bluff 4)",
+      desc: "If you fail a Bluff DC to deceive an NPC, you may make another Bluff DC to downplay the lie or convince the offended party it was a joke.",
+      requiresSkillId: "bluff",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "bluff",
+  level: 5,
+  choices: [
+    {
+      name: "Polygraph Cheater (Bluff 5)",
+      desc: "You may use your Bluff skill to lie in otherwise impossible situations (mind reading, truth serum, polygraph, mind control, etc.).",
+      requiresSkillId: "bluff",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Mimicry (Bluff 5)",
+      desc: "You can skillfully mimic others' voices and speech patterns as long as you have heard them speak before.",
+      requiresSkillId: "bluff",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "bodybuilding",
+  level: 4,
+  choices: [
+    {
+      name: "Strong Legs (Bodybuilding 4)",
+      desc: "Reduce the injuries received from falling by half (rounded down). You still die from a fall of 13 Units or higher.",
+      requiresSkillId: "bodybuilding",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Good Arm (Bodybuilding 4)",
+      desc: "Increase the max and ideal range of any shuriken or grenade weapons by one.",
+      requiresSkillId: "bodybuilding",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "bodybuilding",
+  level: 5,
+  choices: [
+    {
+      name: "Brick House (Bodybuilding 5)",
+      desc: "Increase the reflex cap of worn armor by one.",
+      requiresSkillId: "bodybuilding",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Juggernaut (Bodybuilding 5)",
+      desc: "When moving, you can move through enemy characters. As you move through them, make a contested Bodybuilding DC. If you succeed you can move those characters one Unit in any direction and they gain the Disoriented (2) condition.",
+      requiresSkillId: "bodybuilding",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "chemistry",
+  level: 4,
+  choices: [
+    {
+      name: "Drug Lord (Chemistry 4)",
+      desc: "You may make twice as many drugs per crafting session.",
+      requiresSkillId: "chemistry",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Potency (Chemistry 4)",
+      desc: "You may make twice as many poisons per crafting session.",
+      requiresSkillId: "chemistry",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "chemistry",
+  level: 5,
+  choices: [
+    {
+      name: "Reactive Materials (Chemistry 5)",
+      desc: "You may make a poison or drug you created reactive to the air, turning it into a gas that fills a 3×3 area (AOE 1, max range 5). Counts as a grenade in a sealed container; all targets in the area are affected.",
+      requiresSkillId: "chemistry",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Toxicologist (Chemistry 5)",
+      desc: "When crafting a poison you may make an additional Chemistry DC to add one of the following effects: add Poisoned (4) — if already Poisoned (4), becomes Poisoned (Deadly) (4); add a Die Level penalty to all Survivability and Fortitude DCs against this poison; add Paralysis (1) — if already Paralysis (1), becomes Paralysis (2). On a failed second DC, the poison fails.",
+      requiresSkillId: "chemistry",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "engineering",
+  level: 4,
+  choices: [
+    {
+      name: "Grease Monkey (Engineering 4)",
+      desc: "With access to a garage, repair vehicles between missions at 100 Goldbacks per injury level and 500 Goldbacks to remove Crippled.",
+      requiresSkillId: "engineering",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Saboteur (Engineering 4)",
+      desc: "Craft grenades and other consumable explosives for half their sell value (rounded up).",
+      requiresSkillId: "engineering",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "engineering",
+  level: 5,
+  choices: [
+    {
+      name: "Armor Smith (Engineering 5)",
+      desc: "Craft any piece of armor for half its sell value (rounded up).",
+      requiresSkillId: "engineering",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Weapon Smith (Engineering 5)",
+      desc: "Craft any weapon for half its sell value (rounded up).",
+      requiresSkillId: "engineering",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "fortitude",
+  level: 4,
+  choices: [
+    {
+      name: "Sober (Fortitude 4)",
+      desc: "Gain advantage on the first two Addiction Fortitude DCs during a mission.",
+      requiresSkillId: "fortitude",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Steadfast (Fortitude 4)",
+      desc: "If under the Frightened condition, you only need to spend 2 AP to move away from the source.",
+      requiresSkillId: "fortitude",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "fortitude",
+  level: 5,
+  choices: [
+    {
+      name: "Unflinching (Fortitude 5)",
+      desc: "If you are hit in combat while focusing on an ability, roll a Fortitude DC. On success, you maintain focus.",
+      requiresSkillId: "fortitude",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Unshakable (Fortitude 5)",
+      desc: "If under the Disoriented condition you only lose 2 AP instead of 3.",
+      requiresSkillId: "fortitude",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "hacking",
+  level: 4,
+  choices: [
+    {
+      name: "Remote Hacking Neurolink (Hacking 4)",
+      desc: "You may perform Hacking DCs on targets up to four Units away.",
+      requiresSkillId: "hacking",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Malfunction (Hacking 4)",
+      desc: "If you fail to hack something it has a 50% chance of malfunctioning (e.g., a camera looks at the ceiling, a turret fires indiscriminately).",
+      requiresSkillId: "hacking",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "hacking",
+  level: 5,
+  choices: [
+    {
+      name: "Dual Programs (Hacking 5)",
+      desc: "You may hack two sources at once for the same AP cost.",
+      requiresSkillId: "hacking",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Virus (Hacking 5)",
+      desc: "When you successfully hack a turret, door, camera, or other electronic device on a network, each other similar device on that network has a 50% chance of also being hacked.",
+      requiresSkillId: "hacking",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "hide",
+  level: 4,
+  choices: [
+    {
+      name: "Must Have Been the Wind (Hide 4)",
+      desc: "If you fail a Hide DC, you may immediately (after any rerolls) try the same DC again at minus one Die Level.",
+      requiresSkillId: "hide",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "One of the Crowd (Hide 4)",
+      desc: "Any time you attempt to hide by blending in with foot traffic or a group of NPCs, gain an additional Die Level.",
+      requiresSkillId: "hide",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "hide",
+  level: 5,
+  choices: [
+    {
+      name: "Assassin Strike (Hide 5)",
+      desc: "Any time you make an attack roll against a target while hidden from that target, gain an additional Die Level.",
+      requiresSkillId: "hide",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Phantom (Hide 5)",
+      desc: "If you succeed on your Hide DC you may also remain hidden from infrared vision and similar sensors that detect body heat or smell.",
+      requiresSkillId: "hide",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "medical",
+  level: 4,
+  choices: [
+    {
+      name: "Self Care (Medical 4)",
+      desc: "With access to a Clinic, you can heal your own injuries and Crippled conditions between missions.",
+      requiresSkillId: "medical",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Anti-Venom (Medical 4)",
+      desc: "You may use a Medical DC to reduce the X value of the Poisoned and Poisoned (Deadly) conditions.",
+      requiresSkillId: "medical",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "medical",
+  level: 5,
+  choices: [
+    {
+      name: "Valkyrie (Medical 5)",
+      desc: "Attempt a 4 AP Medical DC to reduce any injury state of an ally higher than four down to four.",
+      requiresSkillId: "medical",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Psychologist (Medical 5)",
+      desc: "You may use a Medical DC to reduce the X value of the Frightened and Disoriented conditions.",
+      requiresSkillId: "medical",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "negotiation",
+  level: 4,
+  choices: [
+    {
+      name: "One of the Pack (Negotiation 4)",
+      desc: "Gain one Die Level on Persuasion DCs once against members of your own race.",
+      requiresSkillId: "negotiation",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Instigator (Negotiation 4)",
+      desc: "Gain a Die Level on any Persuasion DC designed as a call to violence or conflict.",
+      requiresSkillId: "negotiation",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "negotiation",
+  level: 5,
+  choices: [
+    {
+      name: "Negotiator (Negotiation 5)",
+      desc: "If you fail a Negotiation DC, you may immediately (after any rerolls) try the same DC again at minus one Die Level.",
+      requiresSkillId: "negotiation",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Money Talks (Negotiation 5)",
+      desc: "You always know the minimum amount an NPC will take for a bribe.",
+      requiresSkillId: "negotiation",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "observation",
+  level: 4,
+  choices: [
+    {
+      name: "Focused Senses (Observation 4)",
+      desc: "Isolate and hone in on a conversation within ten Units that would normally be obscured by a crowd or other loud noises.",
+      requiresSkillId: "observation",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Camera Shy (Observation 4)",
+      desc: "You always spot any cameras when you enter a location. For hidden cameras you sense they are present, but must make a normal Observation DC to detect where.",
+      requiresSkillId: "observation",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "observation",
+  level: 5,
+  choices: [
+    {
+      name: "Blindsight (Observation 5)",
+      desc: "You can observe the world with each of your senses. Even in darkness or other visual obscuring effects, you know where people and objects are.",
+      requiresSkillId: "observation",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Paranoia (Observation 5)",
+      desc: "You always know when you are being watched, even if the observer is hidden or watching via a drone or camera.",
+      requiresSkillId: "observation",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "parkour",
+  level: 4,
+  choices: [
+    {
+      name: "Rolling Fall (Parkour 4)",
+      desc: "You don’t take any injury for falls of five Units or less.",
+      requiresSkillId: "parkour",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Stamina Reserve (Parkour 4)",
+      desc: "At the start of each mission gain two bonus AP that can be used any time during that mission. Once used they are gone until the next mission.",
+      requiresSkillId: "parkour",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "parkour",
+  level: 5,
+  choices: [
+    {
+      name: "Sure Footed (Parkour 5)",
+      desc: "Your movement cannot be slowed by terrain hazards.",
+      requiresSkillId: "parkour",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Sprinter (Parkour 5)",
+      desc: "You may move one additional Unit per AP spent on movement.",
+      requiresSkillId: "parkour",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "pilot",
+  level: 4,
+  choices: [
+    {
+      name: "Push it to the Limit (Pilot 4)",
+      desc: "Increase the maximum speed of your vehicle by five Units.",
+      requiresSkillId: "pilot",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Life in Reverse (Pilot 4)",
+      desc: "Travel backwards in any vehicle with the same skill and speed as driving forwards.",
+      requiresSkillId: "pilot",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "pilot",
+  level: 5,
+  choices: [
+    {
+      name: "Ace (Pilot 5)",
+      desc: "Gain an additional Die Level when using your Piloting skill to attack other vehicles.",
+      requiresSkillId: "pilot",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Smooth Ride (Pilot 5)",
+      desc: "Passengers in your vehicle do not receive a negative Die Level modifier for shooting from a moving vehicle.",
+      requiresSkillId: "pilot",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "reflex",
+  level: 4,
+  choices: [
+    {
+      name: "Duck for Cover (Reflex 4)",
+      desc: "For 1 AP, if you are targeted by an AOE ability or attack, you may immediately move two Units.",
+      requiresSkillId: "reflex",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Nimble Feet (Reflex 4)",
+      desc: "If you evade an attack as a result of your Reflex DC, you may immediately move one Unit in any direction.",
+      requiresSkillId: "reflex",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "reflex",
+  level: 5,
+  choices: [
+    {
+      name: "Battlefield Dancer (Reflex 5)",
+      desc: "Additional movement granted by your abilities does not trigger Zone of Control or Overwatch abilities.",
+      requiresSkillId: "reflex",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Always Ready (Reflex 5)",
+      desc: "If you find yourself in an Enemy Initiative encounter, you may take your turn as though it was Mixed Initiative.",
+      requiresSkillId: "reflex",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "survivability",
+  level: 4,
+  choices: [
+    {
+      name: "Tough Skinned (Survivability 4)",
+      desc: "Gain one innate Armor Value against Slash, Pierce, and Crush damage types.",
+      requiresSkillId: "survivability",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Naturally Resilient (Survivability 4)",
+      desc: "Gain one innate Armor Value against Electric, Burn, and Freeze damage types.",
+      requiresSkillId: "survivability",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "survivability",
+  level: 5,
+  choices: [
+    {
+      name: "Natural Immunity (Survivability 5)",
+      desc: "Roll at an additional Die Level on Survivability DCs for the Poisoned or Poisoned (Deadly) conditions.",
+      requiresSkillId: "survivability",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Immortal (Survivability 5)",
+      desc: "Once per mission, the first time you would otherwise fail a Critical Condition DC, you may immediately re-roll that DC.",
+      requiresSkillId: "survivability",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
+{
+  skill: "thievery",
+  level: 4,
+  choices: [
+    {
+      name: "Locksmith (Thievery 4)",
+      desc: "If you succeed on a Thievery DC for opening a door, you automatically succeed on any other DCs for doors that use the same key.",
+      requiresSkillId: "thievery",
+      requiresMinLevel: 4,
+    },
+    {
+      name: "Sleight of Hand (Thievery 4)",
+      desc: "You may take two items from a target per successful Thievery DC.",
+      requiresSkillId: "thievery",
+      requiresMinLevel: 4,
+    },
+  ],
+},
+{
+  skill: "thievery",
+  level: 5,
+  choices: [
+    {
+      name: "Confiscation (Thievery 5)",
+      desc: "Attempt to steal the weapon of a non-actively hostile target, but with a negative Die Level modifier.",
+      requiresSkillId: "thievery",
+      requiresMinLevel: 5,
+    },
+    {
+      name: "Jewelry Thief (Thievery 5)",
+      desc: "Attempt to steal equipped accessories from a target.",
+      requiresSkillId: "thievery",
+      requiresMinLevel: 5,
+    },
+  ],
+},
+
 ];
 
 export const SKILL_UNLOCK_DEFS: SkillUnlockChoice[] =
