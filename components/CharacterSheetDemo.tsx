@@ -1891,6 +1891,9 @@ const AbilitiesPanel: React.FC<{
     setOpen(o => ({ ...o, [id]: !(o[id] ?? true) }));
   const isOpen = (id: string) => open[id] ?? true; // default open
 
+  const isPicked = (name: string) =>
+  (abilities ?? []).some(x => x.kind === 'race' && x.name === name);
+
   // Auto-populate defaults whenever the selected race changes
   const prevRaceRef = React.useRef<RaceName | undefined>(undefined);
 
@@ -2182,6 +2185,10 @@ const canAddName = (name: string) => {
     </span>
   );
 
+  const pickedRaceNames = React.useMemo(
+  () => new Set((abilities ?? []).filter(x => x.kind === 'race').map(x => x.name)),
+  [abilities]
+    );
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
@@ -2326,16 +2333,15 @@ const canAddName = (name: string) => {
                 value={draftRaceAbility}
                 onChange={(e) => setDraftRaceAbility(e.target.value)}
               >
-                {raceDefs.map((d) => {
-                  const disabled = !canAddName(d.name);
-                  const why = !meetsPrereqs(d) ? missingReqsText(d) : '';
-                  return (
-                    <option key={d.name} value={d.name} disabled={disabled} title={why || undefined}>
-                      {disabled && why ? `${d.name} (${why})` : d.name}
+                {raceDefs
+                  .filter(d => canAddName(d.name))         // ← only show addable abilities
+                  .map(d => (
+                    <option key={d.name} value={d.name}>
+                      {d.name}
                     </option>
-                  );
-                })}
+                  ))}
               </select>
+
             </div>
             <div className="flex gap-2 md:justify-end">
               <Button
@@ -2373,16 +2379,24 @@ const canAddName = (name: string) => {
               {raceUnlocks.map((a) => {
                 const def     = byName.get(a.name);
                 const isAutoDefault = !!def?.auto;
-                const options = raceDefs.map(d => d.name);
-                const notInList = !!a.name && !options.includes(a.name);
-                const displayOptions = notInList ? [a.name, ...options] : options;
-                
+                // Hide abilities already chosen on other rows; always keep the current row's name
+                const optionPool = raceDefs
+                  .map(d => d.name)
+                  .filter(n => !pickedRaceNames.has(n) || n === a.name);
+                const notInList = !!a.name && !optionPool.includes(a.name);
+                const displayOptions = notInList ? [a.name, ...optionPool] : optionPool;
+                const visibleOptions = displayOptions.filter((n, idx) => {
+                if (notInList && idx === 0) return true;   // keep sentinel when current choice isn’t in list
+                if (n === a.name) return true;             // always keep the current row’s choice
+                return !optionDisabled(a.name, n);         // drop anything that would be disabled
+                });
                 return (
                   <div key={a.id} className="rounded-xl border border-white/10 p-3">
                     {/* compact header row: select + default pill + trash */}
                     <div className="grid gap-1">
                       
                       <div className="flex items-center gap-2">
+                        
                         <select
                           className={compactSelect}
                           value={a.name}
@@ -2393,14 +2407,11 @@ const canAddName = (name: string) => {
                           disabled={readOnly || isAutoDefault || displayOptions.length === 0}
                           title={isAutoDefault ? "Default race ability (locked)" : undefined}
                         >
-                          {displayOptions.map((n, idx) => {
-                            const dis = notInList && idx === 0 ? true : optionDisabled(a.name, n);
-                            return (
-                              <option key={`${a.id}-${idx}-${n}`} value={n} disabled={dis}>
-                                {notInList && idx === 0 ? `${n} (not in ${raceName})` : n}
-                              </option>
-                            );
-                          })}
+                          {visibleOptions.map((n, idx) => (
+                          <option key={`${a.id}-${idx}-${n}`} value={n}>
+                            {notInList && idx === 0 ? `${n} (not in ${raceName})` : n}
+                          </option>
+                        ))}
                         </select>
 
                         {isAutoDefault && (
