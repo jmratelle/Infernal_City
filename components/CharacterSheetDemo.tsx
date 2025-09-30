@@ -461,6 +461,394 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
   ],
 };
 
+export interface SkillUnlockChoice {
+name: string;
+desc: string;
+requiresSkillId?: string;
+requiresMinLevel?: number;
+oneOf?: string;
+stackMax?: number;
+}
+
+
+export interface SkillUnlockDef {
+skill: string;
+level: number;
+choices: SkillUnlockChoice[];
+requiresSkillId?: string;
+requiresMinLevel?: number;
+group?: string;        // e.g., "mutation" (Abomination)
+oneOf?: string;        // e.g., "altered-core" (Altered)
+auto?: boolean;        // default/starting
+requiresAll?: string[];     // must have ALL of these ability names
+requiresAny?: string[];     // must have AT LEAST ONE of these names
+requiresAnySkillLevel?: number;                 // must have ANY skill at >= this level
+requiresSkillLevels?: Record<string, number>;   // specific skillId -> min level
+stackable?: boolean; 
+stackMax?: number; 
+}
+
+
+export interface GeneralUnlockDef {
+name: string;
+desc: string;
+requiresSkillId?: string;
+requiresMinLevel?: number;
+group?: string;        // e.g., "mutation" (Abomination)
+oneOf?: string;        // e.g., "altered-core" (Altered)
+auto?: boolean;        // default/starting
+requiresAll?: string[];     // must have ALL of these ability names
+requiresAny?: string[];     // must have AT LEAST ONE of these names
+requiresAnySkillLevel?: number;                 // must have ANY skill at >= this level
+requiresSkillLevels?: Record<string, number>;   // specific skillId -> min level
+stackable?: boolean; 
+stackMax?: number;
+requiresAllAbilities?: string[];
+}
+
+// Seed a few examples so the UI is wired. Replace with your real lists later.
+export const SKILL_UNLOCK_DEF: SkillUnlockDef[] = [
+{
+skill: "automatics",
+level: 4,
+choices: [
+{
+name: "Penetrating Barrage",
+desc: "You may increase the ArP of consecutive attacks with an automatic weapon against the same target.",
+requiresSkillId: "automatics",
+requiresMinLevel: 4,
+},
+{
+name: "Spray and Pray",
+desc: "You may make up to three attacks, spending one ammunition per attack, for your single two AP attack with an automatic weapon, but at a one Die Level penalty. These attacks can be against the same or multiple targets.",
+requiresSkillId: "automatics",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "automatics",
+level: 5,
+choices: [
+{
+name: "Infinite Ammo",
+desc: "You may make a zero AP reload on an automatic weapon once per combat round.",
+requiresSkillId: "automatics",
+requiresMinLevel: 5,
+},
+{
+name: "Barrel Melter",
+desc: "Your attacks with automatic weapons gain the Burn damage type.",
+requiresSkillId: "automatics",
+requiresMinLevel: 5,
+},
+],
+},
+{
+skill: "droneOperation",
+level: 4,
+choices: [
+{
+name: "Split Mind",
+desc: "You may control one additional drone. Each makes separate rolls and has separate AP.",
+requiresSkillId: "droneOperation",
+requiresMinLevel: 4,
+},
+{
+name: "Evasive Control",
+desc: "Drones gain an additional Die Level on their Reflex DCs while you control them.",
+requiresSkillId: "droneOperation",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "droneOperation",
+level: 5,
+choices: [
+{
+name: "Swarm Tactics",
+desc: "You may control one additional drone. Each makes separate rolls and has separate AP.",
+requiresSkillId: "droneOperation",
+requiresMinLevel: 5,
+},
+{
+name: "Master of Efficiency",
+desc: "Drones you control get an additional AP during their turns.",
+requiresSkillId: "droneOperation",
+requiresMinLevel: 5,
+},
+],
+},
+{
+skill: "marksman",
+level: 4,
+choices: [
+{
+name: "Camping",
+desc: "If you didn’t move last round of combat, you may reload an equipped Marksman weapon once for zero AP.",
+requiresSkillId: "marksman",
+requiresMinLevel: 4,
+},
+{
+name: "Kill Shot",
+desc: "You may spend two AP to raise the Die Level of your next Marksman attack this turn by one Die Level.",
+requiresSkillId: "marksman",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "marksman",
+level: 5,
+choices: [
+{
+name: "Head Shot",
+desc: "If you land a critical hit against a mortal humanoid enemy with a marksman weapon, and that attack would inflict an injury, the target dies instead.",
+requiresSkillId: "marksman",
+requiresMinLevel: 5,
+},
+{
+name: "No Scope",
+desc: "You may decrease the lower ideal range of equipped marksman weapons to two units.",
+requiresSkillId: "marksman",
+requiresMinLevel: 5,
+},
+],
+},
+{
+skill: "martialArts",
+level: 4,
+choices: [
+{
+name: "Circular Breathing",
+desc: "Your Martial Arts attacks are reduced by one AP.",
+requiresSkillId: "martialArts",
+requiresMinLevel: 4,
+},
+{
+name: "Acupressure",
+desc: "Anytime you hit with an attack using the Martial Arts skill, that target gains the Disorientated (2) condition.",
+requiresSkillId: "martialArts",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "martialArts",
+level: 5,
+choices: [
+{
+name: "One Thousand Fists",
+desc: "Any time you make an attack using the Martial Arts skill, you may make additional zero AP attacks against any available adjacent targets.",
+requiresSkillId: "martialArts",
+requiresMinLevel: 5,
+},
+{
+name: "Piercing Ki",
+desc: "Whenever you land a critical hit with an attack using the Martial Arts skill, the target does not get any Armor Saves for that attack.",
+requiresSkillId: "martialArts",
+requiresMinLevel: 5,
+},
+],
+},
+{
+skill: "meleeWeapons",
+level: 4,
+choices: [
+{
+name: "Tameshigiri",
+desc: "Each time you inflict an injury with a melee weapon that has the Slash damage type, the target gains the Bleeding (2) condition.",
+requiresSkillId: "meleeWeapons",
+requiresMinLevel: 4,
+},
+{
+name: "Crusher",
+desc: "Equipped melee weapons that have the Crush damage type increase their ArP by one.",
+requiresSkillId: "meleeWeapons",
+requiresMinLevel: 4,
+},
+{
+name: "Fencer",
+desc: "Equipped melee weapons that have the Pierce damage type can hit targets up to two units away.",
+requiresSkillId: "meleeWeapons",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "meleeWeapons",
+level: 5,
+choices: [
+{
+name: "Phalanx",
+desc: "The First time a target enters the range of your equipped melee weapon you may make a zero AP attack against them. If your attack would hit, regardless of Armor Save, that target must cease all movement available to it for the AP spent and loses two AP.",
+requiresSkillId: "meleeWeapons",
+requiresMinLevel: 5,
+},
+{
+name: "Decapitation",
+desc: "If you land a Critical hit against a mortal humanoid enemy with a melee weapon, and that attack would inflict an injury, the target dies instead.",
+requiresSkillId: "meleeWeapons",
+requiresMinLevel: 5,
+},
+],
+},
+{
+skill: "pistols",
+level: 4,
+choices: [
+{
+name: "Two Hands are Better Than One",
+desc: "You can dual-wield pistols. You may equip an additional pistol, and when making an attack with one pistol, you may attack with the other equipped pistol for one AP less than what the weapon’s normal attack requires.",
+requiresSkillId: "pistols",
+requiresMinLevel: 4,
+},
+{
+name: "Quickdraw",
+desc: "You may swap one pistol in your inventory with one of your equipped pistols for zero AP.",
+requiresSkillId: "pistols",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "pistols",
+level: 5,
+choices: [
+{
+name: "Faster Than Lighting",
+desc: "Once per combat round, you may make a zero AP attack with one of your equipped pistols.",
+requiresSkillId: "pistols",
+requiresMinLevel: 5,
+},
+{
+name: "Russian Roulette",
+desc: "Whenever you make an attack with a pistol, roll a D6. On a six your attack automatically scores a critical hit.",
+requiresSkillId: "pistols",
+requiresMinLevel: 5,
+},
+],
+},
+{
+skill: "propellants",
+level: 4,
+choices: [
+{
+name: "Bringer of Pain",
+desc: "If your equipped propellant weapon inflicts a condition, increase the X value of that condition by one.",
+requiresSkillId: "propellants",
+requiresMinLevel: 4,
+},
+{
+name: "Double Barrel",
+desc: "Increase the ammo of your equipped propellant weapon by one.",
+requiresSkillId: "propellants",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "propellants",
+level: 5,
+choices: [
+{
+name: "Pressurized",
+desc: "Increase the Ideal and max range of your equipped propellant weapons by one.",
+requiresSkillId: "propellants",
+requiresMinLevel: 5,
+},
+{
+name: "Tormentor",
+desc: "If your equipped propellant weapon inflicts a condition, increase the X value of that condition by one.",
+requiresSkillId: "propellants",
+requiresMinLevel: 5,
+},
+],
+},
+{
+skill: "shotguns",
+level: 4,
+choices: [
+{
+name: "Point Blank",
+desc: "Increase the Die Level of your attack DC by one when attacking a target within two Units.",
+requiresSkillId: "shotguns",
+requiresMinLevel: 4,
+},
+{
+name: "Propelling Force",
+desc: "If you hit a target with a shotgun weapon, you may move them two Units away from your character. If the target was moving, its movement for that AP ends.",
+requiresSkillId: "shotguns",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "shotguns",
+level: 5,
+choices: [
+{
+name: "Birdshot",
+desc: "Increase the ideal and max range of equipped shotguns by two Units.",
+requiresSkillId: "shotguns",
+requiresMinLevel: 5,
+},
+{
+name: "Slugs",
+desc: "Increase the ArP of all equipped shotguns by one.",
+requiresSkillId: "shotguns",
+requiresMinLevel: 5,
+},
+],
+},
+{
+skill: "shurikens",
+level: 4,
+choices: [
+{
+name: "Aim for the Gaps",
+desc: "Each time you roll a critical hit against a target using a Shuriken weapon, your target doesn't get an Armor Save against your attack.",
+requiresSkillId: "shurikens",
+requiresMinLevel: 4,
+},
+{
+name: "Duel Throwing",
+desc: "You can throw shurikens from both hands, whenever you make an attack using the Shuriken skill, you may make another attack for one AP.",
+requiresSkillId: "shurikens",
+requiresMinLevel: 4,
+},
+],
+},
+{
+skill: "shurikens",
+level: 5,
+choices: [
+{
+name: "Skewered",
+desc: "Shuriken weapon attacks that result in a hit give the Impaled (1) condition.",
+requiresSkillId: "shurikens",
+requiresMinLevel: 5,
+},
+{
+name: "Bleed Them Dry",
+desc: "If one of your attacks using the Shuriken skill would cause an injury against a target they also gain the Bleeding (2) Condition.",
+requiresSkillId: "shurikens",
+requiresMinLevel: 5,
+},
+],
+}
+];
+
+export const SKILL_UNLOCK_DEFS: SkillUnlockChoice[] =
+  SKILL_UNLOCK_DEF.flatMap(u => u.choices);
+
+export const GENERAL_UNLOCK_DEFS: GeneralUnlockDef[] = [
+  { name: 'Field Medic', desc: 'Once/mission, treat 1 injury on ally adjacent as free action.' },
+  { name: 'Tactician', desc: 'Once/round, grant ally +1 Die Level to a DC as a free action.' },
+  { name: 'Pack Mule', desc: '+5 carry capacity. Stack up to 3.' },
+];
+
 
 const HIDEOUT_UPGRADES = [
   'Bedroom',
@@ -1881,7 +2269,8 @@ const AbilitiesPanel: React.FC<{
   const [draftRaceAbility, setDraftRaceAbility] = React.useState<string>('');
   const compactSelect =
   "h-8 w-51 text-xs px-2 py-0.5 leading-tight rounded-md border border-white/20 bg-background focus:outline-none focus-visible:ring-0";
-
+  const raceDefs: RaceAbilityDef[] = raceName ? (RACE_ABILITIES[raceName] ?? []) : [];
+  const byName = new Map(raceDefs.map(d => [d.name, d]));
   const isDefaultEntry = (x: AbilityEntry) => !!byName.get(x.name)?.auto;
   const EMERGING_MAX = 7;
 
@@ -1990,8 +2379,6 @@ const AbilitiesPanel: React.FC<{
   );
   // How many stacks it currently has (0 if not present)
   const emCount = emRow ? (emRow.count ?? 1) : 0;
-  const raceDefs: RaceAbilityDef[] = raceName ? (RACE_ABILITIES[raceName] ?? []) : [];
-  const byName = new Map(raceDefs.map(d => [d.name, d]));
   const hasRaceAbility = (name: string) => raceUnlocks.some(a => a.name === name);
   // Pretty name for a skill id
   const skillLabel = (id: string) => skillDefs.find(s => s.id === id)?.label ?? id;
@@ -2010,6 +2397,74 @@ const AbilitiesPanel: React.FC<{
     }
     return true;
   };
+
+  // Index skill levels for gating
+const skillLevel = (id?: string) => (id ? (attrValues?.[id] ?? 0) : 0);
+
+// Lookups for already-chosen names
+const chosenSkillNames = new Set((abilities ?? []).filter(a => a.kind === 'skill').map(a => a.name));
+const chosenGeneralNames = new Set((abilities ?? []).filter(a => a.kind === 'general').map(a => a.name));
+
+// Gating for skill unlocks
+const meetsSkillUnlockPrereqs = (choice?: SkillUnlockChoice) => {
+  if (!choice) return true;
+
+  if (choice.requiresSkillId && choice.requiresMinLevel != null) {
+    if (skillLevel(choice.requiresSkillId) < choice.requiresMinLevel) return false;
+  }
+
+  // oneOf group: allow picking if player does not already have some other in that group
+  if (choice.oneOf) {
+    const hasSameGroup = (abilities ?? []).some(a =>
+      a.kind === 'skill' &&
+      SKILL_UNLOCK_DEFS.find(d => d.name === a.name)?.oneOf === choice.oneOf
+    );
+    if (hasSameGroup) return false;
+  }
+
+  // stack limits if you later convert to stackable via count
+  if (choice.stackMax != null) {
+    const have = (abilities ?? [])
+      .filter(a => a.kind === 'skill' && a.name === choice.name)
+      .reduce((s, a) => s + (a.count ?? 1), 0);
+    if (have >= choice.stackMax) return false;
+  }
+
+  return true;
+};
+
+
+// Gating for general unlocks
+const meetsGeneralUnlockPrereqs = (def?: GeneralUnlockDef) => {
+  if (!def) return true;
+  if (def.oneOf) {
+    const hasSameGroup = (abilities ?? []).some(a => a.kind === 'general' && GENERAL_UNLOCK_DEFS.find(d => d.name === a.name)?.oneOf === def.oneOf);
+    if (hasSameGroup) return false;
+  }
+  if (def.requiresAllAbilities?.length) {
+    const haveAll = def.requiresAllAbilities.every(req =>
+      (abilities ?? []).some(a => a.name === req)
+    );
+    if (!haveAll) return false;
+  }
+  if (def.stackMax != null) {
+    const have = (abilities ?? []).filter(a => a.kind === 'general' && a.name === def.name)
+                                  .reduce((s, a) => s + (a.count ?? 1), 0);
+    if (have >= def.stackMax) return false;
+  }
+  return true;
+};
+
+// Display lists that hide already-chosen choices and those that fail prereqs
+const skillDisplayOptions = SKILL_UNLOCK_DEFS
+  .filter(d => !chosenSkillNames.has(d.name))           // hide already chosen
+  .filter(d => meetsSkillUnlockPrereqs(d))               // hide if not eligible
+  .map(d => d.name);
+
+const generalDisplayOptions = GENERAL_UNLOCK_DEFS
+  .filter(d => !chosenGeneralNames.has(d.name))
+  .filter(d => meetsGeneralUnlockPrereqs(d))
+  .map(d => d.name);
 
   const meetsPrereqs = (def?: RaceAbilityDef) => {
   if (!def) return false;
@@ -2472,114 +2927,139 @@ const canAddName = (name: string) => {
           )}
         </div>
 
-        {/* SKILL UNLOCKS (unchanged) */}
-        <div className="mt-4 space-y-2">
-          <div className="text-xs font-semibold uppercase text-white/80">Skill Unlock</div>
-          {skillUnlocks.length === 0 && <div className="text-sm text-white/70">No skill unlocks.</div>}
-          {skillUnlocks.map((a) => (
-            <div key={a.id} className="rounded-xl border border-white/10 p-3">
-              <div className="grid gap-2 md:grid-cols-3">
-                <div className="grid gap-1">
-                  <Label>Ability Name</Label>
-                  <Input
-                    value={a.name}
-                    onChange={(e) => patch(a.id, { name: e.target.value })}
-                    placeholder="e.g., Advanced Marksman Drills"
-                    disabled={readOnly}
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label>Linked Skill</Label>
+        {/* ---- SKILL UNLOCKS ---- */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold uppercase text-white/80">Skill Unlocks</div>
+          </div>
+
+          {(abilities ?? []).filter(a => a.kind === 'skill').map((a) => {
+            const def = SKILL_UNLOCK_DEFS.find(d => d.name === a.name);
+            const options = [a.name, ...skillDisplayOptions.filter(n => n !== a.name)];
+            return (
+              <div key={a.id} className="rounded-md bg-white/5 p-2">
+                <div className="flex items-center gap-2">
                   <select
-                    className="rounded-md border bg-background px-3 py-2 text-sm"
-                    value={a.linkedSkillId ?? ''}
-                    onChange={(e) => patch(a.id, { linkedSkillId: e.target.value })}
+                    className="h-7 text-sm rounded bg-white/10 px-2"
+                    value={a.name}
+                    onChange={(e) => {
+                      const next = (abilities ?? []).map(x => x.id === a.id ? { ...x, name: e.target.value } : x);
+                      onChange(next);
+                    }}
                     disabled={readOnly}
+                    title={def?.desc}
                   >
-                    {skillDefs.map((s) => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
+                    {options.map(n => <option key={`${a.id}-${n}`} value={n}>{n}</option>)}
                   </select>
+
+                  {/* Optional stack +/- if you use count on some skill unlocks */}
+                  {def?.stackMax != null && (
+                    <div className="ml-2 flex items-center gap-1">
+                      <Button size="icon" variant="ghost" onMouseDown={(e)=>e.preventDefault()}
+                        onClick={() => onChange((abilities ?? []).map(x =>
+                          x.id === a.id ? { ...x, count: Math.max(1, (x.count ?? 1) - 1) } : x
+                        ))}
+                        disabled={readOnly || (a.count ?? 1) <= 1}
+                        aria-label="Decrease stack"
+                      >-</Button>
+                      <span className="min-w-[1.25rem] text-center text-xs">{a.count ?? 1}</span>
+                      <Button size="icon" variant="ghost" onMouseDown={(e)=>e.preventDefault()}
+                        onClick={() => onChange((abilities ?? []).map(x =>
+                          x.id === a.id ? { ...x, count: Math.min(def.stackMax!, (x.count ?? 1) + 1) } : x
+                        ))}
+                        disabled={readOnly || (a.count ?? 1) >= (def.stackMax ?? Infinity)}
+                        aria-label="Increase stack"
+                      >+</Button>
+                    </div>
+                  )}
+
+                  {/* Trash (always allow removing non-defaults for skill/general) */}
+                  {!readOnly && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onMouseDown={(e)=>e.preventDefault()}
+                      onClick={() => onChange((abilities ?? []).filter(x => x.id !== a.id))}
+                      aria-label="Remove skill unlock"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                <div className="flex items-end justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => remove(a.id)}
-                    disabled={readOnly}
-                    aria-label="Remove ability"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => toggle(a.id)}
-                  title={isOpen(a.id) ? 'Hide' : 'Show'}
-                >
-                  {isOpen(a.id) ? 'Hide' : 'Show'}
-                </Button>
-                </div>
+
+                {!!def?.desc && <div className="mt-1 text-xs text-white/70 whitespace-pre-line">{def.desc}</div>}
               </div>
-              <div className="mt-2 grid gap-1">
-                <Label>Notes</Label>
-                <Textarea
-                  value={a.notes ?? ''}
-                  onChange={(e) => patch(a.id, { notes: e.target.value })}
-                  placeholder="Optional description or rules text…"
-                  disabled={readOnly}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* GENERAL UNLOCKS (unchanged) */}
-        <div className="mt-4 space-y-2">
-          <div className="text-xs font-semibold uppercase text-white/80">General Unlock</div>
-          {generalUnlocks.length === 0 && <div className="text-sm text-white/70">No general unlocks.</div>}
-          {generalUnlocks.map((a) => (
-            <div key={a.id} className="rounded-xl border border-white/10 p-3">
-              <div className="grid gap-2 md:grid-cols-3">
-                <div className="grid gap-1 md:col-span-2">
-                  <Label>Ability Name</Label>
-                  <Input
+
+        {/* ---- GENERAL UNLOCKS ---- */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold uppercase text-white/80">General Unlocks</div>
+          </div>
+
+          {(abilities ?? []).filter(a => a.kind === 'general').map((a) => {
+            const def = GENERAL_UNLOCK_DEFS.find(d => d.name === a.name);
+            const options = [a.name, ...generalDisplayOptions.filter(n => n !== a.name)];
+            return (
+              <div key={a.id} className="rounded-md bg-white/5 p-2">
+                <div className="flex items-center gap-2">
+                  <select
+                    className="h-7 text-sm rounded bg-white/10 px-2"
                     value={a.name}
-                    onChange={(e) => patch(a.id, { name: e.target.value })}
-                    placeholder="e.g., Night Vision Training"
+                    onChange={(e) => {
+                      const next = (abilities ?? []).map(x => x.id === a.id ? { ...x, name: e.target.value } : x);
+                      onChange(next);
+                    }}
                     disabled={readOnly}
-                  />
-                </div>
-                <div className="flex items-end justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => remove(a.id)}
-                    disabled={readOnly}
-                    aria-label="Remove ability"
+                    title={def?.desc}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    {options.map(n => <option key={`${a.id}-${n}`} value={n}>{n}</option>)}
+                  </select>
+
+                  {def?.stackMax != null && (
+                    <div className="ml-2 flex items-center gap-1">
+                      <Button size="icon" variant="ghost" onMouseDown={(e)=>e.preventDefault()}
+                        onClick={() => onChange((abilities ?? []).map(x =>
+                          x.id === a.id ? { ...x, count: Math.max(1, (x.count ?? 1) - 1) } : x
+                        ))}
+                        disabled={readOnly || (a.count ?? 1) <= 1}
+                        aria-label="Decrease stack"
+                      >-</Button>
+                      <span className="min-w-[1.25rem] text-center text-xs">{a.count ?? 1}</span>
+                      <Button size="icon" variant="ghost" onMouseDown={(e)=>e.preventDefault()}
+                        onClick={() => onChange((abilities ?? []).map(x =>
+                          x.id === a.id ? { ...x, count: Math.min(def.stackMax!, (x.count ?? 1) + 1) } : x
+                        ))}
+                        disabled={readOnly || (a.count ?? 1) >= (def.stackMax ?? Infinity)}
+                        aria-label="Increase stack"
+                      >+</Button>
+                    </div>
+                  )}
+
+                  {!readOnly && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onMouseDown={(e)=>e.preventDefault()}
+                      onClick={() => onChange((abilities ?? []).filter(x => x.id !== a.id))}
+                      aria-label="Remove general unlock"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
+
+                {!!def?.desc && <div className="mt-1 text-xs text-white/70 whitespace-pre-line">{def.desc}</div>}
               </div>
-              <div className="mt-2 grid gap-1">
-                <Label>Notes</Label>
-                <Textarea
-                  value={a.notes ?? ''}
-                  onChange={(e) => patch(a.id, { notes: e.target.value })}
-                  placeholder="Optional description or rules text…"
-                  disabled={readOnly}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
       </CardContent>
     </Card>
   );
