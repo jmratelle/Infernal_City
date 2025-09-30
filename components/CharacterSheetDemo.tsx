@@ -4991,18 +4991,24 @@ const commitMission = () => {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleExportCharacter = () => {
-    try {
-      const blob = new Blob([JSON.stringify(char, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'character.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      // ignore
-    }
-  };
+  try {
+    const blob = new Blob([JSON.stringify(char, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // build filename
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const safeName = (char?.name || "Character").replace(/\s+/g, "_");
+    const fileName = `${safeName}_${today}.json`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    // ignore
+  }
+};
 
   const handleImportClick = () => {
     fileRef.current?.click();
