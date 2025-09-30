@@ -2267,6 +2267,9 @@ const AbilitiesPanel: React.FC<{
   const [showKindPicker, setShowKindPicker] = React.useState(false);
   const [pickingRace, setPickingRace] = React.useState(false);
   const [draftRaceAbility, setDraftRaceAbility] = React.useState<string>('');
+  const rowClass =
+   "flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5";
+  const labelClass = "text-[12px] text-white";
   const compactSelect =
   "h-8 w-51 text-xs px-2 py-0.5 leading-tight rounded-md border border-white/20 bg-background focus:outline-none focus-visible:ring-0";
   const raceDefs: RaceAbilityDef[] = raceName ? (RACE_ABILITIES[raceName] ?? []) : [];
@@ -2927,138 +2930,175 @@ const canAddName = (name: string) => {
           )}
         </div>
 
-        {/* ---- SKILL UNLOCKS ---- */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold uppercase text-white/80">Skill Unlocks</div>
-          </div>
+        {/* SKILL UNLOCKS */}
+<div className="space-y-2">
+  <div className="text-xs font-semibold uppercase text-white/80">Skill Unlocks</div>
 
-          {(abilities ?? []).filter(a => a.kind === 'skill').map((a) => {
-            const def = SKILL_UNLOCK_DEFS.find(d => d.name === a.name);
-            const options = [a.name, ...skillDisplayOptions.filter(n => n !== a.name)];
-            return (
-              <div key={a.id} className="rounded-md bg-white/5 p-2">
+  {/* Empty state (parity with Race) */}
+  {(abilities ?? []).filter(a => a.kind === 'skill').length === 0 && (
+    <div className="text-sm text-white/70">No skill unlocks added yet.</div>
+  )}
+
+  {(abilities ?? []).filter(a => a.kind === 'skill').length > 0 && (
+    <div className="grid gap-2">
+      {(abilities ?? [])
+        .filter(a => a.kind === 'skill')
+        .map((a) => {
+          // Find full choice def (for description)
+          const choice = SKILL_UNLOCK_DEFS.find(d => d.name === a.name);
+
+          // Build visible options: always keep the current row's value at top if it’s not otherwise eligible
+          const notInList = !!a.name && !skillDisplayOptions.includes(a.name);
+          const displayOptions = notInList ? [a.name, ...skillDisplayOptions] : skillDisplayOptions;
+
+          return (
+            <div key={a.id} className="rounded-xl border border-white/10 p-3">
+              {/* compact header row: select + trash + show/hide */}
+              <div className="grid gap-1">
                 <div className="flex items-center gap-2">
                   <select
-                    className="h-7 text-sm rounded bg-white/10 px-2"
+                    className={compactSelect}
                     value={a.name}
                     onChange={(e) => {
-                      const next = (abilities ?? []).map(x => x.id === a.id ? { ...x, name: e.target.value } : x);
-                      onChange(next);
+                      // swap selected skill unlock choice
+                      patch(a.id, { name: e.target.value });
                     }}
-                    disabled={readOnly}
-                    title={def?.desc}
+                    disabled={readOnly || displayOptions.length === 0}
+                    title="Choose a skill unlock"
                   >
-                    {options.map(n => <option key={`${a.id}-${n}`} value={n}>{n}</option>)}
+                    {displayOptions.map((n, idx) => (
+                      <option key={`${a.id}-${idx}-${n}`} value={n}>
+                        {notInList && idx === 0 ? `${n} (not currently eligible)` : n}
+                      </option>
+                    ))}
                   </select>
 
-                  {/* Optional stack +/- if you use count on some skill unlocks */}
-                  {def?.stackMax != null && (
-                    <div className="ml-2 flex items-center gap-1">
-                      <Button size="icon" variant="ghost" onMouseDown={(e)=>e.preventDefault()}
-                        onClick={() => onChange((abilities ?? []).map(x =>
-                          x.id === a.id ? { ...x, count: Math.max(1, (x.count ?? 1) - 1) } : x
-                        ))}
-                        disabled={readOnly || (a.count ?? 1) <= 1}
-                        aria-label="Decrease stack"
-                      >-</Button>
-                      <span className="min-w-[1.25rem] text-center text-xs">{a.count ?? 1}</span>
-                      <Button size="icon" variant="ghost" onMouseDown={(e)=>e.preventDefault()}
-                        onClick={() => onChange((abilities ?? []).map(x =>
-                          x.id === a.id ? { ...x, count: Math.min(def.stackMax!, (x.count ?? 1) + 1) } : x
-                        ))}
-                        disabled={readOnly || (a.count ?? 1) >= (def.stackMax ?? Infinity)}
-                        aria-label="Increase stack"
-                      >+</Button>
-                    </div>
-                  )}
+                  {/* Remove (parity with Race) */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => remove(a.id)}
+                    disabled={readOnly}
+                    aria-label="Remove skill unlock"
+                    title="Remove"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
 
-                  {/* Trash (always allow removing non-defaults for skill/general) */}
-                  {!readOnly && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onMouseDown={(e)=>e.preventDefault()}
-                      onClick={() => onChange((abilities ?? []).filter(x => x.id !== a.id))}
-                      aria-label="Remove skill unlock"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                  {/* Show/Hide (parity with Race) */}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => toggle(a.id)}
+                    title={isOpen(a.id) ? 'Hide' : 'Show'}
+                  >
+                    {isOpen(a.id) ? 'Hide' : 'Show'}
+                  </Button>
                 </div>
-
-                {!!def?.desc && <div className="mt-1 text-xs text-white/70 whitespace-pre-line">{def.desc}</div>}
               </div>
-            );
-          })}
-        </div>
+
+              {/* rules text (parity with Race) */}
+              {isOpen(a.id) && (
+                <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
+                  {choice ? choice.desc : `No description found for "${a.name}".`}
+                </div>
+              )}
+            </div>
+          );
+        })}
+    </div>
+  )}
+</div>
 
 
-        {/* ---- GENERAL UNLOCKS ---- */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold uppercase text-white/80">General Unlocks</div>
-          </div>
 
-          {(abilities ?? []).filter(a => a.kind === 'general').map((a) => {
-            const def = GENERAL_UNLOCK_DEFS.find(d => d.name === a.name);
-            const options = [a.name, ...generalDisplayOptions.filter(n => n !== a.name)];
-            return (
-              <div key={a.id} className="rounded-md bg-white/5 p-2">
+        {/* GENERAL UNLOCKS */}
+<div className="space-y-2">
+  <div className="text-xs font-semibold uppercase text-white/80">General Unlocks</div>
+
+  {/* Empty state (parity with Race) */}
+  {(abilities ?? []).filter(a => a.kind === 'general').length === 0 && (
+    <div className="text-sm text-white/70">No general abilities added yet.</div>
+  )}
+
+  {(abilities ?? []).filter(a => a.kind === 'general').length > 0 && (
+    <div className="grid gap-2">
+      {(abilities ?? [])
+        .filter(a => a.kind === 'general')
+        .map((a) => {
+          // Find full def (for description)
+          const def = GENERAL_UNLOCK_DEFS.find(d => d.name === a.name);
+
+          // Build visible options: always keep the current row's value at top if it’s not otherwise eligible
+          const notInList = !!a.name && !generalDisplayOptions.includes(a.name);
+          const displayOptions = notInList ? [a.name, ...generalDisplayOptions] : generalDisplayOptions;
+
+          return (
+            <div key={a.id} className="rounded-xl border border-white/10 p-3">
+              {/* compact header row: select + trash + show/hide */}
+              <div className="grid gap-1">
                 <div className="flex items-center gap-2">
                   <select
-                    className="h-7 text-sm rounded bg-white/10 px-2"
+                    className={compactSelect}
                     value={a.name}
                     onChange={(e) => {
-                      const next = (abilities ?? []).map(x => x.id === a.id ? { ...x, name: e.target.value } : x);
-                      onChange(next);
+                      // swap selected general ability
+                      patch(a.id, { name: e.target.value });
                     }}
-                    disabled={readOnly}
-                    title={def?.desc}
+                    disabled={readOnly || displayOptions.length === 0}
+                    title="Choose a general ability"
                   >
-                    {options.map(n => <option key={`${a.id}-${n}`} value={n}>{n}</option>)}
+                    {displayOptions.map((n, idx) => (
+                      <option key={`${a.id}-${idx}-${n}`} value={n}>
+                        {notInList && idx === 0 ? `${n} (not currently eligible)` : n}
+                      </option>
+                    ))}
                   </select>
 
-                  {def?.stackMax != null && (
-                    <div className="ml-2 flex items-center gap-1">
-                      <Button size="icon" variant="ghost" onMouseDown={(e)=>e.preventDefault()}
-                        onClick={() => onChange((abilities ?? []).map(x =>
-                          x.id === a.id ? { ...x, count: Math.max(1, (x.count ?? 1) - 1) } : x
-                        ))}
-                        disabled={readOnly || (a.count ?? 1) <= 1}
-                        aria-label="Decrease stack"
-                      >-</Button>
-                      <span className="min-w-[1.25rem] text-center text-xs">{a.count ?? 1}</span>
-                      <Button size="icon" variant="ghost" onMouseDown={(e)=>e.preventDefault()}
-                        onClick={() => onChange((abilities ?? []).map(x =>
-                          x.id === a.id ? { ...x, count: Math.min(def.stackMax!, (x.count ?? 1) + 1) } : x
-                        ))}
-                        disabled={readOnly || (a.count ?? 1) >= (def.stackMax ?? Infinity)}
-                        aria-label="Increase stack"
-                      >+</Button>
-                    </div>
-                  )}
+                  {/* Remove (parity with Race) */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => remove(a.id)}
+                    disabled={readOnly}
+                    aria-label="Remove general ability"
+                    title="Remove"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
 
-                  {!readOnly && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onMouseDown={(e)=>e.preventDefault()}
-                      onClick={() => onChange((abilities ?? []).filter(x => x.id !== a.id))}
-                      aria-label="Remove general unlock"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                  {/* Show/Hide (parity with Race) */}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => toggle(a.id)}
+                    title={isOpen(a.id) ? 'Hide' : 'Show'}
+                  >
+                    {isOpen(a.id) ? 'Hide' : 'Show'}
+                  </Button>
                 </div>
-
-                {!!def?.desc && <div className="mt-1 text-xs text-white/70 whitespace-pre-line">{def.desc}</div>}
               </div>
-            );
-          })}
-        </div>
+
+              {/* rules text (parity with Race) */}
+              {isOpen(a.id) && (
+                <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
+                  {def ? def.desc : `No description found for "${a.name}".`}
+                </div>
+              )}
+            </div>
+          );
+        })}
+    </div>
+  )}
+</div>
 
       </CardContent>
     </Card>
