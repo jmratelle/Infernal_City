@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
+import { Lock, Unlock } from 'lucide-react';
+
 
 /**
  * Infernal City – Character Sheet (Applied Features)
@@ -323,16 +325,16 @@ export const RACE_ABILITIES: Record<RaceName, RaceAbilityDef[]> = {
     { name: 'Advanced Mutations', desc: `You may enhance your prior mutations. This ability may be selected multiple times, but you cannot choose the same enhancement twice, unless otherwise noted.\nRequirement: Abomination race.` },
 
     // Enhanced → require the base mutation + Advanced Mutations
-    { name: 'Enhanced Additional Arms', desc: `You have two additional arms, and once per round can perform one of the following actions without spending any AP:\n• A Martial Arts or weapon attack\n• A reload action\n• Use a consumable\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Additional Arms'] },
-    { name: 'Enhanced Additional Legs', desc: `You may move an additional Unit per AP spent on movement.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Additional Legs'] },
-    { name: 'Enhanced Compound Eyes',   desc: `You gain advantage on contested DCs using your Observation skill.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Compound Eyes'] },
-    { name: 'Enhanced Chromatophores',  desc: `Your ability to change the color of your skin now includes bioluminescence. You can make any part of your body or skin pattern glow in different colors; you can also make your eyes glow to imitate a Demon or Demonkin’s appearance.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Chromatophores'] },
-    { name: 'Enhanced Flesh Rending Claws', desc: `Increase the ArP of your Martial Arts attacks by one. This ability may be selected more than once.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Flesh-Rending Claws'] },
-    { name: 'Enhanced Toxic Skin',      desc: `Increase the X value of the Poisoned condition your Toxic Skin inflicts by two. This ability may be selected more than once.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Toxic Skin'] },
-    { name: 'Enhanced Regeneration',    desc: `You remove the Critical condition automatically after your first Critical Condition DC.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Regeneration'] },
-    { name: 'Enhanced Heat Vision',     desc: `You can see the heat signatures of the footprints or handprints of warm-blooded beings for up to two minutes after they were made.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Heat Vision'] },
-    { name: 'Enhanced Quills',          desc: `Your Quills explode out with explosive force. The Quills ability now works on any targets up to three Units away.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Quills'] },
-    { name: 'Enhanced Exoskeleton',     desc: `You gain an additional innate Armor Value against all damage types except Curse.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'Exoskeleton'] },
+    { name: 'Enhanced Additional Arms', desc: `You have two additional arms, and once per round can perform one of the following actions without spending any AP:\n• A Martial Arts or weapon attack\n• A reload action\n• Use a consumable\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Additional Arms'] },
+    { name: 'Enhanced Additional Legs', desc: `You may move an additional Unit per AP spent on movement.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Additional Legs'] },
+    { name: 'Enhanced Compound Eyes',   desc: `You gain advantage on contested DCs using your Observation skill.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Compound Eyes'] },
+    { name: 'Enhanced Chromatophores',  desc: `Your ability to change the color of your skin now includes bioluminescence. You can make any part of your body or skin pattern glow in different colors; you can also make your eyes glow to imitate a Demon or Demonkin’s appearance.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Chromatophores'] },
+    { name: 'Enhanced Flesh Rending Claws', desc: `Increase the ArP of your Martial Arts attacks by one. This ability may be selected more than once.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Flesh-Rending Claws'] },
+    { name: 'Enhanced Toxic Skin',      desc: `Increase the X value of the Poisoned condition your Toxic Skin inflicts by two. This ability may be selected more than once.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Toxic Skin'] },
+    { name: 'Enhanced Regeneration',    desc: `You remove the Critical condition automatically after your first Critical Condition DC.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Regeneration'] },
+    { name: 'Enhanced Heat Vision',     desc: `You can see the heat signatures of the footprints or handprints of warm-blooded beings for up to two minutes after they were made.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Heat Vision'] },
+    { name: 'Enhanced Quills',          desc: `Your Quills explode out with explosive force. The Quills ability now works on any targets up to three Units away.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Quills'] },
+    { name: 'Enhanced Exoskeleton',     desc: `You gain an additional innate Armor Value against all damage types except Curse.\nRequirement: Abomination race.`, requiresAll: ['Advanced Mutations', 'MUTATION: Exoskeleton'] },
   ],
 
   Altered: [
@@ -1817,7 +1819,9 @@ const IdentitySection: React.FC<{
   value: Character;
   onChange: (c: Character) => void;
   readOnly?: boolean;
-}> = ({ value, onChange, readOnly }) => {
+  raceLocked?: boolean;
+  onToggleRaceLock?: () => void;
+}> = ({ value, onChange, readOnly, raceLocked = false, onToggleRaceLock }) => {
   const idBase = useId();
   return (
     <Card className="shadow-sm bg-red-900">
@@ -1834,22 +1838,36 @@ const IdentitySection: React.FC<{
         </div>
         <div className="grid gap-2">
           <Label htmlFor={`${idBase}-race`}>Race</Label>
-          <select
-            id={`${idBase}-race`}
-            className="rounded-md border bg-background px-3 py-2 text-sm"
-            value={(value.race as RaceName) ?? ''}
-            onChange={(e) =>
-              onChange(set(value, 'race', (e.target.value || undefined) as RaceName | undefined))
-            }
-            disabled={readOnly}
+          <div className="flex items-center gap-2">
+            <select
+              id={`${idBase}-race`}
+              className="rounded-md border bg-background px-3 py-2 text-sm"
+              value={(value.race as RaceName) ?? ''}
+              onChange={(e) =>
+                onChange(set(value, 'race', (e.target.value || undefined) as RaceName | undefined))
+              }
+              disabled={readOnly || raceLocked}
+              title={raceLocked ? "Race is locked" : "Select race"}
+            >
+              <option value="" disabled>Select race…</option>
+              {RACE_OPTIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+
+            <Button
+            type="button"
+            size="sm"
+            className="bg-black text-white hover:bg-black/80"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onToggleRaceLock}
+            title={raceLocked ? "Click to allow editing your race" : "Click to lock your race"}
           >
-            <option value="" disabled>Select race…</option>
-            {RACE_OPTIONS.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+            {raceLocked ? "Edit Race" : "Lock Race"}
+          </Button>
+          </div>
         </div>
         <div className="grid gap-2">
           <Label htmlFor={`${idBase}-origin`}>Origin</Label>
@@ -3042,8 +3060,11 @@ const ConditionsPanel: React.FC<{
     name === 'Poisoned (Deadly)' ||
     name === 'Transformed';
 
+  const clampX = (x: number) => Math.max(0, Math.min(99, x | 0));
+
   const add = () =>
     onChange([...(entries || []), { id: makeId('cond'), name: 'Bleeding', severity: 1 }]);
+
   const remove = (id: string) => onChange((entries || []).filter((e) => e.id !== id));
 
   const ALL: ConditionName[] = [
@@ -3070,72 +3091,115 @@ const ConditionsPanel: React.FC<{
 
         <div className="space-y-4">
           {(entries || []).map((e, i) => (
-            <div key={e.id} className="space-y-2 rounded-md bg-black/20 p-3">
-              {/* First row: select + X + remove */}
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-7 items-center">
+            <div key={e.id} className="space-y-1 rounded-md bg-black/20 p-1">
+              {/* First row: select + X stepper (if applicable) */}
+              <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-7">
                 <select
                   className="md:col-span-4 rounded-md border bg-background px-3 py-2 text-sm text-white"
                   value={e.name}
                   onChange={(ev) => {
                     const name = ev.target.value as ConditionName;
                     const next = [...(entries || [])];
-                    next[i] = { ...e, name, severity: isX(name) ? (e.severity ?? 1) : undefined };
+                    next[i] = {
+                      ...e,
+                      name,
+                      // if this condition has an X value, ensure severity is defined (default to 1)
+                      severity: isX(name) ? (e.severity ?? 1) : undefined,
+                    };
                     onChange(next);
                   }}
                   disabled={readOnly}
                 >
                   {ALL.map((n) => (
-                    <option key={n} value={n}>{n}</option>
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
                   ))}
                 </select>
 
+                {/* X-based conditions: +/- stepper instead of typing */}
                 {isX(e.name) && (
-                  <Input
-                    className="md:col-span-2"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    placeholder="X"
-                    value={String(e.severity ?? 1)}
-                    onChange={(ev) => {
-                      const next = [...(entries || [])];
-                      next[i] = { ...e, severity: clamp(parseInt(ev.target.value || '0', 10), 0, 99) };
-                      onChange(next);
-                    }}
-                    disabled={readOnly}
-                  />
-                )}
+                  <div className="md:col-span-2 flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 w-7"
+                      onMouseDown={(ev) => ev.preventDefault()}
+                      onClick={() => {
+                        const next = [...(entries || [])];
+                        const cur = next[i];
+                        const newX = clampX((cur.severity ?? 0) - 1);
+                        next[i] = { ...cur, severity: newX };
+                        onChange(next);
+                      }}
+                      disabled={readOnly || (e.severity ?? 0) <= 0}
+                      title="Decrease"
+                      aria-label="Decrease"
+                    >
+                      –
+                    </Button>
 
+                    <div className="min-w-[2.25rem] rounded-md bg-white px-2 py-1 text-center text-sm text-black">
+                      {e.severity ?? 0}
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 w-7"
+                      onMouseDown={(ev) => ev.preventDefault()}
+                      onClick={() => {
+                        const next = [...(entries || [])];
+                        const cur = next[i];
+                        const newX = clampX((cur.severity ?? 0) + 1);
+                        next[i] = { ...cur, severity: newX };
+                        onChange(next);
+                      }}
+                      disabled={readOnly}
+                      title="Increase"
+                      aria-label="Increase"
+                    >
+                      +
+                    </Button>
+                  </div>
+                  
+                )}
+                {/* Remove button */}
+              <div className="md:col-span-1 flex justify-end">
+                <Button
+                  type="button"
+                  className="md:col-span-1 flex justify-end"
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => remove(e.id)}
+                  disabled={readOnly}
+                  aria-label="Remove condition"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
               </div>
 
               {/* Second row: rules description */}
               <div className="rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
                 {renderConditionText(e.name as ConditionName, e.severity)}
               </div>
-              <div className="md:col-span-1 flex justify-end">
-                  <Button
-                    type="button"
-                    onMouseDown={(ev) => ev.preventDefault()}
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => remove(e.id)}
-                    disabled={readOnly}
-                    aria-label="Remove condition"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+
             </div>
           ))}
-          
 
           {(entries || []).length === 0 && (
-            <div className="text-sm text-muted-foreground text-white">No conditions.</div>
+            <div className="text-sm text-white">No conditions.</div>
           )}
         </div>
       </CardContent>
     </Card>
   );
 };
+
 
 const AbilitiesPanel: React.FC<{
   abilities: AbilityEntry[];
@@ -3145,6 +3209,7 @@ const AbilitiesPanel: React.FC<{
   onChange: (next: AbilityEntry[]) => void;
   readOnly?: boolean;
 }> = ({ abilities, skillDefs, raceName, attrValues, onChange, readOnly }) => {
+
   const [showKindPicker, setShowKindPicker] = React.useState(false);
   const [pickingRace, setPickingRace] = React.useState(false);
   const [draftRaceAbility, setDraftRaceAbility] = React.useState<string>('');
@@ -4302,7 +4367,7 @@ const DEFAULT_REGISTRY: RulesRegistry = {
     { id: 'bluff', label: 'Bluff', group: 'specialized', min: 1, max: 5 },
     { id: 'bodybuilding', label: 'Bodybuilding', group: 'specialized', min: 1, max: 5 },
     { id: 'chemistry', label: 'Chemistry', group: 'specialized', min: 1, max: 5 },
-    { id: 'engineer', label: 'Engineer', group: 'specialized', min: 1, max: 5 },
+    { id: 'engineering', label: 'Engineering', group: 'specialized', min: 1, max: 5 },
     { id: 'fortitude', label: 'Fortitude', group: 'specialized', min: 1, max: 5 },
     { id: 'hacking', label: 'Hacking', group: 'specialized', min: 1, max: 5 },
     { id: 'hide', label: 'Hide', group: 'specialized', min: 1, max: 5 },
@@ -4371,6 +4436,7 @@ const DEFAULT_CHARACTER: Character = {
 // ---------- Main Component ----------
 export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) {
   const [tabValue, setTabValue] = useState("stats");
+  const [raceLocked, setRaceLocked] = React.useState(false);
   const [char, setChar] = useState<Character>(() => {
   if (props.value) return props.value;
   if (typeof window !== 'undefined') {
@@ -4503,7 +4569,7 @@ const commitMission = () => {
   return (
     <div className="mx-auto grid max-w-6xl gap-4 p-4">
 
-      <IdentitySection value={char} onChange={onChange} readOnly={readOnly} />
+      <IdentitySection value={char} onChange={onChange} readOnly={readOnly} raceLocked={raceLocked} onToggleRaceLock={() => setRaceLocked((v) => !v)}/>
 
       <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
         {/* Row with tabs + right-side button */}
