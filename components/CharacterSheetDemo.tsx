@@ -513,13 +513,13 @@ skill: "automatics",
 level: 4,
 choices: [
 {
-name: "Penetrating Barrage",
+name: "Penetrating Barrage (Automatics 4)",
 desc: "You may increase the ArP of consecutive attacks with an automatic weapon against the same target.",
 requiresSkillId: "automatics",
 requiresMinLevel: 4,
 },
 {
-name: "Spray and Pray",
+name: "Spray and Pray (Automatics 4)",
 desc: "You may make up to three attacks, spending one ammunition per attack, for your single two AP attack with an automatic weapon, but at a one Die Level penalty. These attacks can be against the same or multiple targets.",
 requiresSkillId: "automatics",
 requiresMinLevel: 4,
@@ -531,13 +531,13 @@ skill: "automatics",
 level: 5,
 choices: [
 {
-name: "Infinite Ammo",
+name: "Infinite Ammo (Automatics 5)",
 desc: "You may make a zero AP reload on an automatic weapon once per combat round.",
 requiresSkillId: "automatics",
 requiresMinLevel: 5,
 },
 {
-name: "Barrel Melter",
+name: "Barrel Melter (Automatics 5)",
 desc: "Your attacks with automatic weapons gain the Burn damage type.",
 requiresSkillId: "automatics",
 requiresMinLevel: 5,
@@ -549,13 +549,13 @@ skill: "droneOperation",
 level: 4,
 choices: [
 {
-name: "Split Mind",
+name: "Split Mind (Drone Operation 4)",
 desc: "You may control one additional drone. Each makes separate rolls and has separate AP.",
 requiresSkillId: "droneOperation",
 requiresMinLevel: 4,
 },
 {
-name: "Evasive Control",
+name: "Evasive Control (Drone Operation 4)",
 desc: "Drones gain an additional Die Level on their Reflex DCs while you control them.",
 requiresSkillId: "droneOperation",
 requiresMinLevel: 4,
@@ -567,13 +567,13 @@ skill: "droneOperation",
 level: 5,
 choices: [
 {
-name: "Swarm Tactics",
+name: "Swarm Tactics (Drone Operation 5)",
 desc: "You may control one additional drone. Each makes separate rolls and has separate AP.",
 requiresSkillId: "droneOperation",
 requiresMinLevel: 5,
 },
 {
-name: "Master of Efficiency",
+name: "Master of Efficiency (Drone Operation 5)",
 desc: "Drones you control get an additional AP during their turns.",
 requiresSkillId: "droneOperation",
 requiresMinLevel: 5,
@@ -585,13 +585,13 @@ skill: "marksman",
 level: 4,
 choices: [
 {
-name: "Camping",
+name: "Camping (Marksman 4)",
 desc: "If you didn’t move last round of combat, you may reload an equipped Marksman weapon once for zero AP.",
 requiresSkillId: "marksman",
 requiresMinLevel: 4,
 },
 {
-name: "Kill Shot",
+name: "Kill Shot (Marksman 4)",
 desc: "You may spend two AP to raise the Die Level of your next Marksman attack this turn by one Die Level.",
 requiresSkillId: "marksman",
 requiresMinLevel: 4,
@@ -603,13 +603,13 @@ skill: "marksman",
 level: 5,
 choices: [
 {
-name: "Head Shot",
+name: "Head Shot (Marksman 5)",
 desc: "If you land a critical hit against a mortal humanoid enemy with a marksman weapon, and that attack would inflict an injury, the target dies instead.",
 requiresSkillId: "marksman",
 requiresMinLevel: 5,
 },
 {
-name: "No Scope",
+name: "No Scope (Marksman 5)",
 desc: "You may decrease the lower ideal range of equipped marksman weapons to two units.",
 requiresSkillId: "marksman",
 requiresMinLevel: 5,
@@ -621,13 +621,13 @@ skill: "martialArts",
 level: 4,
 choices: [
 {
-name: "Circular Breathing",
+name: "Circular Breathing (Martial Arts 4)",
 desc: "Your Martial Arts attacks are reduced by one AP.",
 requiresSkillId: "martialArts",
 requiresMinLevel: 4,
 },
 {
-name: "Acupressure",
+name: "Acupressure (Martial Arts 4)",
 desc: "Anytime you hit with an attack using the Martial Arts skill, that target gains the Disorientated (2) condition.",
 requiresSkillId: "martialArts",
 requiresMinLevel: 4,
@@ -639,13 +639,13 @@ skill: "martialArts",
 level: 5,
 choices: [
 {
-name: "One Thousand Fists",
+name: "One Thousand Fists (Martial Arts 5)",
 desc: "Any time you make an attack using the Martial Arts skill, you may make additional zero AP attacks against any available adjacent targets.",
 requiresSkillId: "martialArts",
 requiresMinLevel: 5,
 },
 {
-name: "Piercing Ki",
+name: "Piercing Ki (Martial Arts 5)",
 desc: "Whenever you land a critical hit with an attack using the Martial Arts skill, the target does not get any Armor Saves for that attack.",
 requiresSkillId: "martialArts",
 requiresMinLevel: 5,
@@ -657,19 +657,19 @@ skill: "meleeWeapons",
 level: 4,
 choices: [
 {
-name: "Tameshigiri",
+name: "Tameshigiri (Melee Weapons 4)",
 desc: "Each time you inflict an injury with a melee weapon that has the Slash damage type, the target gains the Bleeding (2) condition.",
 requiresSkillId: "meleeWeapons",
 requiresMinLevel: 4,
 },
 {
-name: "Crusher",
+name: "Crusher (Melee Weapons 4)",
 desc: "Equipped melee weapons that have the Crush damage type increase their ArP by one.",
 requiresSkillId: "meleeWeapons",
 requiresMinLevel: 4,
 },
 {
-name: "Fencer",
+name: "Fencer (Melee Weapons 4)",
 desc: "Equipped melee weapons that have the Pierce damage type can hit targets up to two units away.",
 requiresSkillId: "meleeWeapons",
 requiresMinLevel: 4,
@@ -681,13 +681,13 @@ skill: "meleeWeapons",
 level: 5,
 choices: [
 {
-name: "Phalanx",
+name: "Phalanx (Melee Weapons 5)",
 desc: "The First time a target enters the range of your equipped melee weapon you may make a zero AP attack against them. If your attack would hit, regardless of Armor Save, that target must cease all movement available to it for the AP spent and loses two AP.",
 requiresSkillId: "meleeWeapons",
 requiresMinLevel: 5,
 },
 {
-name: "Decapitation",
+name: "Decapitation (Melee Weapons 5)",
 desc: "If you land a Critical hit against a mortal humanoid enemy with a melee weapon, and that attack would inflict an injury, the target dies instead.",
 requiresSkillId: "meleeWeapons",
 requiresMinLevel: 5,
@@ -699,13 +699,13 @@ skill: "pistols",
 level: 4,
 choices: [
 {
-name: "Two Hands are Better Than One",
+name: "Two Hands are Better Than One (Pistols 4)",
 desc: "You can dual-wield pistols. You may equip an additional pistol, and when making an attack with one pistol, you may attack with the other equipped pistol for one AP less than what the weapon’s normal attack requires.",
 requiresSkillId: "pistols",
 requiresMinLevel: 4,
 },
 {
-name: "Quickdraw",
+name: "Quickdraw (Pistols 4)",
 desc: "You may swap one pistol in your inventory with one of your equipped pistols for zero AP.",
 requiresSkillId: "pistols",
 requiresMinLevel: 4,
@@ -717,13 +717,13 @@ skill: "pistols",
 level: 5,
 choices: [
 {
-name: "Faster Than Lighting",
+name: "Faster Than Lighting (Pistols 5)",
 desc: "Once per combat round, you may make a zero AP attack with one of your equipped pistols.",
 requiresSkillId: "pistols",
 requiresMinLevel: 5,
 },
 {
-name: "Russian Roulette",
+name: "Russian Roulette (Pistols 5)",
 desc: "Whenever you make an attack with a pistol, roll a D6. On a six your attack automatically scores a critical hit.",
 requiresSkillId: "pistols",
 requiresMinLevel: 5,
@@ -735,13 +735,13 @@ skill: "propellants",
 level: 4,
 choices: [
 {
-name: "Bringer of Pain",
+name: "Bringer of Pain (Propellants 4)",
 desc: "If your equipped propellant weapon inflicts a condition, increase the X value of that condition by one.",
 requiresSkillId: "propellants",
 requiresMinLevel: 4,
 },
 {
-name: "Double Barrel",
+name: "Double Barrel (Propellants 4)",
 desc: "Increase the ammo of your equipped propellant weapon by one.",
 requiresSkillId: "propellants",
 requiresMinLevel: 4,
@@ -753,13 +753,13 @@ skill: "propellants",
 level: 5,
 choices: [
 {
-name: "Pressurized",
+name: "Pressurized (Propellants 5)",
 desc: "Increase the Ideal and max range of your equipped propellant weapons by one.",
 requiresSkillId: "propellants",
 requiresMinLevel: 5,
 },
 {
-name: "Tormentor",
+name: "Tormentor (Propellants 5)",
 desc: "If your equipped propellant weapon inflicts a condition, increase the X value of that condition by one.",
 requiresSkillId: "propellants",
 requiresMinLevel: 5,
@@ -771,13 +771,13 @@ skill: "shotguns",
 level: 4,
 choices: [
 {
-name: "Point Blank",
+name: "Point Blank (Shotguns 4)",
 desc: "Increase the Die Level of your attack DC by one when attacking a target within two Units.",
 requiresSkillId: "shotguns",
 requiresMinLevel: 4,
 },
 {
-name: "Propelling Force",
+name: "Propelling Force (Shotguns 4)",
 desc: "If you hit a target with a shotgun weapon, you may move them two Units away from your character. If the target was moving, its movement for that AP ends.",
 requiresSkillId: "shotguns",
 requiresMinLevel: 4,
@@ -789,13 +789,13 @@ skill: "shotguns",
 level: 5,
 choices: [
 {
-name: "Birdshot",
+name: "Birdshot (Shotguns 5)",
 desc: "Increase the ideal and max range of equipped shotguns by two Units.",
 requiresSkillId: "shotguns",
 requiresMinLevel: 5,
 },
 {
-name: "Slugs",
+name: "Slugs (Shotguns 5)",
 desc: "Increase the ArP of all equipped shotguns by one.",
 requiresSkillId: "shotguns",
 requiresMinLevel: 5,
@@ -807,13 +807,13 @@ skill: "shurikens",
 level: 4,
 choices: [
 {
-name: "Aim for the Gaps",
+name: "Aim for the Gaps (Shurikens 4)",
 desc: "Each time you roll a critical hit against a target using a Shuriken weapon, your target doesn't get an Armor Save against your attack.",
 requiresSkillId: "shurikens",
 requiresMinLevel: 4,
 },
 {
-name: "Duel Throwing",
+name: "Duel Throwing (Shurikens 4)",
 desc: "You can throw shurikens from both hands, whenever you make an attack using the Shuriken skill, you may make another attack for one AP.",
 requiresSkillId: "shurikens",
 requiresMinLevel: 4,
@@ -825,13 +825,13 @@ skill: "shurikens",
 level: 5,
 choices: [
 {
-name: "Skewered",
+name: "Skewered (Shurikens 5)",
 desc: "Shuriken weapon attacks that result in a hit give the Impaled (1) condition.",
 requiresSkillId: "shurikens",
 requiresMinLevel: 5,
 },
 {
-name: "Bleed Them Dry",
+name: "Bleed Them Dry (Shurikens 5)",
 desc: "If one of your attacks using the Shuriken skill would cause an injury against a target they also gain the Bleeding (2) Condition.",
 requiresSkillId: "shurikens",
 requiresMinLevel: 5,
@@ -2267,11 +2267,20 @@ const AbilitiesPanel: React.FC<{
   const [showKindPicker, setShowKindPicker] = React.useState(false);
   const [pickingRace, setPickingRace] = React.useState(false);
   const [draftRaceAbility, setDraftRaceAbility] = React.useState<string>('');
+  
+  // Inline “add” pickers
+  const [addingSkill, setAddingSkill] = React.useState(false);
+  const [addingSkillChoice, setAddingSkillChoice] = React.useState<string | undefined>(undefined);
+
+  const [addingGeneral, setAddingGeneral] = React.useState(false);
+  const [addingGeneralChoice, setAddingGeneralChoice] = React.useState<string | undefined>(undefined);
+  
+
   const rowClass =
    "flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5";
   const labelClass = "text-[12px] text-white";
   const compactSelect =
-  "h-8 w-51 text-xs px-2 py-0.5 leading-tight rounded-md border border-white/20 bg-background focus:outline-none focus-visible:ring-0";
+  "h-8 w-70 text-xs px-2 py-0.5 leading-tight rounded-md border border-white/20 bg-background focus:outline-none focus-visible:ring-0";
   const raceDefs: RaceAbilityDef[] = raceName ? (RACE_ABILITIES[raceName] ?? []) : [];
   const byName = new Map(raceDefs.map(d => [d.name, d]));
   const isDefaultEntry = (x: AbilityEntry) => !!byName.get(x.name)?.auto;
@@ -2288,6 +2297,15 @@ const AbilitiesPanel: React.FC<{
 
   // Auto-populate defaults whenever the selected race changes
   const prevRaceRef = React.useRef<RaceName | undefined>(undefined);
+  // Minimal add helper — adjust to your data shape if needed
+  const addAbilityRow = (kind: 'skill' | 'general', name: string) => {
+  // If you have a context/store mutation, call it instead of setState below.
+  add({
+    id: makeId('ab'),
+    kind,
+    name,
+  });
+};
 
   React.useEffect(() => {
     if (!raceName) {
@@ -2436,6 +2454,17 @@ const meetsSkillUnlockPrereqs = (choice?: SkillUnlockChoice) => {
   return true;
 };
 
+// Map each skill choice name -> its (skill, level) group using requiresSkillId/requiresMinLevel
+const SKILL_CHOICE_GROUP = React.useMemo(() => {
+  const m = new Map<string, { skill: string; level: number }>();
+  for (const c of SKILL_UNLOCK_DEFS) {
+    if (c.requiresSkillId && c.requiresMinLevel != null) {
+      m.set(c.name, { skill: c.requiresSkillId, level: c.requiresMinLevel });
+    }
+  }
+  return m;
+}, [SKILL_UNLOCK_DEFS]);
+
 
 // Gating for general unlocks
 const meetsGeneralUnlockPrereqs = (def?: GeneralUnlockDef) => {
@@ -2459,15 +2488,48 @@ const meetsGeneralUnlockPrereqs = (def?: GeneralUnlockDef) => {
 };
 
 // Display lists that hide already-chosen choices and those that fail prereqs
-const skillDisplayOptions = SKILL_UNLOCK_DEFS
-  .filter(d => !chosenSkillNames.has(d.name))           // hide already chosen
-  .filter(d => meetsSkillUnlockPrereqs(d))               // hide if not eligible
-  .map(d => d.name);
+// Build options for a specific Skill row, letting the current row's selection remain selectable
+const skillDisplayOptionsFor = (currentId: string, currentName?: string) => {
+  // Names picked by other skill rows
+  const pickedByOthers = new Set(
+    (abilities ?? [])
+      .filter(a => a.kind === 'skill' && a.id !== currentId)
+      .map(a => a.name)
+  );
 
-const generalDisplayOptions = GENERAL_UNLOCK_DEFS
-  .filter(d => !chosenGeneralNames.has(d.name))
-  .filter(d => meetsGeneralUnlockPrereqs(d))
-  .map(d => d.name);
+  // Which (skill,level) groups are already taken by other rows?
+  const groupsTaken = new Set<string>();
+  for (const n of pickedByOthers) {
+    const grp = SKILL_CHOICE_GROUP.get(n);
+    if (grp) groupsTaken.add(`${grp.skill}:${grp.level}`);
+  }
+
+   return SKILL_UNLOCK_DEFS
+    .filter(choice => {
+      if (!meetsSkillUnlockPrereqs(choice)) return false;
+      const grp = SKILL_CHOICE_GROUP.get(choice.name);
+      if (!grp) return false;
+      const key = `${grp.skill}:${grp.level}`;
+      if (groupsTaken.has(key)) return false;
+      if (pickedByOthers.has(choice.name)) return false;
+      return true;
+    })
+    .map(c => c.name);
+};
+
+// Build options for a specific General row, letting the current row's selection remain selectable
+const generalDisplayOptionsFor = (currentId: string, currentName?: string) => {
+  const pickedByOthers = new Set(
+    (abilities ?? [])
+      .filter(a => a.kind === 'general' && a.id !== currentId)
+      .map(a => a.name)
+  );
+
+  return GENERAL_UNLOCK_DEFS
+    .filter(def => meetsGeneralUnlockPrereqs(def))
+    .filter(def => !pickedByOthers.has(def.name))
+    .map(def => def.name);
+};
 
   const meetsPrereqs = (def?: RaceAbilityDef) => {
   if (!def) return false;
@@ -2681,21 +2743,47 @@ const canAddName = (name: string) => {
                 size="sm"
                 variant="secondary"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => add({ id: makeId('ab'), kind: 'general', name: '', notes: '' })}
-                disabled={readOnly}
+                onClick={() => {
+                  const isOpen = addingGeneral;
+                  if (isOpen) {
+                    // closing
+                    setAddingGeneral(false);
+                    setAddingGeneralChoice(undefined);
+                  } else {
+                    // opening: preselect first eligible option
+                    const opts = generalDisplayOptionsFor("new-general");
+                    setAddingGeneral(true);
+                    setAddingGeneralChoice(opts[0] ?? undefined);
+                  }
+                }}
+                
               >
-                General Unlock
+                Add General
               </Button>
+
               <Button
                 type="button"
                 size="sm"
                 variant="secondary"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => add({ id: makeId('ab'), kind: 'skill', name: '', linkedSkillId: skillDefs[0]?.id, notes: '' })}
-                disabled={readOnly || skillDefs.length === 0}
+                onClick={() => {
+                  const isOpen = addingSkill;
+                  if (isOpen) {
+                    // closing
+                    setAddingSkill(false);
+                    setAddingSkillChoice(undefined);
+                  } else {
+                    // opening: preselect first eligible option
+                    const opts = skillDisplayOptionsFor("new-skill");
+                    setAddingSkill(true);
+                    setAddingSkillChoice(opts[0] ?? undefined);
+                  }
+                }}
+              
               >
-                Skill Unlock
+                Add Skill
               </Button>
+
               <Button
                 type="button"
                 size="sm"
@@ -2829,103 +2917,73 @@ const canAddName = (name: string) => {
         <div className="space-y-2">
           <div className="text-xs font-semibold uppercase text-white/80">Race Acquired</div>
 
-          {!raceName && <div className="text-sm text-white/70">Select a race to use race abilities.</div>}
-          {raceName && raceUnlocks.length === 0 && <div className="text-sm text-white/70">No race abilities added yet.</div>}
+          {!raceName && <div className="mt-2 mb-4 text-sm text-white/70">Select a race to use race abilities.</div>}
+          {raceName && raceUnlocks.length === 0 && <div className="mt-2 mb-4 text-sm text-white/70">No race abilities added yet.</div>}
 
           {raceName && raceUnlocks.length > 0 && (
             <div className="grid gap-2">
               {raceUnlocks.map((a) => {
-                const def     = byName.get(a.name);
+                const def = byName.get(a.name);
                 const isAutoDefault = !!def?.auto;
-                // Hide abilities already chosen on other rows; always keep the current row's name
-                const optionPool = raceDefs
-                  .map(d => d.name)
-                  .filter(n => !pickedRaceNames.has(n) || n === a.name);
-                const notInList = !!a.name && !optionPool.includes(a.name);
-                const displayOptions = notInList ? [a.name, ...optionPool] : optionPool;
-                const visibleOptions = displayOptions.filter((n, idx) => {
-                if (notInList && idx === 0) return true;   // keep sentinel when current choice isn’t in list
-                if (n === a.name) return true;             // always keep the current row’s choice
-                return !optionDisabled(a.name, n);         // drop anything that would be disabled
-                });
+
                 return (
                   <div key={a.id} className="rounded-xl border border-white/10 p-3">
-                    {/* compact header row: select + default pill + trash */}
+                    {/* header row: static label + (Default pill) + Remove + Show/Hide */}
                     <div className="grid gap-1">
-                      
-                      <div className="flex items-center gap-2">
-                        
-                        <select
-                          className={compactSelect}
-                          value={a.name}
-                          onChange={(e) => {
-                            if (isAutoDefault) return; // locked if default
-                            patch(a.id, { name: e.target.value });
-                          }}
-                          disabled={readOnly || isAutoDefault || displayOptions.length === 0}
-                          title={isAutoDefault ? "Default race ability (locked)" : undefined}
-                        >
-                          {visibleOptions.map((n, idx) => (
-                          <option key={`${a.id}-${idx}-${n}`} value={n}>
-                            {notInList && idx === 0 ? `${n} (not in ${raceName})` : n}
-                          </option>
-                        ))}
-                        </select>
+                      <div className="flex items-center justify-between gap-2">
+                        {/* LEFT: static name (no dropdown) */}
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-semibold text-white">{a.name}</div>
 
-                        {isAutoDefault && (
-                          <span className="rounded-full bg-white/10 px-1.5 py-[2px] text-[10px] leading-none">
-                            Default
-                          </span>
-                        )}
+                          {/* Default pill (locked) */}
+                          {isAutoDefault && (
+                            <span className="rounded-full bg-white/10 px-1.5 py-[2px] text-[10px] leading-none">
+                              Default
+                            </span>
+                          )}
+                        </div>
 
-                        {!isAutoDefault && (
+                        {/* RIGHT: actions */}
+                        <div className="flex items-center gap-2">
+                          {/* Remove only if not default */}
+                          {!isAutoDefault && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => remove(a.id)} // or safeRemove(a.id) if you prefer
+                              disabled={readOnly}
+                              aria-label="Remove race ability"
+                              title="Remove"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+
                           <Button
                             type="button"
+                            size="sm"
                             variant="ghost"
-                            size="icon"
                             onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => remove(a.id)}  // or safeRemove(a.id) if you added it
-                            disabled={readOnly}
-                            aria-label="Remove race ability"
-                            title="Remove"
+                            onClick={() => toggle(a.id)}
+                            title={isOpen(a.id) ? 'Hide' : 'Show'}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {isOpen(a.id) ? 'Hide' : 'Show'}
                           </Button>
-                        )}
-                        <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => toggle(a.id)}
-                        title={isOpen(a.id) ? 'Hide' : 'Show'}
-                      >
-                        {isOpen(a.id) ? 'Hide' : 'Show'}
-                      </Button>
+                        </div>
                       </div>
                     </div>
 
                     {/* rules text */}
                     {isOpen(a.id) && (
-                    <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
-                      {def ? renderDesc(def) : `No description found for "${a.name}"${raceName ? ` in ${raceName}` : ''}.`}
-                    </div>
-                  )}
+                      <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
+                        {def ? renderDesc(def) : `No description found for "${a.name}"${raceName ? ` in ${raceName}` : ''}.`}
+                      </div>
+                    )}
                   </div>
                 );
               })}
-            </div>
-          )}
-
-          {/* Rule warnings */}
-          {raceName === 'Abomination' && !abomOK && (
-            <div className="text-xs text-amber-200/90">
-              Abomination rule: choose <b>1–3</b> abilities from the Mutations list.
-            </div>
-          )}
-          {raceName === 'Altered' && !alteredOK && (
-            <div className="text-xs text-amber-200/90">
-              Altered rule: choose <b>exactly 1</b> core power (Electrokinesis, Perfect Reflexes, or ESP).
             </div>
           )}
         </div>
@@ -2934,9 +2992,60 @@ const canAddName = (name: string) => {
 <div className="space-y-2">
   <div className="text-xs font-semibold uppercase text-white/80">Skill Unlocks</div>
 
+  {/* Inline “Add Skill Unlock” picker */}
+{addingSkill && (
+  <div className="rounded-xl border border-white/10 p-3">
+    <div className="flex items-center gap-2">
+      <select
+        className={compactSelect}
+        value={addingSkillChoice ?? ""}
+        onChange={(e) => setAddingSkillChoice(e.target.value || undefined)}
+        title="Select a skill unlock to add"
+      >
+        {/* Optional: you can drop the disabled placeholder now that we auto-pick the first option */}
+        {/* <option value="" disabled>— Select a skill unlock —</option> */}
+        {skillDisplayOptionsFor("new-skill").map((n, idx) => (
+          <option key={`new-skill-${idx}-${n}`} value={n}>{n}</option>
+        ))}
+      </select>
+
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          if (!addingSkillChoice) return;
+          // ADD A ROW with this choice name
+          // If you have an existing add() helper, use that instead.
+          addAbilityRow("skill", addingSkillChoice);
+          setAddingSkill(false);
+          setAddingSkillChoice(undefined);
+        }}
+        disabled={!addingSkillChoice}
+      >
+        Add
+      </Button>
+
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          setAddingSkill(false);
+          setAddingSkillChoice(undefined);
+        }}
+      >
+        Cancel
+      </Button>
+    </div>
+  </div>
+)}
+
   {/* Empty state (parity with Race) */}
   {(abilities ?? []).filter(a => a.kind === 'skill').length === 0 && (
-    <div className="text-sm text-white/70">No skill unlocks added yet.</div>
+    <div className="mt-2 mb-4 text-sm text-white/70">No skill unlocks added yet.</div>
   )}
 
   {(abilities ?? []).filter(a => a.kind === 'skill').length > 0 && (
@@ -2948,63 +3057,49 @@ const canAddName = (name: string) => {
           const choice = SKILL_UNLOCK_DEFS.find(d => d.name === a.name);
 
           // Build visible options: always keep the current row's value at top if it’s not otherwise eligible
-          const notInList = !!a.name && !skillDisplayOptions.includes(a.name);
-          const displayOptions = notInList ? [a.name, ...skillDisplayOptions] : skillDisplayOptions;
+          const displayOptions = skillDisplayOptionsFor(a.id, a.name);
 
           return (
             <div key={a.id} className="rounded-xl border border-white/10 p-3">
-              {/* compact header row: select + trash + show/hide */}
+              {/* header row: static label + remove + show/hide */}
               <div className="grid gap-1">
-                <div className="flex items-center gap-2">
-                  <select
-                    className={compactSelect}
-                    value={a.name}
-                    onChange={(e) => {
-                      // swap selected skill unlock choice
-                      patch(a.id, { name: e.target.value });
-                    }}
-                    disabled={readOnly || displayOptions.length === 0}
-                    title="Choose a skill unlock"
-                  >
-                    {displayOptions.map((n, idx) => (
-                      <option key={`${a.id}-${idx}-${n}`} value={n}>
-                        {notInList && idx === 0 ? `${n} (not currently eligible)` : n}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex items-center justify-between gap-2">
+                  {/* LEFT: static name (no dropdown) */}
+                  <div className="text-sm font-semibold text-white">{a.name}</div>
 
-                  {/* Remove (parity with Race) */}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => remove(a.id)}
-                    disabled={readOnly}
-                    aria-label="Remove skill unlock"
-                    title="Remove"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {/* RIGHT: actions */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => remove(a.id)}
+                      disabled={readOnly}
+                      aria-label="Remove skill unlock"
+                      title="Remove"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
 
-                  {/* Show/Hide (parity with Race) */}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => toggle(a.id)}
-                    title={isOpen(a.id) ? 'Hide' : 'Show'}
-                  >
-                    {isOpen(a.id) ? 'Hide' : 'Show'}
-                  </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => toggle(a.id)}
+                      title={isOpen(a.id) ? 'Hide' : 'Show'}
+                    >
+                      {isOpen(a.id) ? 'Hide' : 'Show'}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              {/* rules text (parity with Race) */}
+              {/* rules text */}
               {isOpen(a.id) && (
                 <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
-                  {choice ? choice.desc : `No description found for "${a.name}".`}
+                  {SKILL_UNLOCK_DEFS.find(d => d.name === a.name)?.desc ?? `No description found for "${a.name}".`}
                 </div>
               )}
             </div>
@@ -3020,9 +3115,59 @@ const canAddName = (name: string) => {
 <div className="space-y-2">
   <div className="text-xs font-semibold uppercase text-white/80">General Unlocks</div>
 
+  {/* Inline “Add General Ability” picker */}
+{addingGeneral && (
+  <div className="rounded-xl border border-white/10 p-3">
+    <div className="flex items-center gap-2">
+      <select
+        className={compactSelect}
+        value={addingGeneralChoice ?? ""}
+        onChange={(e) => setAddingGeneralChoice(e.target.value || undefined)}
+        title="Select a general ability to add"
+      >
+        {/* <option value="" disabled>— Select a general ability —</option> */}
+        {generalDisplayOptionsFor("new-general").map((n, idx) => (
+          <option key={`new-general-${idx}-${n}`} value={n}>{n}</option>
+        ))}
+      </select>
+
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          if (!addingGeneralChoice) return;
+          // ⬇️ ADD A ROW with this choice name
+          addAbilityRow("general", addingGeneralChoice);
+          setAddingGeneral(false);
+          setAddingGeneralChoice(undefined);
+        }}
+        disabled={!addingGeneralChoice}
+      >
+        Add
+      </Button>
+
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          setAddingGeneral(false);
+          setAddingGeneralChoice(undefined);
+        }}
+      >
+        Cancel
+      </Button>
+    </div>
+  </div>
+)}
+
+
   {/* Empty state (parity with Race) */}
   {(abilities ?? []).filter(a => a.kind === 'general').length === 0 && (
-    <div className="text-sm text-white/70">No general abilities added yet.</div>
+    <div className="mt-2 mb-4 text-sm text-white/70">No general abilities added yet.</div>
   )}
 
   {(abilities ?? []).filter(a => a.kind === 'general').length > 0 && (
@@ -3034,63 +3179,50 @@ const canAddName = (name: string) => {
           const def = GENERAL_UNLOCK_DEFS.find(d => d.name === a.name);
 
           // Build visible options: always keep the current row's value at top if it’s not otherwise eligible
-          const notInList = !!a.name && !generalDisplayOptions.includes(a.name);
-          const displayOptions = notInList ? [a.name, ...generalDisplayOptions] : generalDisplayOptions;
+          const displayOptions = generalDisplayOptionsFor(a.id, a.name);
 
           return (
             <div key={a.id} className="rounded-xl border border-white/10 p-3">
               {/* compact header row: select + trash + show/hide */}
+              {/* header row: static label + remove + show/hide */}
               <div className="grid gap-1">
-                <div className="flex items-center gap-2">
-                  <select
-                    className={compactSelect}
-                    value={a.name}
-                    onChange={(e) => {
-                      // swap selected general ability
-                      patch(a.id, { name: e.target.value });
-                    }}
-                    disabled={readOnly || displayOptions.length === 0}
-                    title="Choose a general ability"
-                  >
-                    {displayOptions.map((n, idx) => (
-                      <option key={`${a.id}-${idx}-${n}`} value={n}>
-                        {notInList && idx === 0 ? `${n} (not currently eligible)` : n}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex items-center justify-between gap-2">
+                  {/* LEFT: static name (no dropdown) */}
+                  <div className="text-sm font-semibold text-white">{a.name}</div>
 
-                  {/* Remove (parity with Race) */}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => remove(a.id)}
-                    disabled={readOnly}
-                    aria-label="Remove general ability"
-                    title="Remove"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {/* RIGHT: actions */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => remove(a.id)}
+                      disabled={readOnly}
+                      aria-label="Remove general ability"
+                      title="Remove"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
 
-                  {/* Show/Hide (parity with Race) */}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => toggle(a.id)}
-                    title={isOpen(a.id) ? 'Hide' : 'Show'}
-                  >
-                    {isOpen(a.id) ? 'Hide' : 'Show'}
-                  </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => toggle(a.id)}
+                      title={isOpen(a.id) ? 'Hide' : 'Show'}
+                    >
+                      {isOpen(a.id) ? 'Hide' : 'Show'}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              {/* rules text (parity with Race) */}
+              {/* rules text */}
               {isOpen(a.id) && (
                 <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
-                  {def ? def.desc : `No description found for "${a.name}".`}
+                  {GENERAL_UNLOCK_DEFS.find(d => d.name === a.name)?.desc ?? `No description found for "${a.name}".`}
                 </div>
               )}
             </div>
