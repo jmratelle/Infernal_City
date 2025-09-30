@@ -506,7 +506,18 @@ requiresSkillLevels?: Record<string, number>;   // specific skillId -> min level
 stackable?: boolean; 
 stackMax?: number;
 requiresAllAbilities?: string[];
+requiresAnySkillIds?: string[];   // OR of multiple skills
+
 }
+// Skill ID bundles for gating
+const COMBAT_SKILLS = [
+  'automatics','droneOperation','martialArts','marksman','meleeWeapons',
+  'pistols','propellants','shotguns','shurikens',
+];
+
+const RANGED_SKILLS = [
+  'automatics','marksman','pistols','propellants','shotguns','shurikens',
+];
 
 // Seed a few examples so the UI is wired. Replace with your real lists later.
 export const SKILL_UNLOCK_DEF: SkillUnlockDef[] = [
@@ -1726,10 +1737,443 @@ requiresMinLevel: 5,
 export const SKILL_UNLOCK_DEFS: SkillUnlockChoice[] =
   SKILL_UNLOCK_DEF.flatMap(u => u.choices);
 
+// ---------- General Acquired Abilities ----------
 export const GENERAL_UNLOCK_DEFS: GeneralUnlockDef[] = [
-  { name: 'Field Medic', desc: 'Once/mission, treat 1 injury on ally adjacent as free action.' },
-  { name: 'Tactician', desc: 'Once/round, grant ally +1 Die Level to a DC as a free action.' },
-  { name: 'Pack Mule', desc: '+5 carry capacity. Stack up to 3.' },
+  {
+    name: "Suppressing Fire",
+    desc: "Requires a ranged weapon. Spend 2 ammo and 1 AP to suppress a target. They take −1 Die Level to any action while staying in that space; if they move from that spot, you may make a free attack with your equipped weapon.",
+  },
+  {
+    name: "Kamikaze Directive",
+    desc: "If one of your drones would be destroyed, it may immediately move up to 2 Units and attempt a suicidal attack using Drone Operation (Crush + Electric, ArP 1).",
+    requiresSkillId: "droneOperation",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Demolisher",
+    desc: "When you hit a target behind cover, if the cover’s Armor Value is less than the difference between your contested DC, destroy that cover at the end of injury allocation.",
+  },
+  {
+    name: "Shrapnel",
+    desc: "When your attack destroys cover, make a free attack roll using that attack's combat skill against all adjacent targets of that cover (Crush, ArP 1).",
+    requiresAllAbilities: ["Demolisher"],
+  },
+  {
+    name: "Defensive Stance",
+    desc: "Spend 2 AP to gain advantage on Reflex DCs until the start of your next turn.",
+    requiresSkillId: "reflex",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Matching Movements",
+    desc: "At the end of your turn, recover 1 AP to your action pool.",
+  },
+  {
+    name: "Spiritually Attuned",
+    desc: "Gain 1 innate Armor Value against the Curse damage type.",
+  },
+  {
+    name: "Base Competency",
+    desc: "If a Die Level penalty would cause you to roll with disadvantage, instead roll at Die Level 1.",
+  },
+  {
+    name: "Heavy Armor Proficiency",
+    desc: "You no longer suffer the −1 Die Level penalty on Reflex DCs for wearing light armor.",
+    requiresSkillId: "bodybuilding",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Explosive Leaping",
+    desc: "Double your free jumping distance.",
+    requiresSkillId: "parkour",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Learn from Mistakes",
+    desc: "Each time you fail a Specialized Skill DC for a specific action (e.g., the same door or stabilize attempt), the next attempt on that same DC gets +1 Die Level. Does not stack and ends once you succeed.",
+  },
+  {
+    name: "Mentorship",
+    desc: "When an ally within 3 Units performs a Specialized Skill DC with a lower skill level than yours, they gain +1 Die Level to that Specialized Skill DC.",
+  },
+  {
+    name: "Emergency Resuscitation",
+    desc: "Attempt to revive one dead target by making a Medical DC (once per target per turn, within 1 round of death). The revived target keeps any injuries/conditions they had upon death.",
+    requiresSkillId: "medical",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Industry Contact",
+    desc: "Pick a Hellcorp or industry (e.g., Entertainment, Medical, Food Services). You now have a contact there for information, aid, or services. Can be taken multiple times for different choices.",
+  },
+  {
+    name: "Underworld Contact",
+    desc: "You have the favor of a violent/intimidation group. For a job-dependent fee they can: provide a getaway, gather intel (e.g., NPC location), or rough up/intimidate a target.",
+  },
+  {
+    name: "The Don’s Favor",
+    desc: "Request a major favor from a powerful crime lord; you will then owe an equally important favor. No new favors until the prior one is repaid.",
+    requiresAllAbilities: ["Underworld Contact"],
+  },
+  {
+    name: "Good First Impression",
+    desc: "If you succeed on your first Persuasion DC against an NPC, gain +1 Die Level to all future Persuasion DCs against that NPC.",
+  },
+  {
+    name: "Wall Run",
+    desc: "Freely move 1 Unit across a flat, vertical surface as part of movement.",
+  },
+  {
+    name: "Overwatch",
+    desc: "Any time a valid target makes a movement action, you may spend 2 AP to make a ranged attack at any point of their interrupted movement (e.g., when out of cover). Target resumes movement after your attack.",
+  },
+  {
+    name: "Ambush Predator",
+    desc: "Reduce Overwatch AP cost by 1.",
+    requiresAllAbilities: ["Overwatch"],
+  },
+  {
+    name: "Tactical Reload",
+    desc: "Reduce reload AP cost by 1 (min 1).",
+  },
+  {
+    name: "Pack Tactics",
+    desc: "Each time a friendly character attacks the same target in a turn as another with Pack Tactics, increase the attack DC’s Die Level by 1. Stacks with other Pack Tactics.",
+  },
+  {
+    name: "Hunter’s Zen",
+    desc: "Spend 2 AP to steady yourself (Focus). While you maintain focus and don’t move from your space, you gain advantage on each attack DC you make.",
+  },
+  {
+    name: "One Shot One Kill",
+    desc: "If a target dies from your attack, gain 2 AP. Triggers at most once per round.",
+  },
+  {
+    name: "Zone of Control",
+    desc: "Make a 0 AP Martial Arts or melee attack against any target that leaves your melee attack range.",
+  },
+  {
+  name: "Disarming Strike",
+  desc: "When you make a melee attack that hits, you may spend 1 AP to attempt to disarm. Make a contested Martial Arts DC; on success the weapon drops to an adjacent space and costs 2 AP to re-equip.",
+  requiresAnySkillIds: ['meleeWeapons','martialArts'],
+  requiresMinLevel: 4,
+},
+  {
+    name: "Parry",
+    desc: "Spend 1 AP when attacked by a melee attack to use Martial Arts or Melee Weapons instead of Reflex. If you roll higher than the incoming attack, you avoid it and your roll counts as an attack against them.",
+  },
+  {
+    name: "Ranged Parry",
+    desc: "You may use Parry on ranged attacks.",
+    requiresAllAbilities: ["Parry"],
+  },
+  {
+    name: "Extended Accuracy",
+    desc: "Increase the ideal range of ranged combat weapons by 1 Unit.",
+  },
+  {
+    name: "Wall Hugger",
+    desc: "While adjacent to cover, you cannot be flanked unless attacked from directly behind.",
+  },
+  {
+    name: "Reversal",
+    desc: "When an enemy’s melee attack against you misses, you may move that enemy 1 Unit away. Can trigger Zone of Control.",
+  },
+  {
+    name: "Thrill of Combat",
+    desc: "Every attack made against you grants you +1 AP on your following turn.",
+  },
+  {
+  name: "Trickshot",
+  desc: "Make a ranged attack against an enemy in cover by banking a shot off another surface within range to create a flanking line. Only valid if your ArP does not exceed the Armor Value of the surface you bank off.",
+  requiresAnySkillIds: RANGED_SKILLS,
+  requiresMinLevel: 4,
+},
+  {
+  name: "Qi Aura",
+  desc: "Increase the range of all melee attacks by 1 Unit.",
+  requiresAnySkillIds: ['meleeWeapons','martialArts'],
+  requiresMinLevel: 5,
+},
+  {
+  name: "Precision",
+  desc: "Choose a combat skill at level 4+. You now crit with that skill if the DC difference is 4 or higher.",
+  requiresAnySkillIds: COMBAT_SKILLS,
+  requiresMinLevel: 4,
+},
+  // Arcane
+  {
+    name: "The Sight (Arcane)",
+    desc: "Always see the aura of enchanted or magically affected items within 1 Unit.",
+  },
+  {
+    name: "Summoning Circle (Arcane)",
+    desc: "2 AP: Arcane DC to create a 1-Unit circle on a surface within 1 Unit. Max circles = Arcane level + 1 (oldest evaporates if exceeded). Spend 1 AP to summon a non-living object < 240 kg (500 lb) from a prepared location into the circle.",
+  },
+  {
+    name: "Alarming Circle (Arcane)",
+    desc: "2 AP: Arcane DC to create a 1-Unit circle that triggers on pass/approach (front/under/over). On trigger: loud sound, 5-word message in your voice, or a flash of colored light. Max circles = Arcane + 1 (oldest evaporates).",
+  },
+  {
+    name: "Sealing Circle (Arcane)",
+    desc: "2 AP: Arcane DC to place a circle on a door/container/closeable object. Opening requires a contested Arcane DC vs you; on failure it stays closed (still destructible). Max circles = Arcane + 1.",
+  },
+  {
+    name: "The Way is Shut (Arcane)",
+    desc: "Your Sealing Circle grants +3 Armor Value vs all damage types to that door/object.",
+    requiresAllAbilities: ["Sealing Circle (Arcane)"],
+  },
+  {
+    name: "Blasting Circle (Arcane)",
+    desc: "2 AP: Arcane DC to place a 1-Unit circle that triggers an AOE 1 explosion (Crush, ArP 3) using your Arcane attack roll. Max circles = Arcane + 1.",
+  },
+  {
+    name: "Teleportation Circle (Arcane)",
+    desc: "2 AP: Arcane DC to create a teleport circle (max circles = Arcane + 1). Spend 4 AP to send yourself/ally on/under/in-front to another prepared Teleportation Circle.",
+    requiresSkillId: "arcane",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Illusion Circle (Arcane)",
+    desc: "2 AP: Arcane DC to create a 1-Unit illusion at the circle (static image or 30-second loop). Ends if circle is damaged or someone interacts with the image.",
+  },
+  {
+    name: "Transfiguration Circle (Arcane)",
+    desc: "2 AP: Arcane DC to create a 1-Unit trigger circle. On activation: contested Arcane vs target; on failure, target gains Transformed (X) where X = DC difference.",
+    requiresSkillId: "arcane",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Binding Circle (Arcane)",
+    desc: "2 AP: Arcane DC to create a 1-Unit circle; activate for 1 AP (can interrupt). Anything sharing the Unit becomes Bound (X) using Arcane; X = sum of two Arcane DCs. Cannot affect or be affected by anything outside the circle. If someone else destroys/erases the circle, the entity is freed.",
+  },
+  {
+    name: "Binding Ritual (Arcane)",
+    desc: "Attempt to seal a Demon trapped in your Binding Circle into an object inside it. Make cumulative Arcane DC 20 via consecutive attempts or it fails. If the circle fails, the ritual fails. If sealed, the entity remains until the object is destroyed; the object may gain powers based on Demon strength.",
+    requiresAllAbilities: ["Binding Circle (Arcane)"],
+    requiresSkillId: "arcane",
+    requiresMinLevel: 5,
+  },
+  {
+    name: "Arcane Academia (Arcane)",
+    desc: "You have academic contacts (teachers, peers, researchers) to consult for arcane problems or leads.",
+  },
+  {
+    name: "Scent of the Master (Arcane)",
+    desc: "When you identify a spell/enchantment via Arcane DC, you can craft a suspended charm that pulls toward the spell’s creator for ~15 minutes.",
+  },
+  {
+    name: "Tracker Enchantment (Arcane)",
+    desc: "Enchant any item after 1 minute of uninterrupted control (Focus). While focused, you always know the item’s general direction. If focus ends, the enchantment breaks.",
+  },
+  {
+    name: "Barrier Enchantment (Arcane)",
+    desc: "2 AP: Arcane DC to create a 2×2-Unit invisible barrier that attempts to block attacks (counts as cover, AV 3). Focus.",
+  },
+  {
+    name: "Fortress (Arcane)",
+    desc: "You may attack through your own Barrier Enchantments without granting armor to the target.",
+    requiresAllAbilities: ["Barrier Enchantment (Arcane)"],
+  },
+  {
+    name: "Enchant Weapon (Arcane)",
+    desc: "1 AP: Arcane DC to enchant a weapon so its next attack adds an additional damage type of your choice.",
+  },
+  {
+    name: "Airwalker Enchantment (Arcane)",
+    desc: "2 AP: Arcane DC to create an invisible bridge/stairs up to 5 Units (max 450 kg/1000 lb). Focus. If attacked, it dissipates over the next turn.",
+  },
+  {
+    name: "Sunlight Enchantment (Arcane)",
+    desc: "1 AP: Arcane DC to create bright light in a held object (Focus). +1 AP to focus into a beam to attempt to blind: target suffers −1 Die Level to attack rolls while exposed unless hidden or has Blindsight.",
+  },
+  {
+    name: "Prophetic Dreams (Arcane)",
+    desc: "Each night, dream of three helpful things likely encountered the next day (faces, places, objects, scenes). Typically minimal context from the GM.",
+  },
+  {
+    name: "Stone Enchantment (Arcane)",
+    desc: "2 AP: Arcane DC to grant +1 innate Armor Value vs all damage types to yourself or an ally. Focus.",
+  },
+
+  // Envy
+  {
+    name: "Evil Eye (Envy)",
+    desc: "2 AP: Focus your gaze on a target. While focused and in line of sight, any DC that target makes suffers −1 Die Level. Effect is subtle at first.",
+  },
+  {
+    name: "Jinx (Envy)",
+    desc: "Spend 1 AP when a target within 10 Units makes a DC to contest with Envy. If you roll higher, they automatically fail (if contested where difference matters, they fail by 5). Temptation: On a failed re-roll sequence, for each DC you make until end of your following turn, also make an Envy DC; if that Envy roll is higher, you auto-fail.",
+  },
+  {
+    name: "Bonded Destiny (Envy)",
+    desc: "4 AP: Choose two targets (one must be willing; can be you). Contest Envy vs unwilling target; on failure they gain Bonded Destiny with the willing target. Focus. Temptation: If your re-roll sequence fails, you gain Bonded Destiny with the willing target (or the closest ally if you were the willing target).",
+  },
+  {
+    name: "Possession (Envy)",
+    desc: "4 AP: Contest Envy vs adjacent target; on failure you become black smoke and possess them (Focus). You control their actions and may use their abilities; injuries to them also injure you. They may contest at end of your subsequent turns. Temptation: If your re-roll sequence fails, your consciousness appears as a black mist next to your body (body becomes Unconscious). Mist can only be harmed by Curse, shares your Reflex, and if it would take an injury you die. Use this again to repossess your body.",
+    requiresSkillId: "envy",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Violent Exorcism (Envy)",
+    desc: "Any time you end Possession (choice or failure), the target gains Disoriented (4).",
+    requiresAllAbilities: ["Possession (Envy)"],
+    requiresSkillId: "envy",
+    requiresMinLevel: 5,
+  },
+
+  // Gluttony
+  {
+    name: "Energy Drain (Gluttony)",
+    desc: "2 AP: Make a Gluttony attack vs target within 3 Units (Curse, ArP 1). On hit, always inflicts an injury; target then contests Gluttony vs caster; on failure, caster recovers 1 injury. Temptation: If your re-roll sequence fails, you receive 1 injury.",
+  },
+  {
+    name: "Devouring Beam (Gluttony)",
+    desc: "Can be acquired multiple times; choose one unchosen option each time. Each acquisition increases Energy Drain’s Temptation injury by 1. Options: (1) Energy Drain ArP = your Gluttony level; (2) Energy Drain range = 10 Units; (3) On a successful contested roll, each other target within range has a 50% chance to be attacked as well.",
+    requiresAllAbilities: ["Energy Drain (Gluttony)"],
+  },
+  {
+    name: "Hungering Hound Summon (Gluttony)",
+    desc: "4 AP: Summon a ravenous feral hound in an adjacent space (Focus). Hound: AP 4; Skills: Demonology+2, Survivability+3, Reflex+3, Martial Arts+3, Bodybuilding+2, Gluttony+2; 2 AP Bite (Martial Arts; Slash+Pierce; ArP 1); Armor: Curse 3, others 0; Move 4 Units/AP. Other: Pack Tactics; Unpredictable Servant (contested Gluttony each turn; if it succeeds, it breaks control and persists 5 rounds).",
+  },
+  {
+    name: "Primal Fury (Gluttony)",
+    desc: "Your Hungering Hound gains +1 to Reflex, Martial Arts, Bodybuilding, and Gluttony.",
+    requiresAllAbilities: ["Hungering Hound Summon (Gluttony)"],
+    requiresSkillId: "gluttony",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Hunting Hounds (Gluttony)",
+    desc: "All your Hungering Hounds gain Zone of Control.",
+    requiresAllAbilities: ["Hungering Hound Summon (Gluttony)"],
+    requiresSkillId: "gluttony",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Devouring Aura (Gluttony)",
+    desc: "Once per round, spend 2 AP to contest Gluttony vs all targets within 3 Units (separately). Each failure: that target loses 1 AP until end of their next turn; you gain total AP lost. For each target that succeeds you lose 1 AP (if you cannot lose AP, you take 1 injury instead per AP). Temptation: If your re-roll sequence fails, you lose an additional AP.",
+    requiresSkillId: "gluttony",
+    requiresMinLevel: 4,
+  },
+
+  // Greed
+  {
+    name: "Soften Metal (Greed)",
+    desc: "1 AP: Greed DC to make metal within a 1-Unit cube behave like water (passes through but retains shape). Focus; end focus to resolidify (expelling anything inside to nearest empty space).",
+  },
+  {
+    name: "Phosphorus Cloud (Greed)",
+    desc: "2 AP: Greed DC + spend 10 Goldbacks to create a 3×3×3 smoke cloud centered on you. Attacks made through or against targets in the smoke take −2 Die Levels.",
+  },
+  {
+    name: "Midas’ Touch (Greed)",
+    desc: "4 AP: Contested Greed vs adjacent living target. On failure a random part turns to gold and deals 2 injuries; gold can be harvested (200–500 GB). Temptation: On failed re-roll sequence, a random part of the caster turns to gold and the caster takes 2 injuries.",
+  },
+  {
+    name: "Magnetism (Greed)",
+    desc: "2 AP: Greed DC to magnetize any amount of metal within a 1-Unit cube up to 10 Units away (Focus). Either (A) attract to nearby metal within 2 Units (equipped targets must pass Bodybuilding or get stuck), or (B) attract to you/your limb; if heavier you fly, if lighter it flies; equipped targets contest Bodybuilding vs your Greed: success pulls item to you or pulls target X Units where X = DC disparity.",
+  },
+  {
+    name: "Every Man for Himself (Greed)",
+    desc: "4 AP: Target a 3×3 space within 10 Units. Contest Greed vs each target. On failure, target gains Madness (X) where X = DC disparity. Temptation: On failed re-roll sequence, you gain Madness (6).",
+    requiresSkillId: "greed",
+    requiresMinLevel: 4,
+  },
+  {
+    name: "Anarchy (Greed)",
+    desc: "Targets that fail your Every Man for Himself also gain Madness (2).",
+    requiresAllAbilities: ["Every Man for Himself (Greed)"],
+    requiresSkillId: "greed",
+    requiresMinLevel: 5,
+  },
+
+  // Lust
+  {
+    name: "Hallucination (Lust)",
+    desc: "1 AP: Contest Lust vs target within 10 Units to implant a visual/audio illusion (3 rounds/10 minutes). Can be extended by re-casting. Over-the-top illusions are easier to doubt; targets may attempt Observation to break when suspicious. Temptation: On failed re-roll sequence, you gain Disoriented (6).",
+  },
+  {
+    name: "Enthral (Lust)",
+    desc: "Choose a target within 5 Units; contested Lust (Focus). On failure they gain Enthralled. Temptation: On failed re-roll sequence, you become Enthralled with your intended target as the source.",
+  },
+
+  // Pride
+  {
+    name: "Self Improvement (Pride)",
+    desc: "1 AP: Make a Pride DC to increase the Die Level of a DC you’re about to make by 1. Temptation: On failed re-roll sequence, you suffer −1 Die Level to that DC.",
+  },
+  {
+    name: "Irresistible Challenger (Pride)",
+    desc: "1 AP: Contest Pride vs hostile target within 10 Units. On success, they can only spend AP to engage you until end of their next turn. Temptation: On failed re-roll sequence, you gain Madness (6).",
+  },
+  {
+    name: "Invincibility (Pride)",
+    desc: "2 AP: Focus. Whenever you would take damage, roll Pride DC; on success, ignore injuries (being hit still removes focus). Temptation: On failed re-roll sequence, you cannot use this ability for the rest of the mission or 2 days, whichever is sooner.",
+    requiresSkillId: "pride",
+    requiresMinLevel: 4,
+  },
+
+  // Sloth
+  {
+    name: "Slow (Sloth)",
+    desc: "2 AP: Contest Sloth vs target within 10 Units. On failure, their AP costs are doubled. Focus; they may contest at end of each of their turns. Temptation: On failed re-roll sequence, your next turn’s actions cost double AP.",
+  },
+  {
+    name: "Time Void (Sloth)",
+    desc: "2 AP: Sloth DC to create a 3×2 wall of stopped time. Attacks stop at the wall until it ends. Moving through it inflicts Bound (X) where X = sum of two Sloth DCs; trapped targets may contest each turn. Focus; barrier fails if a target passes the contest.",
+  },
+  {
+    name: "Rewind (Sloth)",
+    desc: "4 AP: Sloth DC to return to your position at the start of your last turn; ammo spent last turn replenishes and any injuries/conditions since then are removed. Temptation: On failed re-roll sequence, you are removed from play until end of next combat round (still resolve condition rolls).",
+    requiresSkillId: "sloth",
+    requiresMinLevel: 4,
+  },
+
+  // Wrath
+  {
+    name: "Fireball (Wrath)",
+    desc: "2 AP: Attack using Wrath vs target within 10 Units and line of sight (Burn, AOE 1, ArP 1).",
+  },
+  {
+    name: "Firenado (Wrath)",
+    desc: "4 AP: Create a moving firenado in an unoccupied space within 10 Units. You control its 3-Unit/turn movement (Focus). When it crosses/occupies a target’s space, attack using Wrath.",
+  },
+  {
+    name: "Feed the Flames (Wrath)",
+    desc: "2 AP: Spread a fire to all adjacent spaces (max 5 Units). Any character starting in or moving into fire gains Burning (1); remaining in fire at end of turn gains Burning (1).",
+  },
+  {
+    name: "Combust (Wrath)",
+    desc: "2 AP: Contest Wrath vs target within 10 Units. On failure they gain Burning (X) where X = DC disparity. Temptation: On failed re-roll sequence, you gain Burning (X) where X = the DC disparity.",
+    requiresSkillId: "wrath",
+    requiresMinLevel: 4,
+  },
+
+  // Demonology
+  {
+    name: "Inquisitor’s Authority (Demonology)",
+    desc: "1 AP: Contest Demonology vs Demon/Damned; on failure they can only speak the truth for 1 hour (Demons know you did this; the Damned might not immediately).",
+  },
+  {
+    name: "Infernal Command (Demonology)",
+    desc: "2 AP: Contest Demonology vs Demon/Damned; on failure they must perform a one-word action of your choice.",
+  },
+  {
+    name: "Feral Control (Demonology)",
+    desc: "2 AP: Contest Demonology vs a feral within earshot; on failure it gains Enthralled.",
+  },
+  {
+    name: "Infernal Contact (Demonology)",
+    desc: "You and the GM define a Demon NPC friendly (for a Demon) to you; they may aid you for favors or soul contracts, depending on the ask.",
+  },
+  {
+    name: "Exorcism (Demonology)",
+    desc: "4 AP: Force a Demon within 5 Units to make a contested Demonology DC; on failure they gain Frightened (6).",
+    requiresSkillId: "demonology",
+    requiresMinLevel: 4,
+  },
 ];
 
 
@@ -3415,23 +3859,46 @@ const SKILL_CHOICE_GROUP = React.useMemo(() => {
 // Gating for general unlocks
 const meetsGeneralUnlockPrereqs = (def?: GeneralUnlockDef) => {
   if (!def) return true;
+
+  // Skill gates
+  if (def.requiresMinLevel != null) {
+    if (def.requiresSkillId) {
+      if (skillLevel(def.requiresSkillId) < def.requiresMinLevel) return false;
+    }
+    if (def.requiresAnySkillIds?.length) {
+      const ok = def.requiresAnySkillIds.some(id => skillLevel(id) >= def.requiresMinLevel!);
+      if (!ok) return false;
+    }
+  }
+
+  // One-of grouping
   if (def.oneOf) {
-    const hasSameGroup = (abilities ?? []).some(a => a.kind === 'general' && GENERAL_UNLOCK_DEFS.find(d => d.name === a.name)?.oneOf === def.oneOf);
+    const hasSameGroup = (abilities ?? []).some(a =>
+      a.kind === 'general' &&
+      GENERAL_UNLOCK_DEFS.find(d => d.name === a.name)?.oneOf === def.oneOf
+    );
     if (hasSameGroup) return false;
   }
+
+  // Must-have abilities
   if (def.requiresAllAbilities?.length) {
     const haveAll = def.requiresAllAbilities.every(req =>
       (abilities ?? []).some(a => a.name === req)
     );
     if (!haveAll) return false;
   }
+
+  // Stack limits
   if (def.stackMax != null) {
-    const have = (abilities ?? []).filter(a => a.kind === 'general' && a.name === def.name)
-                                  .reduce((s, a) => s + (a.count ?? 1), 0);
+    const have = (abilities ?? [])
+      .filter(a => a.kind === 'general' && a.name === def.name)
+      .reduce((s, a) => s + (a.count ?? 1), 0);
     if (have >= def.stackMax) return false;
   }
+
   return true;
 };
+
 
 // Display lists that hide already-chosen choices and those that fail prereqs
 // Build options for a specific Skill row, letting the current row's selection remain selectable
