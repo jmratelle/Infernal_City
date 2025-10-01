@@ -4584,7 +4584,13 @@ const canAddName = (name: string) => {
                       variant="ghost"
                       size="icon"
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => remove(a.id)}
+                      onClick={() => {
+                        // remove the row…
+                        remove(a.id);
+                        // …then reopen the “Add Skill” picker so they can choose again
+                        setAddingSkill(true);
+                        setAddingSkillChoice(undefined); // no preselect; user will pick
+                      }}
                       disabled={readOnly}
                       aria-label="Remove skill unlock"
                       title="Remove"
