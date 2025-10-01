@@ -4032,7 +4032,7 @@ const skillDisplayOptionsFor = (currentId: string, currentName?: string) => {
     if (grp) groupsTaken.add(`${grp.skill}:${grp.level}`);
   }
 
-   return SKILL_UNLOCK_DEFS
+  const opts = SKILL_UNLOCK_DEFS
     .filter(choice => {
       if (!meetsSkillUnlockPrereqs(choice)) return false;
       const grp = SKILL_CHOICE_GROUP.get(choice.name);
@@ -4043,6 +4043,13 @@ const skillDisplayOptionsFor = (currentId: string, currentName?: string) => {
       return true;
     })
     .map(c => c.name);
+
+  // Keep current selection visible so <select> doesn’t snap back
+  if (currentName && !opts.includes(currentName)) {
+    opts.unshift(currentName);
+  }
+
+  return opts;
 };
 
 // Build options for a specific General row, letting the current row's selection remain selectable
@@ -4053,10 +4060,17 @@ const generalDisplayOptionsFor = (currentId: string, currentName?: string) => {
       .map(a => a.name)
   );
 
-  return GENERAL_UNLOCK_DEFS
+  const opts = GENERAL_UNLOCK_DEFS
     .filter(def => meetsGeneralUnlockPrereqs(def))
     .filter(def => !pickedByOthers.has(def.name))
     .map(def => def.name);
+
+  // Keep current selection visible so <select> doesn’t snap back
+  if (currentName && !opts.includes(currentName)) {
+    opts.unshift(currentName);
+  }
+
+  return opts;
 };
 
   const meetsPrereqs = (def?: RaceAbilityDef) => {
@@ -4403,7 +4417,7 @@ const canAddName = (name: string) => {
     label="Select Race Ability"
     labelSuffix={raceName ? `for ${raceName}` : undefined}
     value={draftRaceAbility ?? ""}
-    onChange={(v) => setAddingGeneralChoice(v ?? "")}
+    onChange={(v) => setDraftRaceAbility(v ?? "")}
     options={raceDefs.filter(d => canAddName(d.name)).map(d => d.name)}
     optionKeyPrefix="race"
     selectTitle="Select a race ability to add"
@@ -4419,7 +4433,7 @@ const canAddName = (name: string) => {
     label="Select General Ability"
     value={addingGeneralChoice ?? ""}
     onChange={(v) => setAddingGeneralChoice(v)}
-    options={generalDisplayOptionsFor("new-general")}
+    options={generalDisplayOptionsFor("new-general", addingGeneralChoice || undefined)}
     optionKeyPrefix="general"
     selectTitle="Select a general ability to add"
     onConfirm={() => {
@@ -4442,7 +4456,7 @@ const canAddName = (name: string) => {
     label="Select Skill Unlock"
     value={addingSkillChoice ?? ""}
     onChange={(v) => setAddingSkillChoice(v)}
-    options={skillDisplayOptionsFor("new-skill")}
+    options={skillDisplayOptionsFor("new-skill", addingSkillChoice || undefined)}
     optionKeyPrefix="skill"
     selectTitle="Select a skill unlock to add"
     onConfirm={() => {
