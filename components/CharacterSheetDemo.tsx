@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
 import { Lock, Unlock } from 'lucide-react';
+import clsx from "clsx";
 
 
 /**
@@ -20,7 +21,120 @@ import { Lock, Unlock } from 'lucide-react';
  * - Notes: Notes, People Met, Secrets
  * - Level Up: Current Mission checklist + Mission History
  */
+type InlinePickerProps = {
+  /** Main label. You can pass text or JSX. */
+  label: React.ReactNode;
+  /** Optional suffix (e.g., “for Dwarf”) shown inline with the label. */
+  labelSuffix?: string;
 
+  /** Current selected value (string). Use "" for none. */
+  value: string;
+  /** onChange handler. Pass undefined when empty. */
+  onChange: (next: string) => void;
+
+  /** Options to render in the <select>. */
+  options: string[];
+  /** Optional key prefix to keep React keys distinct across pickers. */
+  optionKeyPrefix?: string;
+
+  /** Click handlers. */
+  onConfirm: () => void;
+  onCancel: () => void;
+
+  /** Disable confirm button (e.g., when no selection). */
+  confirmDisabled?: boolean;
+
+  /** Optional title for the select. */
+  selectTitle?: string;
+
+  /** Custom classes for the outer container. */
+  className?: string;
+
+  /** If true, the picker will scroll into view when mounted/toggled. */
+  autoScrollIntoView?: boolean;
+};
+
+export function InlinePicker({
+  label,
+  labelSuffix,
+  value,
+  onChange,
+  options,
+  optionKeyPrefix = "opt",
+  onConfirm,
+  onCancel,
+  confirmDisabled,
+  selectTitle,
+  className,
+  autoScrollIntoView = true,
+}: InlinePickerProps) {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    if (autoScrollIntoView && ref.current) {
+      ref.current.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [autoScrollIntoView]);
+
+  return (
+    <div
+      ref={ref}
+      className={clsx(
+        "mb-3 grid grid-cols-1 gap-3 md:grid-cols-3 md:items-end",
+        "rounded-lg border border-white/10 bg-black/30 p-3",
+        className
+      )}
+    >
+      <div className="grid gap-1 md:col-span-2">
+        <Label className="text-sm">
+          {label} {labelSuffix ? <span className="opacity-80">{labelSuffix}</span> : null}
+        </Label>
+
+        <select
+          className={clsx(
+            "h-10 w-full text-sm px-3 rounded-md",
+            "border border-white/20 bg-background",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          )}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          title={selectTitle}
+        >
+          {options.map((n, idx) => (
+            <option key={`${optionKeyPrefix}-${idx}-${n}`} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex flex-col gap-2 md:flex-row md:justify-end">
+        <Button
+          type="button"
+          size="sm"
+          className="w-full md:w-auto min-h-[44px]"
+          variant="secondary"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onConfirm}
+          disabled={!!confirmDisabled}
+        >
+          Add
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          className="w-full md:w-auto min-h-[44px]"
+          variant="ghost"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onCancel}
+        >
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
 // ---------- Types ----------
 export type SkillGroup = 'combat' | 'magic' | 'specialized';
 export type AbilityKind = 'skill' | 'general' | 'race';
@@ -154,6 +268,7 @@ export type ArmorSlots = {
   body: { name: string};
   lining: { name: string};
 };
+export type ArmorCategory = "body" | "lining" | "head";
 
 export type VehicleEntry = {
   id: string;
@@ -277,7 +392,7 @@ const CONDITION_TEXT: Record<ConditionName, (x?: number) => string> = {
     `At the beginning of each of their turns, the target must make a Cumulative Survivability DC with ${x} as the target number. On a fail, they receive two injuries. At the end of each turn, ${x} decreases by one. If ${x} is equal to zero, remove this condition.`,
 
   'Transformed': (x = 1) =>
-    `While under this condition, the target is transformed into a small animal (e.g., mouse, hedgehog, chicken). At the end of each turn, reduce ${x} by one; when ${x} is zero, remove this condition. All equipment disappears until the transformation ends. Lose all skills/abilities; use: Reflex 3, all other skills 1. Injuries transfer to the actual form. If the target dies while transformed, they die and immediately regain original form.`,
+    `While under this condition, the target is transformed into a small animal (e.g., mouse, hedgehog, chicken). At the end of each turn, reduce X by one; when X is zero, remove this condition. All equipment disappears until the transformation ends. Lose all skills/abilities; use: Reflex 3, all other skills 1. Injuries transfer to the actual form. If the target dies while transformed, they die and immediately regain original form.`,
 
   'Unconscious': () =>
     'The target cannot spend any AP. Remove this condition at the end of the target’s subsequent turn. All attacks against unconscious targets automatically hit, and the Reflex save result is considered a one for crit purposes.',
@@ -3663,7 +3778,7 @@ const AbilitiesPanel: React.FC<{
   const [addingSkillChoice, setAddingSkillChoice] = React.useState<string | undefined>(undefined);
 
   const [addingGeneral, setAddingGeneral] = React.useState(false);
-  const [addingGeneralChoice, setAddingGeneralChoice] = React.useState<string | undefined>(undefined);
+  const [addingGeneralChoice, setAddingGeneralChoice] = useState<string | undefined>(undefined);
   
 
   const rowClass =
@@ -4282,49 +4397,68 @@ const canAddName = (name: string) => {
           </div>
         )}
 
-        {/* Inline picker when adding a Race ability */}
-        {pickingRace && (
-          <div className="mb-3 grid gap-2 md:grid-cols-3 items-end rounded-lg border border-white/10 bg-black/30 p-3">
-            <div className="grid gap-1 md:col-span-2">
-              <Label>Select Race Ability {raceName ? `for ${raceName}` : ''}</Label>
-              <select
-                className="h-7 w-36 text-xs px-2 py-0.5 rounded-md border border-white/20 bg-background"
-                value={draftRaceAbility}
-                onChange={(e) => setDraftRaceAbility(e.target.value)}
-              >
-                {raceDefs
-                  .filter(d => canAddName(d.name))         // ← only show addable abilities
-                  .map(d => (
-                    <option key={d.name} value={d.name}>
-                      {d.name}
-                    </option>
-                  ))}
-              </select>
+       {/* RACE ability picker */}
+{pickingRace && (
+  <InlinePicker
+    label="Select Race Ability"
+    labelSuffix={raceName ? `for ${raceName}` : undefined}
+    value={draftRaceAbility ?? ""}
+    onChange={(v) => setAddingGeneralChoice(v ?? "")}
+    options={raceDefs.filter(d => canAddName(d.name)).map(d => d.name)}
+    optionKeyPrefix="race"
+    selectTitle="Select a race ability to add"
+    onConfirm={confirmAddRaceAbility}
+    onCancel={() => setPickingRace(false)}
+    confirmDisabled={!draftRaceAbility || !canAddName(draftRaceAbility)}
+  />
+)}
 
-            </div>
-            <div className="flex gap-2 md:justify-end">
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={confirmAddRaceAbility}
-                disabled={!draftRaceAbility || !canAddName(draftRaceAbility)}
-              >
-                Add
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setPickingRace(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
+{/* GENERAL ability picker */}
+{addingGeneral && (
+  <InlinePicker
+    label="Select General Ability"
+    value={addingGeneralChoice ?? ""}
+    onChange={(v) => setAddingGeneralChoice(v)}
+    options={generalDisplayOptionsFor("new-general")}
+    optionKeyPrefix="general"
+    selectTitle="Select a general ability to add"
+    onConfirm={() => {
+      if (!addingGeneralChoice) return;
+      addAbilityRow("general", addingGeneralChoice);
+      setAddingGeneral(false);
+      setAddingGeneralChoice(undefined);
+    }}
+    onCancel={() => {
+      setAddingGeneral(false);
+      setAddingGeneralChoice(undefined);
+    }}
+    confirmDisabled={!addingGeneralChoice}
+  />
+)}
+
+{/* SKILL unlock picker */}
+{addingSkill && (
+  <InlinePicker
+    label="Select Skill Unlock"
+    value={addingSkillChoice ?? ""}
+    onChange={(v) => setAddingSkillChoice(v)}
+    options={skillDisplayOptionsFor("new-skill")}
+    optionKeyPrefix="skill"
+    selectTitle="Select a skill unlock to add"
+    onConfirm={() => {
+      if (!addingSkillChoice) return;
+      addAbilityRow("skill", addingSkillChoice);
+      setAddingSkill(false);
+      setAddingSkillChoice(undefined);
+    }}
+    onCancel={() => {
+      setAddingSkill(false);
+      setAddingSkillChoice(undefined);
+    }}
+    confirmDisabled={!addingSkillChoice}
+  />
+)}
+        
 
         {/* RACE ACQUIRED */}
         <div className="space-y-2">
@@ -4403,58 +4537,7 @@ const canAddName = (name: string) => {
 
         {/* SKILL UNLOCKS */}
 <div className="space-y-2">
-  <div className="text-xs font-semibold uppercase text-white/80">Skill Unlocks</div>
-
-  {/* Inline “Add Skill Unlock” picker */}
-{addingSkill && (
-  <div className="rounded-xl border border-white/10 p-3">
-    <div className="flex items-center gap-2">
-      <select
-        className={compactSelect}
-        value={addingSkillChoice ?? ""}
-        onChange={(e) => setAddingSkillChoice(e.target.value || undefined)}
-        title="Select a skill unlock to add"
-      >
-        {/* Optional: you can drop the disabled placeholder now that we auto-pick the first option */}
-        {/* <option value="" disabled>— Select a skill unlock —</option> */}
-        {skillDisplayOptionsFor("new-skill").map((n, idx) => (
-          <option key={`new-skill-${idx}-${n}`} value={n}>{n}</option>
-        ))}
-      </select>
-
-      <Button
-        type="button"
-        size="sm"
-        variant="secondary"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          if (!addingSkillChoice) return;
-          // ADD A ROW with this choice name
-          // If you have an existing add() helper, use that instead.
-          addAbilityRow("skill", addingSkillChoice);
-          setAddingSkill(false);
-          setAddingSkillChoice(undefined);
-        }}
-        disabled={!addingSkillChoice}
-      >
-        Add
-      </Button>
-
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          setAddingSkill(false);
-          setAddingSkillChoice(undefined);
-        }}
-      >
-        Cancel
-      </Button>
-    </div>
-  </div>
-)}
+  <div className="space-above text-xs font-semibold uppercase text-white/80">Skill Unlocks</div>
 
   {/* Empty state (parity with Race) */}
   {(abilities ?? []).filter(a => a.kind === 'skill').length === 0 && (
@@ -4527,56 +4610,6 @@ const canAddName = (name: string) => {
         {/* GENERAL UNLOCKS */}
 <div className="space-y-2">
   <div className="text-xs font-semibold uppercase text-white/80">General Unlocks</div>
-
-  {/* Inline “Add General Ability” picker */}
-{addingGeneral && (
-  <div className="rounded-xl border border-white/10 p-3">
-    <div className="flex items-center gap-2">
-      <select
-        className={compactSelect}
-        value={addingGeneralChoice ?? ""}
-        onChange={(e) => setAddingGeneralChoice(e.target.value || undefined)}
-        title="Select a general ability to add"
-      >
-        {/* <option value="" disabled>— Select a general ability —</option> */}
-        {generalDisplayOptionsFor("new-general").map((n, idx) => (
-          <option key={`new-general-${idx}-${n}`} value={n}>{n}</option>
-        ))}
-      </select>
-
-      <Button
-        type="button"
-        size="sm"
-        variant="secondary"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          if (!addingGeneralChoice) return;
-          // ⬇️ ADD A ROW with this choice name
-          addAbilityRow("general", addingGeneralChoice);
-          setAddingGeneral(false);
-          setAddingGeneralChoice(undefined);
-        }}
-        disabled={!addingGeneralChoice}
-      >
-        Add
-      </Button>
-
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          setAddingGeneral(false);
-          setAddingGeneralChoice(undefined);
-        }}
-      >
-        Cancel
-      </Button>
-    </div>
-  </div>
-)}
-
 
   {/* Empty state (parity with Race) */}
   {(abilities ?? []).filter(a => a.kind === 'general').length === 0 && (
