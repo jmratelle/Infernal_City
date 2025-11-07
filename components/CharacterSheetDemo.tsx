@@ -3670,7 +3670,6 @@ const ArmorSlot: React.FC<{
     options.includes(slot.name) ? "" : slot.name
   );
 
-  // 🪄 FIXED: dependency array now includes 'options'
   React.useEffect(() => {
     if (options.includes(slot.name)) {
       setSelected(slot.name);
@@ -3683,23 +3682,6 @@ const ArmorSlot: React.FC<{
       setLocalOther("");
     }
   }, [slot.name, options]);
-
-  // 🪄 FIXED: top-level local state for all armor values
-  const [localAV, setLocalAV] = React.useState<Record<DamageType, string>>(
-    Object.fromEntries(DAMAGE_TYPES.map((dt) => [dt, String(slot.av[dt] ?? "")])) as Record<
-      DamageType,
-      string
-    >
-  );
-
-  React.useEffect(() => {
-    setLocalAV(
-      Object.fromEntries(DAMAGE_TYPES.map((dt) => [dt, String(slot.av[dt] ?? "")])) as Record<
-        DamageType,
-        string
-      >
-    );
-  }, [slot.av]);
 
   const commitName = (newName: string) => {
     onChange(k, { ...slot, name: newName });
@@ -3739,45 +3721,11 @@ const ArmorSlot: React.FC<{
           />
         )}
       </div>
-
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {DAMAGE_TYPES.map((dt) => (
-          <div key={dt} className="grid gap-1">
-            <Label htmlFor={`${k}-${dt}-input`} className="text-xs">
-              {dt}
-            </Label>
-            <Input
-              id={`${k}-${dt}-input`}
-              type="text"
-              inputMode="decimal"
-              autoComplete="off"
-              value={localAV[dt]}
-              onChange={(e) =>
-                setLocalAV((prev) => ({
-                  ...prev,
-                  [dt]: e.target.value.replace(/[^0-9]/g, ""),
-                }))
-              }
-              onBlur={() => {
-                const n =
-                  localAV[dt] === "" ? 0 : clamp(parseInt(localAV[dt], 10), 0, 99);
-                onChange(k, {
-                  ...slot,
-                  av: { ...slot.av, [dt]: n },
-                });
-              }}
-              disabled={readOnly}
-              className="w-20"
-            />
-          </div>
-        ))}
-      </div>
     </div>
   );
 });
 
 ArmorSlot.displayName = "ArmorSlot";
-
 
 const ArmorSlotsBox: React.FC<{
   armor: ArmorSlots;
@@ -3799,14 +3747,33 @@ const ArmorSlotsBox: React.FC<{
           Armor Slots
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-white">
-          <ArmorSlot k="head" label="Head" slot={armor.head} onChange={handleSlotChange} readOnly={readOnly} />
-          <ArmorSlot k="body" label="Body" slot={armor.body} onChange={handleSlotChange} readOnly={readOnly} />
-          <ArmorSlot k="lining" label="Lining" slot={armor.lining} onChange={handleSlotChange} readOnly={readOnly} />
+          <ArmorSlot
+            k="head"
+            label="Head"
+            slot={armor.head}
+            onChange={handleSlotChange}
+            readOnly={readOnly}
+          />
+          <ArmorSlot
+            k="body"
+            label="Body"
+            slot={armor.body}
+            onChange={handleSlotChange}
+            readOnly={readOnly}
+          />
+          <ArmorSlot
+            k="lining"
+            label="Lining"
+            slot={armor.lining}
+            onChange={handleSlotChange}
+            readOnly={readOnly}
+          />
         </div>
       </CardContent>
     </Card>
   );
 };
+
 
 
 
