@@ -3670,6 +3670,7 @@ const ArmorSlot: React.FC<{
     options.includes(slot.name) ? "" : slot.name
   );
 
+  // 🪄 FIXED: dependency array now includes 'options'
   React.useEffect(() => {
     if (options.includes(slot.name)) {
       setSelected(slot.name);
@@ -3681,7 +3682,24 @@ const ArmorSlot: React.FC<{
       setSelected("");
       setLocalOther("");
     }
-  }, [slot.name]);
+  }, [slot.name, options]);
+
+  // 🪄 FIXED: top-level local state for all armor values
+  const [localAV, setLocalAV] = React.useState<Record<DamageType, string>>(
+    Object.fromEntries(DAMAGE_TYPES.map((dt) => [dt, String(slot.av[dt] ?? "")])) as Record<
+      DamageType,
+      string
+    >
+  );
+
+  React.useEffect(() => {
+    setLocalAV(
+      Object.fromEntries(DAMAGE_TYPES.map((dt) => [dt, String(slot.av[dt] ?? "")])) as Record<
+        DamageType,
+        string
+      >
+    );
+  }, [slot.av]);
 
   const commitName = (newName: string) => {
     onChange(k, { ...slot, name: newName });
@@ -3723,41 +3741,42 @@ const ArmorSlot: React.FC<{
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {DAMAGE_TYPES.map((dt) => {
-          const [localVal, setLocalVal] = React.useState(String(slot.av[dt] ?? ""));
-          React.useEffect(() => {
-            setLocalVal(String(slot.av[dt] ?? ""));
-          }, [slot.av[dt]]);
-
-          return (
-            <div key={dt} className="grid gap-1">
-              <Label htmlFor={`${k}-${dt}-input`} className="text-xs">
-                {dt}
-              </Label>
-              <Input
-                id={`${k}-${dt}-input`}
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                value={localVal}
-                onChange={(e) => setLocalVal(e.target.value.replace(/[^0-9]/g, ""))}
-                onBlur={() => {
-                  const n = localVal === "" ? 0 : clamp(parseInt(localVal, 10), 0, 99);
-                  onChange(k, {
-                    ...slot,
-                    av: { ...slot.av, [dt]: n },
-                  });
-                }}
-                disabled={readOnly}
-                className="w-20"
-              />
-            </div>
-          );
-        })}
+        {DAMAGE_TYPES.map((dt) => (
+          <div key={dt} className="grid gap-1">
+            <Label htmlFor={`${k}-${dt}-input`} className="text-xs">
+              {dt}
+            </Label>
+            <Input
+              id={`${k}-${dt}-input`}
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={localAV[dt]}
+              onChange={(e) =>
+                setLocalAV((prev) => ({
+                  ...prev,
+                  [dt]: e.target.value.replace(/[^0-9]/g, ""),
+                }))
+              }
+              onBlur={() => {
+                const n =
+                  localAV[dt] === "" ? 0 : clamp(parseInt(localAV[dt], 10), 0, 99);
+                onChange(k, {
+                  ...slot,
+                  av: { ...slot.av, [dt]: n },
+                });
+              }}
+              disabled={readOnly}
+              className="w-20"
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
 });
+
+ArmorSlot.displayName = "ArmorSlot";
 
 
 const ArmorSlotsBox: React.FC<{
@@ -3885,11 +3904,10 @@ const VehiclesPanel: React.FC<{
   const patchVehicle = (id: string, p: Partial<VehicleEntry>) =>
     onChange(vehicles.map((v) => (v.id === id ? { ...v, ...p } : v)));
 
-  const allVehicles: string[] = Object.keys(VEHICLE_STATS);
-
-  // Vehicle names as plain strings, so .includes accepts `string`
-  const vehicleNames = React.useMemo(() => Object.keys(VEHICLE_STATS) as string[], []);
-  const isKnownVehicle = (name: string) => vehicleNames.includes(name);
+  const allVehicles = React.useMemo(
+    () => Object.keys(VEHICLE_STATS) as string[],
+    []
+  );
 
   return (
     <Card className="shadow-sm bg-red-900">
@@ -3911,10 +3929,11 @@ const VehiclesPanel: React.FC<{
 
         <div className="grid grid-cols-1 gap-4">
           {vehicles.map((v) => {
-            const base =
-            typeof v.name === "string" && v.name in VEHICLE_STATS
-              ? (VEHICLE_STATS as Record<string, any>)[v.name]
-              : undefined;
+            const base = (VEHICLE_STATS as Record<
+              string,
+              { type?: string; size?: string; speed?: string; capacity?: number }
+            >)[v.name];
+
             const vehicleType = base
               ? base.type
               : v.name
@@ -3931,7 +3950,13 @@ const VehiclesPanel: React.FC<{
                     <Label>Vehicle</Label>
                     <select
                       className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
-                      value={(allVehicles as readonly string[]).includes(v.name) ? v.name : v.name ? "Other" : ""}
+                      value={
+                        allVehicles.includes(v.name)
+                          ? v.name
+                          : v.name
+                          ? "Other"
+                          : ""
+                      }
                       onChange={(e) => {
                         const model = e.target.value;
                         if (model === "Other") {
@@ -3943,12 +3968,17 @@ const VehiclesPanel: React.FC<{
                             size: "",
                           });
                         } else if (VEHICLE_STATS[model]) {
-                          const info = VEHICLE_STATS[model];
+                          const info = VEHICLE_STATS[model] as {
+                            type?: string;
+                            size?: string;
+                            speed?: string;
+                            capacity?: number;
+                          };
                           patchVehicle(v.id, {
                             name: model,
-                            capacity: info.capacity,
-                            size: info.size,
-                            topSpeed: info.speed,
+                            capacity: info.capacity ?? 0,
+                            size: info.size ?? "",
+                            topSpeed: info.speed ?? "",
                             flying: info.type === "Flying",
                           });
                         } else {
@@ -3972,11 +4002,12 @@ const VehiclesPanel: React.FC<{
                         className="mt-2"
                         placeholder="Enter custom vehicle name"
                         value={v.name}
-                        onChange={(e) => patchVehicle(v.id, { name: e.target.value })}
+                        onChange={(e) =>
+                          patchVehicle(v.id, { name: e.target.value })
+                        }
                         disabled={readOnly}
                       />
                     ) : null}
-
                   </div>
 
                   {/* Passenger Capacity */}
@@ -3987,7 +4018,11 @@ const VehiclesPanel: React.FC<{
                       value={v.capacity}
                       onChange={(e) =>
                         patchVehicle(v.id, {
-                          capacity: clamp(parseInt(e.target.value || "0", 10), 0, 999),
+                          capacity: clamp(
+                            parseInt(e.target.value || "0", 10),
+                            0,
+                            999
+                          ),
                         })
                       }
                       disabled={readOnly}
@@ -4066,6 +4101,7 @@ const VehiclesPanel: React.FC<{
     </Card>
   );
 };
+
 
 
 
