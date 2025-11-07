@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+
 /* globals.css */
 /* Make the container a positioning context and use modern viewport units */
 .app-background {

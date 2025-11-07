@@ -10,7 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
 import { Lock, Unlock } from 'lucide-react';
 import clsx from "clsx";
-
+import { SelectableField } from "@/components/ui/SelectableField";
+import { ACCESSORY_OPTIONS, ARMOR_OPTIONS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_DATA, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
+import { read } from 'fs';
 
 /**
  * Infernal City – Character Sheet (Applied Features)
@@ -53,6 +55,7 @@ type InlinePickerProps = {
   /** If true, the picker will scroll into view when mounted/toggled. */
   autoScrollIntoView?: boolean;
 };
+
 
 export function InlinePicker({
   label,
@@ -264,19 +267,20 @@ export type DamageType =
 
 export type ArmorAV = Record<DamageType, number>;
 export type ArmorSlots = {
-  head: { name: string};
-  body: { name: string};
-  lining: { name: string};
+  head: { name: string; av: ArmorAV };
+  body: { name: string; av: ArmorAV };
+  lining: { name: string; av: ArmorAV };
 };
 export type ArmorCategory = "body" | "lining" | "head";
 
 export type VehicleEntry = {
   id: string;
-  name: string;
+  name: string; // ← allows custom names too
   capacity: number;
   topSpeed: string;
   flying: boolean;
   notes?: string;
+  size: string
 };
 
 export type Character = {
@@ -2333,8 +2337,9 @@ function groupBy<T extends { group: SkillGroup }>(arr: T[]): Record<SkillGroup, 
 }
 function formatDate(iso: string) {
   const d = new Date(iso);
-  return d.toISOString().slice(0, 10); // stable YYYY-MM-DD
+  return d.toISOString().slice(0, 10); // consistent "YYYY-MM-DD" format
 }
+
 
 function renderConditionText(name: ConditionName, severity?: number) {
   const fn = CONDITION_TEXT[name];
@@ -2555,6 +2560,8 @@ const GroupedSkillsGrid: React.FC<{
     </CardContent>
   </Card>
 );
+
+
 
   return (
   <div className="grid gap-4 text-white">
@@ -2995,80 +3002,310 @@ const ItemsTable: React.FC<{
   rows: Array<Record<string, string | number>>;
   onChange: (next: Array<Record<string, string | number>>) => void;
   readOnly?: boolean;
-}> = ({ title, fields, rows, onChange, readOnly }) => {
+  maxItems?: number;
+  currentTotal?: number;
+}> = ({ title, fields, rows, onChange, readOnly, maxItems = Infinity, currentTotal = 0 }) => {
   const idBase = useId();
+
+  // Adds a new blank item row
   const addRow = () =>
     onChange([
       ...rows,
-      Object.fromEntries(fields.map((f) => [f.id, f.type === 'number' ? 0 : ''])),
+      { name: "", type: "", qty: 1, category: "", subcategory: "" },
     ]);
-  const removeRow = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
+
+  // Removes an item row by index
+  const removeRow = (i: number) =>
+    onChange(rows.filter((_, idx) => idx !== i));
+
+  // Helper to patch a specific row
+  const patchRow = (i: number, updates: Record<string, string | number>) => {
+    const next = [...rows];
+    next[i] = { ...next[i], ...updates };
+    onChange(next);
+  };
+
+  // Numeric clamping utility
+  const clamp = (n: number, min = 0, max = 9999) =>
+    Math.max(min, Math.min(max, n));
+
   return (
     <Card className="shadow-sm bg-red-900">
-      <CardContent className="p-4">
+      <CardContent className="p-4 text-white">
+        {/* Header */}
         <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-medium text-muted-foreground text-white">{title}</div>
-          <Button type="button" size="sm" onClick={addRow} onMouseDown={(e) => e.preventDefault()} disabled={readOnly}>
+          <div className="text-sm font-medium">{title}</div>
+          <Button
+            type="button"
+            size="sm"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={addRow}
+            disabled={
+              readOnly ||
+              (currentTotal ?? 0) >= (maxItems ?? Infinity)
+            }
+            title={
+              (currentTotal ?? 0) >= (maxItems ?? Infinity)
+                ? "Inventory is full"
+                : undefined
+            }
+          >
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
+          {rows.length >= maxItems && (
+            <div className="mt-1 text-xs text-white/70">
+              Inventory full ({rows.length}/{maxItems})
+            </div>
+          )}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed border-separate border-spacing-y-2">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground text-white">
-                {fields.map((f) => (
-                  <th key={f.id} className="px-2 font-medium">
-                    {f.label}
-                  </th>
-                ))}
-                <th className="w-12 px-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={`${idBase}-row-${i}`} className="rounded-xl">
-                  {fields.map((f) => (
-                    <td key={f.id} className="px-2 py-2">
-                      <Input
-                        aria-label={`${f.label} row ${i + 1}`}
-                        value={String(row[f.id] ?? (f.type === 'number' ? 0 : ''))}
-                        inputMode={f.type === 'number' ? 'numeric' : undefined}
-                        pattern={f.type === 'number' ? '[0-9]*' : undefined}
-                        onChange={(e) => {
-                          const v =
-                            f.type === 'number' ? Number(e.target.value || 0) : e.target.value;
-                          const next = rows.slice();
-                          next[i] = { ...next[i], [f.id]: v };
-                          onChange(next);
-                        }}
-                        disabled={readOnly}
-                      />
-                    </td>
-                  ))}
-                  <td className="px-2 py-2 text-right">
-                    <Button
-                      onMouseDown={(e) => e.preventDefault()}
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Remove row ${i + 1}`}
-                      onClick={() => removeRow(i)}
+
+        {/* Table Body */}
+        <div className="space-y-3">
+          {rows.map((row, i) => {
+            const type = String(row.type ?? "");
+            const sub = String(row.subcategory ?? "");
+            const name = String(row.name ?? "");
+
+            // --- Handle item options ---
+            const typeOptions = Object.keys(ITEM_OPTIONS) as (keyof typeof ITEM_OPTIONS)[];
+            const subOptions =
+              type === "Weapons" || type === "Armor"
+                ? (Object.keys(
+                    ITEM_OPTIONS[type as "Weapons" | "Armor"]
+                  ) as string[])
+                : [];
+            const itemOptions =
+              type === "Weapons" || type === "Armor"
+                ? sub && ITEM_OPTIONS[type as "Weapons" | "Armor"][sub as keyof (typeof ITEM_OPTIONS)["Weapons" | "Armor"]]
+                : type
+                ? ITEM_OPTIONS[type as keyof typeof ITEM_OPTIONS]
+                : [];
+            return (
+              <div
+                key={`${idBase}-row-${i}`}
+                className="rounded-xl border border-white/10 bg-black/30 p-3"
+              >
+                <div className="grid gap-3 md:grid-cols-4">
+                  {/* --- Type Dropdown --- */}
+                  <div className="grid gap-1">
+                    <Label>Type</Label>
+                    <select
+                      className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
+                      value={
+                        typeOptions.includes(type as keyof typeof ITEM_OPTIONS)
+                          ? type
+                          : type === "Other"
+                          ? "Other"
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Other") {
+                          patchRow(i, { type: "Other", subcategory: "", name: "" });
+                        } else {
+                          patchRow(i, {
+                            type: val as keyof typeof ITEM_OPTIONS | "Other",
+                            subcategory: "",
+                            name: "",
+                          });
+                        }
+                      }}
                       disabled={readOnly}
                     >
-                      <Trash2 className="h-4 w-4 text-white" />
+                      <option value="">Select Type...</option>
+                      {typeOptions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                      <option value="Other">Other</option>
+                    </select>
+
+                    {/* Custom input only when "Other" selected */}
+                    {type === "Other" && (
+                      <Input
+                        className="mt-2"
+                        placeholder="Enter custom type"
+                        value={row.customType ?? ""}
+                        onChange={(e) =>
+                          patchRow(i, { customType: e.target.value })
+                        }
+                        disabled={readOnly}
+                      />
+                    )}
+                  </div>
+
+
+                  {/* --- Subcategory (for Weapons / Armor only) --- */}
+                  {subOptions.length > 0 && (
+                  <div className="grid gap-1">
+                    <Label>{type === "Weapons" ? "Weapon Type" : "Armor Type"}</Label>
+                    <select
+                      className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
+                      value={
+                        subOptions.includes(sub)
+                          ? sub
+                          : sub === "Other"
+                          ? "Other"
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Other") {
+                          patchRow(i, { subcategory: "Other", name: "" });
+                        } else {
+                          patchRow(i, { subcategory: val, name: "" });
+                        }
+                      }}
+                      disabled={readOnly}
+                    >
+                      <option value="">Select...</option>
+                      {subOptions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                      <option value="Other">Other</option>
+                    </select>
+
+                    {sub === "Other" && (
+                      <Input
+                        className="mt-2"
+                        placeholder={`Enter custom ${type.toLowerCase()} type`}
+                        value={row.customSub ?? ""}
+                        onChange={(e) => patchRow(i, { customSub: e.target.value })}
+                        disabled={readOnly}
+                      />
+                    )}
+                  </div>
+                )}
+
+                  {/* --- Item Name Dropdown (only after type/sub selected) --- */}
+                  {type && (
+                    <>
+                      {((type === "Weapons" || type === "Armor") && sub) ||
+                      (type !== "Weapons" && type !== "Armor") ? (
+                        itemOptions && Array.isArray(itemOptions) && (
+                          <div className="grid gap-1">
+                            <Label>Item</Label>
+
+                            {/* Dropdown */}
+                            <select
+                              className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
+                              value={
+                                itemOptions.includes(name)
+                                  ? name
+                                  : name === "" || name === "__OTHER__"
+                                  ? "__OTHER__"
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "__OTHER__") {
+                                  patchRow(i, { name: "" }); // show input
+                                } else {
+                                  patchRow(i, { name: val });
+                                }
+                              }}
+                              disabled={readOnly}
+                            >
+                              <option value="">Select...</option>
+                              {itemOptions.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                              <option value="__OTHER__">Other</option>
+                            </select>
+
+                            {/* Show text box ONLY when "Other" is chosen */}
+                            {name === "" && (
+                              <Input
+                                className="mt-2"
+                                placeholder="Enter custom item"
+                                value={name}
+                                onChange={(e) => patchRow(i, { name: e.target.value })}
+                                disabled={readOnly}
+                              />
+                            )}
+                          </div>
+                        )
+                      ) : null}
+                    </>
+                  )}
+
+                  {/* --- Quantity field with + / − buttons --- */}
+                  <div className="grid gap-1">
+                    <Label>Qty</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="w-16 text-center"
+                        readOnly
+                        value={row.qty ?? 1}
+                        disabled={readOnly}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() =>
+                          patchRow(i, {
+                            qty: clamp(Number(row.qty ?? 1) - 1, 0, 99),
+                          })
+                        }
+                        disabled={readOnly}
+                      >
+                        −
+                      </Button>
+                      <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        if ((currentTotal ?? 0) < (maxItems ?? Infinity)) {
+                          patchRow(i, {
+                            qty: clamp(Number(row.qty ?? 1) + 1, 0, 99),
+                          });
+                        }
+                      }}
+                      disabled={readOnly || (currentTotal ?? 0) >= (maxItems ?? Infinity)}
+                      title={
+                        (currentTotal ?? 0) >= (maxItems ?? Infinity)
+                          ? "Inventory is full"
+                          : undefined
+                      }
+                    >
+                      +
                     </Button>
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td className="px-2 py-4 text-sm text-muted-foreground text-white" colSpan={fields.length + 1}>
-                    No items yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* --- Remove Button --- */}
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeRow(i)}
+                    disabled={readOnly}
+                    aria-label="Remove item"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+
+          {rows.length === 0 && (
+            <div className="text-sm text-white/70">No items yet.</div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -3136,16 +3373,18 @@ const EquippedGear: React.FC<{
           <div className="space-y-2">
             {accessories.map((txt, i) => (
               <div key={i} className="flex items-center gap-2">
-                <Input
+                <SelectableField
+                  label={`Accessory ${i + 1}`}
                   value={txt}
-                  onChange={(e) => {
+                  options={ACCESSORY_OPTIONS}
+                  onChange={(val) => {
                     const next = accessories.slice();
-                    next[i] = e.target.value;
+                    next[i] = val;
                     onChangeAccessories(next);
                   }}
-                  placeholder={`Accessory ${i + 1}`}
-                  disabled={readOnly}
+                  readOnly={readOnly}
                 />
+
                 <Button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
@@ -3189,23 +3428,67 @@ const EquippedGear: React.FC<{
               <div key={w.id} className="rounded-xl border p-3">
                 <div className="grid gap-2">
                   <div className="grid gap-1">
-                    <Label>Name</Label>
-                    <Input
-                      value={w.name}
-                      onChange={(e) => patchWeapon(w.id, { name: e.target.value })}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label>Skill</Label>
-                    <Input
+                    {/* Weapon Type (Skill) Dropdown */}
+                    <SelectableField
+                      label="Weapon Type"
                       value={w.skill}
-                      onChange={(e) => patchWeapon(w.id, { skill: e.target.value })}
-                      disabled={readOnly}
+                      options={Object.keys(WEAPON_OPTIONS)}
+                      onChange={(val) => {
+                        // Reset weapon name if category changes
+                        patchWeapon(w.id, { skill: val, name: "" });
+                      }}
+                      readOnly={readOnly}
                     />
                   </div>
                   <div className="grid gap-1">
-                    <Label>Action/Effects</Label>
+                    {/* Weapon Name Dropdown (depends on type) */}
+                    {w.skill && WEAPON_OPTIONS[w.skill as keyof typeof WEAPON_OPTIONS] && (
+                      <SelectableField
+                        label="Weapon"
+                        value={w.name}
+                        options={
+                          Array.isArray(WEAPON_OPTIONS[w.skill as keyof typeof WEAPON_OPTIONS])
+                            ? (WEAPON_OPTIONS[w.skill as keyof typeof WEAPON_OPTIONS] as string[])
+                            : Object.values(
+                                WEAPON_OPTIONS[w.skill as keyof typeof WEAPON_OPTIONS]
+                              ).flat()
+                        }
+                        onChange={(val) => {
+                        const base = WEAPON_STATS[val];
+                        if (base) {
+                          // Auto-populate all weapon stats, including ammo capacity
+                          const parsedAmmo =
+                            typeof base.ammo === "string"
+                              ? parseInt(base.ammo.replace(/\D/g, ""), 10) || 0
+                              : Number(base.ammo) || 0;
+
+                          patchWeapon(w.id, {
+                            name: val,
+                            skill: base.type ?? w.skill,
+                            action: base.action ?? w.action,
+                            idealRange: base.idealRange ?? w.idealRange,
+                            maxRange: base.maxRange ?? w.maxRange,
+                            damageTypes: base.damage ?? w.damageTypes,
+                            arp: base.arp ?? w.arp,
+                            maxAmmo: parsedAmmo, // auto-set max ammo from WEAPON_STATS
+                            currentAmmo: parsedAmmo, // optional: start full
+                          });
+                        } else {
+                          // No stats available — treat as custom weapon
+                          patchWeapon(w.id, { name: val });
+                        }
+                      }}
+
+
+                        readOnly={readOnly}
+                      />
+                    )}
+                  </div>
+                  <div className="grid gap-1">
+                    <Label>Action/Effects{" "}
+                      {WEAPON_STATS[w.name] && (
+                        <span className="text-xs text-white/50">(auto-filled)</span>
+                      )}</Label>
                     <Textarea
                       value={w.action}
                       onChange={(e) => patchWeapon(w.id, { action: e.target.value })}
@@ -3214,7 +3497,10 @@ const EquippedGear: React.FC<{
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="grid gap-1">
-                      <Label>Ideal Range</Label>
+                      <Label>Ideal Range{" "}
+                      {WEAPON_STATS[w.name] && (
+                        <span className="text-xs text-white/50">(auto-filled)</span>
+                      )}</Label>
                       <Input
                         value={w.idealRange}
                         onChange={(e) => patchWeapon(w.id, { idealRange: e.target.value })}
@@ -3222,7 +3508,10 @@ const EquippedGear: React.FC<{
                       />
                     </div>
                     <div className="grid gap-1">
-                      <Label>Max Range</Label>
+                      <Label>Max Range{" "}
+                      {WEAPON_STATS[w.name] && (
+                        <span className="text-xs text-white/50">(auto-filled)</span>
+                      )}</Label>
                       <Input
                         value={w.maxRange}
                         onChange={(e) => patchWeapon(w.id, { maxRange: e.target.value })}
@@ -3277,7 +3566,10 @@ const EquippedGear: React.FC<{
                     </div>
 
                     <div className="grid gap-1">
-                      <Label>Max Ammo</Label>
+                      <Label>Max Ammo{" "}
+                      {WEAPON_STATS[w.name] && (
+                        <span className="text-xs text-white/50">(auto-filled)</span>
+                      )}</Label>
                       <Input
                         inputMode="numeric"
                         pattern="[0-9]*"
@@ -3293,7 +3585,10 @@ const EquippedGear: React.FC<{
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="grid gap-1">
-                      <Label>Damage Type(s)</Label>
+                      <Label>Damage Type(s){" "}
+                      {WEAPON_STATS[w.name] && (
+                        <span className="text-xs text-white/50">(auto-filled)</span>
+                      )}</Label>
                       <Input
                         value={w.damageTypes}
                         onChange={(e) => patchWeapon(w.id, { damageTypes: e.target.value })}
@@ -3302,7 +3597,10 @@ const EquippedGear: React.FC<{
                       />
                     </div>
                     <div className="grid gap-1">
-                      <Label>ArP</Label>
+                      <Label>ArP{" "}
+                      {WEAPON_STATS[w.name] && (
+                        <span className="text-xs text-white/50">(auto-filled)</span>
+                      )}</Label>
                       <Input
                         inputMode="numeric"
                         pattern="[0-9]*"
@@ -3351,43 +3649,148 @@ const EquippedGear: React.FC<{
   );
 };
 
+const ArmorSlot: React.FC<{
+  k: keyof ArmorSlots;
+  label: string;
+  slot: { name: string; av: ArmorAV };
+  onChange: (slotKey: keyof ArmorSlots, nextSlot: { name: string; av: ArmorAV }) => void;
+  readOnly?: boolean;
+}> = React.memo(({ k, label, slot, onChange, readOnly }) => {
+  const options =
+    k === "head"
+      ? ARMOR_OPTIONS.head
+      : k === "body"
+      ? ARMOR_OPTIONS.body
+      : ARMOR_OPTIONS.lining;
+
+  const [selected, setSelected] = React.useState(
+    options.includes(slot.name) ? slot.name : "Other"
+  );
+  const [localOther, setLocalOther] = React.useState(
+    options.includes(slot.name) ? "" : slot.name
+  );
+
+  React.useEffect(() => {
+    if (options.includes(slot.name)) {
+      setSelected(slot.name);
+      setLocalOther("");
+    } else if (slot.name) {
+      setSelected("Other");
+      setLocalOther(slot.name);
+    } else {
+      setSelected("");
+      setLocalOther("");
+    }
+  }, [slot.name]);
+
+  const commitName = (newName: string) => {
+    onChange(k, { ...slot, name: newName });
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="grid gap-1.5">
+        <Label>{label} Armor</Label>
+        <select
+          className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
+          value={selected}
+          onChange={(e) => {
+            const val = e.target.value;
+            setSelected(val);
+            if (val !== "Other") commitName(val);
+          }}
+          disabled={readOnly}
+        >
+          <option value="">Select...</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+          <option value="Other">Other</option>
+        </select>
+
+        {selected === "Other" && (
+          <Input
+            className="mt-2"
+            placeholder={`Enter custom ${label.toLowerCase()} armor`}
+            value={localOther}
+            onChange={(e) => setLocalOther(e.target.value)}
+            onBlur={() => commitName(localOther)}
+            disabled={readOnly}
+          />
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {DAMAGE_TYPES.map((dt) => {
+          const [localVal, setLocalVal] = React.useState(String(slot.av[dt] ?? ""));
+          React.useEffect(() => {
+            setLocalVal(String(slot.av[dt] ?? ""));
+          }, [slot.av[dt]]);
+
+          return (
+            <div key={dt} className="grid gap-1">
+              <Label htmlFor={`${k}-${dt}-input`} className="text-xs">
+                {dt}
+              </Label>
+              <Input
+                id={`${k}-${dt}-input`}
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                value={localVal}
+                onChange={(e) => setLocalVal(e.target.value.replace(/[^0-9]/g, ""))}
+                onBlur={() => {
+                  const n = localVal === "" ? 0 : clamp(parseInt(localVal, 10), 0, 99);
+                  onChange(k, {
+                    ...slot,
+                    av: { ...slot.av, [dt]: n },
+                  });
+                }}
+                disabled={readOnly}
+                className="w-20"
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+
 const ArmorSlotsBox: React.FC<{
   armor: ArmorSlots;
   onChange: (next: ArmorSlots) => void;
   readOnly?: boolean;
 }> = ({ armor, onChange, readOnly }) => {
-  const Slot: React.FC<{ k: keyof ArmorSlots; label: string }> = ({ k, label }) => {
-    const slot = armor[k];
-    return (
-      <div className="space-y-2">
-        <div className="grid gap-1.5">
-          <Label>{label}</Label>
-          <Input
-            value={slot.name}
-            onChange={(e) => onChange({ ...armor, [k]: { ...slot, name: e.target.value } })}
-            placeholder={`${label} item name`}
-            disabled={readOnly}
-          />
-        </div>
-      </div>
-    );
-  };
+  const handleSlotChange = React.useCallback(
+    (slotKey: keyof ArmorSlots, nextSlot: { name: string; av: ArmorAV }) => {
+      const nextArmor = { ...armor, [slotKey]: nextSlot };
+      onChange(nextArmor);
+    },
+    [armor, onChange]
+  );
 
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
-        <div className="mb-2 text-sm font-medium text-muted-foreground text-white">Armor Slots</div>
+        <div className="mb-2 text-sm font-medium text-muted-foreground text-white">
+          Armor Slots
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-white">
-          <Slot k="head" label="Head" />
-          <Slot k="body" label="Body" />
-          <Slot k="lining" label="Lining" />
+          <ArmorSlot k="head" label="Head" slot={armor.head} onChange={handleSlotChange} readOnly={readOnly} />
+          <ArmorSlot k="body" label="Body" slot={armor.body} onChange={handleSlotChange} readOnly={readOnly} />
+          <ArmorSlot k="lining" label="Lining" slot={armor.lining} onChange={handleSlotChange} readOnly={readOnly} />
         </div>
       </CardContent>
     </Card>
   );
 };
 
-// Replace the existing ArmorTotalsBox with this version
+
+
 const ArmorTotalsBox: React.FC<{
   av: ArmorAV;
   onChange: (next: ArmorAV) => void;
@@ -3412,7 +3815,6 @@ const ArmorTotalsBox: React.FC<{
                 <div className="flex items-center gap-2">
                   <Input
                     inputMode="numeric"
-                    pattern="[0-9]*"
                     value={val}
                     readOnly
                     className="w-15"
@@ -3424,7 +3826,9 @@ const ArmorTotalsBox: React.FC<{
                     variant="secondary"
                     size="sm"
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => onChange({ ...av, [dt]: clamp(val - 1, MIN, MAX) })}
+                    onClick={() =>
+                      onChange({ ...av, [dt]: clamp(val - 1, MIN, MAX) })
+                    }
                     disabled={readOnly}
                     aria-label={`${dt} decrement`}
                   >
@@ -3435,7 +3839,9 @@ const ArmorTotalsBox: React.FC<{
                     variant="secondary"
                     size="sm"
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => onChange({ ...av, [dt]: clamp(val + 1, MIN, MAX) })}
+                    onClick={() =>
+                      onChange({ ...av, [dt]: clamp(val + 1, MIN, MAX) })
+                    }
                     disabled={readOnly}
                     aria-label={`${dt} increment`}
                   >
@@ -3453,107 +3859,215 @@ const ArmorTotalsBox: React.FC<{
 
 
 
+
 const VehiclesPanel: React.FC<{
   vehicles: VehicleEntry[];
   onChange: (next: VehicleEntry[]) => void;
   readOnly?: boolean;
 }> = ({ vehicles, onChange, readOnly }) => {
-  const add = () =>
+  const addVehicle = () =>
     onChange([
       ...vehicles,
-      { id: makeId('veh'), name: '', capacity: 0, topSpeed: '', flying: false, notes: '' },
+      {
+        id: makeId("veh"),
+        name: "",
+        capacity: 0,
+        topSpeed: "",
+        flying: false,
+        size: "",
+        notes: "",
+      },
     ]);
-  const patch = (id: string, p: Partial<VehicleEntry>) =>
+
+  const removeVehicle = (id: string) =>
+    onChange(vehicles.filter((v) => v.id !== id));
+
+  const patchVehicle = (id: string, p: Partial<VehicleEntry>) =>
     onChange(vehicles.map((v) => (v.id === id ? { ...v, ...p } : v)));
-  const remove = (id: string) => onChange(vehicles.filter((v) => v.id !== id));
+
+  const allVehicles: string[] = Object.keys(VEHICLE_STATS);
+
+  // Vehicle names as plain strings, so .includes accepts `string`
+  const vehicleNames = React.useMemo(() => Object.keys(VEHICLE_STATS) as string[], []);
+  const isKnownVehicle = (name: string) => vehicleNames.includes(name);
 
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
         <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-medium text-muted-foreground text-white">Vehicles</div>
-          <Button type="button" onMouseDown={(e) => e.preventDefault()} size="sm" onClick={add} disabled={readOnly}>
+          <div className="text-sm font-medium text-muted-foreground text-white">
+            Vehicles <span className="ml-2 text-xs text-white">{vehicles.length}</span>
+          </div>
+          <Button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            size="sm"
+            onClick={addVehicle}
+            disabled={readOnly}
+          >
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
         </div>
 
-        <div className="space-y-3">
-          {vehicles.map((v) => (
-            <div key={v.id} className="rounded-xl border p-3">
-              <div className="grid gap-2 md:grid-cols-2">
-                <div className="grid gap-1">
-                  <Label>Name</Label>
-                  <Input
-                    value={v.name}
-                    onChange={(e) => patch(v.id, { name: e.target.value })}
-                    disabled={readOnly}
-                  />
+        <div className="grid grid-cols-1 gap-4">
+          {vehicles.map((v) => {
+            const base =
+            typeof v.name === "string" && v.name in VEHICLE_STATS
+              ? (VEHICLE_STATS as Record<string, any>)[v.name]
+              : undefined;
+            const vehicleType = base
+              ? base.type
+              : v.name
+              ? v.flying
+                ? "Flying"
+                : "Ground"
+              : "Custom";
+
+            return (
+              <div key={v.id} className="rounded-xl border p-3">
+                <div className="grid gap-2 md:grid-cols-2">
+                  {/* Vehicle Model Dropdown */}
+                  <div className="grid gap-1">
+                    <Label>Vehicle</Label>
+                    <select
+                      className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
+                      value={(allVehicles as readonly string[]).includes(v.name) ? v.name : v.name ? "Other" : ""}
+                      onChange={(e) => {
+                        const model = e.target.value;
+                        if (model === "Other") {
+                          patchVehicle(v.id, {
+                            name: "",
+                            capacity: 0,
+                            topSpeed: "",
+                            flying: false,
+                            size: "",
+                          });
+                        } else if (VEHICLE_STATS[model]) {
+                          const info = VEHICLE_STATS[model];
+                          patchVehicle(v.id, {
+                            name: model,
+                            capacity: info.capacity,
+                            size: info.size,
+                            topSpeed: info.speed,
+                            flying: info.type === "Flying",
+                          });
+                        } else {
+                          patchVehicle(v.id, { name: model });
+                        }
+                      }}
+                      disabled={readOnly}
+                    >
+                      <option value="">Select...</option>
+                      {allVehicles.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                      <option value="Other">Other</option>
+                    </select>
+
+                    {/* "Other" custom input */}
+                    {(!allVehicles.includes(v.name) && v.name !== "") || v.name === "" ? (
+                      <Input
+                        className="mt-2"
+                        placeholder="Enter custom vehicle name"
+                        value={v.name}
+                        onChange={(e) => patchVehicle(v.id, { name: e.target.value })}
+                        disabled={readOnly}
+                      />
+                    ) : null}
+
+                  </div>
+
+                  {/* Passenger Capacity */}
+                  <div className="grid gap-1">
+                    <Label>Passenger Capacity</Label>
+                    <Input
+                      inputMode="numeric"
+                      value={v.capacity}
+                      onChange={(e) =>
+                        patchVehicle(v.id, {
+                          capacity: clamp(parseInt(e.target.value || "0", 10), 0, 999),
+                        })
+                      }
+                      disabled={readOnly}
+                    />
+                  </div>
+
+                  {/* Top Speed */}
+                  <div className="grid gap-1">
+                    <Label>Top Speed</Label>
+                    <Input
+                      value={v.topSpeed}
+                      onChange={(e) => patchVehicle(v.id, { topSpeed: e.target.value })}
+                      placeholder="e.g., 20 Units/turn"
+                      disabled={readOnly}
+                    />
+                  </div>
+
+                  {/* Type (auto-filled, read-only) */}
+                  <div className="grid gap-1">
+                    <Label>Type</Label>
+                    <Input
+                      readOnly
+                      value={vehicleType}
+                      className="bg-black/40 text-white border-white/10"
+                      disabled={readOnly}
+                    />
+                  </div>
+
+                  {/* Size */}
+                  <div className="grid gap-1">
+                    <Label>Size</Label>
+                    <Input
+                      value={v.size}
+                      onChange={(e) => patchVehicle(v.id, { size: e.target.value })}
+                      placeholder="e.g., 3x4"
+                      disabled={readOnly}
+                    />
+                  </div>
+
+                  {/* Notes */}
+                  <div className="md:col-span-2 grid gap-1">
+                    <Label>Notes</Label>
+                    <Textarea
+                      value={v.notes ?? ""}
+                      onChange={(e) => patchVehicle(v.id, { notes: e.target.value })}
+                      disabled={readOnly}
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-1">
-                  <Label>Passenger Capacity</Label>
-                  <Input
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={v.capacity}
-                    onChange={(e) =>
-                      patch(v.id, { capacity: clamp(parseInt(e.target.value || '0', 10), 0, 999) })
-                    }
+
+                {/* Remove Button */}
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeVehicle(v.id)}
                     disabled={readOnly}
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label>Top Speed</Label>
-                  <Input
-                    value={v.topSpeed}
-                    onChange={(e) => patch(v.id, { topSpeed: e.target.value })}
-                    placeholder="e.g., 20 Units"
-                    disabled={readOnly}
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label>Type</Label>
-                  <select
-                    className="rounded-md border bg-background px-3 py-2 text-sm"
-                    value={v.flying ? 'flying' : 'land'}
-                    onChange={(e) => patch(v.id, { flying: e.target.value === 'flying' })}
-                    disabled={readOnly}
+                    aria-label="Remove vehicle"
                   >
-                    <option value="land">Landlocked</option>
-                    <option value="flying">Flying</option>
-                  </select>
-                </div>
-                <div className="md:col-span-2 grid gap-1">
-                  <Label>Notes</Label>
-                  <Textarea
-                    value={v.notes ?? ''}
-                    onChange={(e) => patch(v.id, { notes: e.target.value })}
-                    disabled={readOnly}
-                  />
+                    <Trash2 className="h-4 w-4 text-white" />
+                  </Button>
                 </div>
               </div>
-              <div className="mt-2 flex justify-end">
-                <Button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => remove(v.id)}
-                  disabled={readOnly}
-                  aria-label="Remove vehicle"
-                >
-                  <Trash2 className="h-4 w-4 text-white" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
+
           {vehicles.length === 0 && (
-            <div className="text-sm text-muted-foreground text-white">No vehicles listed.</div>
+            <div className="text-sm text-muted-foreground text-white">
+              No vehicles added.
+            </div>
           )}
         </div>
       </CardContent>
     </Card>
   );
 };
+
+
 
 const InjuriesPanel: React.FC<{
   injuries: number;
@@ -4783,7 +5297,6 @@ const LevelUpPanel: React.FC<{
                 onMouseDown={(e) => e.preventDefault()}
                 onPointerDown={(e) => e.preventDefault()}
                 onClick={(e) => e.preventDefault()}
-                tabIndex={-1}
               >
               <input
                 onMouseDown={(e) => e.preventDefault()}
@@ -4930,9 +5443,9 @@ const DEFAULT_CHARACTER: Character = {
   items: [],
   stash: [],
   armor: {
-    head: { name: ''},
-    body: { name: ''},
-    lining: { name: ''},
+    head: { name: "", av: emptyAV() },
+    body: { name: "", av: emptyAV() },
+    lining: { name: "", av: emptyAV() },
   },
   totalArmor: emptyAV(),
   accessories: [],
@@ -4958,14 +5471,32 @@ export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) 
   const [tabValue, setTabValue] = useState("stats");
   const [raceLocked, setRaceLocked] = React.useState(false);
   const [char, setChar] = useState<Character>(() => {
-  if (props.value) return props.value;
-  if (typeof window !== 'undefined') {
+  const ensureAV = (slot?: { name: string; av?: ArmorAV }): { name: string; av: ArmorAV } => ({
+    name: slot?.name ?? "",
+    av: slot?.av ?? emptyAV(),
+  });
+
+  let base: Character;
+
+  if (props.value) base = props.value;
+  else if (typeof window !== "undefined") {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) as Character : DEFAULT_CHARACTER;
-    } catch {}
-  }
-  return DEFAULT_CHARACTER;
+      base = raw ? (JSON.parse(raw) as Character) : DEFAULT_CHARACTER;
+    } catch {
+      base = DEFAULT_CHARACTER;
+    }
+  } else base = DEFAULT_CHARACTER;
+
+  // Ensure armor fields always have AV objects
+  return {
+    ...base,
+    armor: {
+      head: ensureAV(base.armor?.head),
+      body: ensureAV(base.armor?.body),
+      lining: ensureAV(base.armor?.lining),
+    },
+  };
 });
 
 
@@ -5013,6 +5544,13 @@ useEffect(() => {
 const registry = useMemo(() => props.registry ?? DEFAULT_REGISTRY, [props.registry]);
 const onChange = props.onChange ?? setChar;
 const readOnly = props.readOnly ?? false;
+
+const handleArmorChange = React.useCallback(
+  (next: ArmorSlots) => {
+    onChange(set(char, "armor", next));
+  },
+  [char, onChange]
+);
 
 // track edit state for skills
 const [editSkills, setEditSkills] = useState(false);
@@ -5086,6 +5624,19 @@ const commitMission = () => {
     }
   };
 
+// --- Inventory capacity logic ---
+const baseMaxItems = 5;
+const hasBackpack = (char.accessories ?? []).includes("Backpack");
+const hasBelt = (char.accessories ?? []).includes("Utility Belt");
+const maxInventory =
+  baseMaxItems + (hasBackpack ? 5 : 0) + (hasBelt ? 3 : 0);
+
+// Count total quantity instead of rows
+const currentInventoryCount = (char.items ?? []).reduce(
+  (sum, item) => sum + Number(item.qty || 0),
+  0
+);
+
   /*const handleResetSave = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -5097,7 +5648,7 @@ const commitMission = () => {
 
       <IdentitySection value={char} onChange={onChange} readOnly={readOnly} raceLocked={raceLocked} onToggleRaceLock={() => setRaceLocked((v) => !v)}/>
 
-      <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
+      <Tabs value={tabValue} onValueChange={setTabValue} className="w-full" activationMode="manual" orientation="horizontal">
         {/* Row with tabs + right-side button */}
         <div className="mb-3 flex items-center justify-between">
           <TabsList
@@ -5172,11 +5723,13 @@ const commitMission = () => {
 
         {/* Items */}
         <TabsContent value="items" className="grid gap-4 text-white">
+          
           <ArmorSlotsBox
-             armor={char.armor}
-             onChange={(next) => onChange(set(char, 'armor', next))}
-             readOnly={readOnly}
-           />
+            armor={char.armor}
+            onChange={handleArmorChange}
+            readOnly={readOnly}
+          />
+
           <ArmorTotalsBox
              av={char.totalArmor ?? emptyAV()}
              onChange={(next) => onChange(set(char, 'totalArmor', next))}
@@ -5199,12 +5752,15 @@ const commitMission = () => {
           />
 
           <ItemsTable
-            title="Inventory"
+            title={`Inventory (${currentInventoryCount}/${maxInventory})`}
             fields={registry.itemFields}
             rows={char.items}
             onChange={(rows) => onChange(set(char, 'items', rows))}
             readOnly={readOnly}
+            maxItems={maxInventory}
+            currentTotal={currentInventoryCount}
           />
+
           <ItemsTable
             title="Stash"
             fields={registry.itemFields}
