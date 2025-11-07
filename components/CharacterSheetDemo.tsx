@@ -3052,21 +3052,15 @@ const ItemsTable: React.FC<{
           >
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
-          {rows.length >= maxItems && (
-            <div className="mt-1 text-xs text-white/70">
-              Inventory full ({rows.length}/{maxItems})
-            </div>
-          )}
         </div>
 
         {/* Table Body */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {rows.map((row, i) => {
             const type = String(row.type ?? "");
             const sub = String(row.subcategory ?? "");
             const name = String(row.name ?? "");
 
-            // --- Handle item options ---
             const typeOptions = Object.keys(ITEM_OPTIONS) as (keyof typeof ITEM_OPTIONS)[];
             const subOptions =
               type === "Weapons" || type === "Armor"
@@ -3080,225 +3074,185 @@ const ItemsTable: React.FC<{
                 : type
                 ? ITEM_OPTIONS[type as keyof typeof ITEM_OPTIONS]
                 : [];
+
             return (
               <div
                 key={`${idBase}-row-${i}`}
-                className="rounded-xl border border-white/10 bg-black/30 p-3"
+                className="inventory-row flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/30 p-2 md:p-3"
               >
-                <div className="grid gap-3 md:grid-cols-4">
-                  {/* --- Type Dropdown --- */}
-                  <div className="grid gap-1">
-                    <Label>Type</Label>
-                    <select
-                      className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
-                      value={
-                        typeOptions.includes(type as keyof typeof ITEM_OPTIONS)
-                          ? type
-                          : type === "Other"
-                          ? "Other"
-                          : ""
+                {/* Type Dropdown */}
+                <select
+                  className="w-32 rounded-md border border-white/20 bg-background px-2 py-1 text-sm text-white"
+                  value={
+                    typeOptions.includes(type as keyof typeof ITEM_OPTIONS)
+                      ? type
+                      : "" // default to Select
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "Other") {
+                      patchRow(i, { type: "Other", subcategory: "", name: "" });
+                    } else {
+                      patchRow(i, {
+                        type: val as keyof typeof ITEM_OPTIONS | "Other",
+                        subcategory: "",
+                        name: "",
+                      });
+                    }
+                  }}
+                  disabled={readOnly}
+                >
+                  <option value="">Type</option>
+                  {typeOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                  <option value="Other">Other</option>
+                </select>
+
+                {/* Subcategory (for Weapons / Armor) */}
+                {subOptions.length > 0 && (
+                  <select
+                    className="w-32 rounded-md border border-white/20 bg-background px-2 py-1 text-sm text-white"
+                    value={
+                      subOptions.includes(sub)
+                        ? sub
+                        : "" // default to Select
+                    }
+
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "Other") {
+                        patchRow(i, { subcategory: "Other", name: "" });
+                      } else {
+                        patchRow(i, { subcategory: val, name: "" });
                       }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "Other") {
-                          patchRow(i, { type: "Other", subcategory: "", name: "" });
-                        } else {
-                          patchRow(i, {
-                            type: val as keyof typeof ITEM_OPTIONS | "Other",
-                            subcategory: "",
-                            name: "",
-                          });
-                        }
-                      }}
-                      disabled={readOnly}
-                    >
-                      <option value="">Select Type...</option>
-                      {typeOptions.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                      <option value="Other">Other</option>
-                    </select>
-
-                    {/* Custom input only when "Other" selected */}
-                    {type === "Other" && (
-                      <Input
-                        className="mt-2"
-                        placeholder="Enter custom type"
-                        value={row.customType ?? ""}
-                        onChange={(e) =>
-                          patchRow(i, { customType: e.target.value })
-                        }
-                        disabled={readOnly}
-                      />
-                    )}
-                  </div>
-
-
-                  {/* --- Subcategory (for Weapons / Armor only) --- */}
-                  {subOptions.length > 0 && (
-                  <div className="grid gap-1">
-                    <Label>{type === "Weapons" ? "Weapon Type" : "Armor Type"}</Label>
-                    <select
-                      className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
-                      value={
-                        subOptions.includes(sub)
-                          ? sub
-                          : sub === "Other"
-                          ? "Other"
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "Other") {
-                          patchRow(i, { subcategory: "Other", name: "" });
-                        } else {
-                          patchRow(i, { subcategory: val, name: "" });
-                        }
-                      }}
-                      disabled={readOnly}
-                    >
-                      <option value="">Select...</option>
-                      {subOptions.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                      <option value="Other">Other</option>
-                    </select>
-
-                    {sub === "Other" && (
-                      <Input
-                        className="mt-2"
-                        placeholder={`Enter custom ${type.toLowerCase()} type`}
-                        value={row.customSub ?? ""}
-                        onChange={(e) => patchRow(i, { customSub: e.target.value })}
-                        disabled={readOnly}
-                      />
-                    )}
-                  </div>
+                    }}
+                    disabled={readOnly}
+                  >
+                    <option value="">Subtype</option>
+                    {subOptions.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
                 )}
 
-                  {/* --- Item Name Dropdown (only after type/sub selected) --- */}
-                  {type && (
-                    <>
-                      {((type === "Weapons" || type === "Armor") && sub) ||
-                      (type !== "Weapons" && type !== "Armor") ? (
-                        itemOptions && Array.isArray(itemOptions) && (
-                          <div className="grid gap-1">
-                            <Label>Item</Label>
+                {/* Item Dropdown */}
+                {type && (
+                  <>
+                    {((type === "Weapons" || type === "Armor") && sub) ||
+                    (type !== "Weapons" && type !== "Armor") ? (
+                      itemOptions && Array.isArray(itemOptions) && (
+                        <select
+                          className="w-40 rounded-md border border-white/20 bg-background px-2 py-1 text-sm text-white"
+                          value={
+                            itemOptions.includes(name)
+                              ? name
+                              : "" // default to Select
+                          }
 
-                            {/* Dropdown */}
-                            <select
-                              className="rounded-md border border-white/20 bg-background px-3 py-2 text-sm text-white"
-                              value={
-                                itemOptions.includes(name)
-                                  ? name
-                                  : name === "" || name === "__OTHER__"
-                                  ? "__OTHER__"
-                                  : ""
-                              }
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === "__OTHER__") {
-                                  patchRow(i, { name: "" }); // show input
-                                } else {
-                                  patchRow(i, { name: val });
-                                }
-                              }}
-                              disabled={readOnly}
-                            >
-                              <option value="">Select...</option>
-                              {itemOptions.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                              <option value="__OTHER__">Other</option>
-                            </select>
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "__OTHER__") {
+                              patchRow(i, { name: "" });
+                            } else {
+                              patchRow(i, { name: val });
+                            }
+                          }}
+                          disabled={readOnly}
+                        >
+                          <option value="">Item</option>
+                          {itemOptions.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                          <option value="__OTHER__">Other</option>
+                        </select>
+                      )
+                    ) : null}
+                  </>
+                )}
 
-                            {/* Show text box ONLY when "Other" is chosen */}
-                            {name === "" && (
-                              <Input
-                                className="mt-2"
-                                placeholder="Enter custom item"
-                                value={name}
-                                onChange={(e) => patchRow(i, { name: e.target.value })}
-                                disabled={readOnly}
-                              />
-                            )}
-                          </div>
-                        )
-                      ) : null}
-                    </>
-                  )}
+                {/* Custom input (Other item) */}
+                {name === "" && (
+                  <Input
+                    className="w-40 h-8 text-sm px-2"
+                    placeholder="Custom item"
+                    value={name}
+                    onChange={(e) => patchRow(i, { name: e.target.value })}
+                    disabled={readOnly}
+                  />
+                )}
 
-                  {/* --- Quantity field with + / − buttons --- */}
-                  <div className="grid gap-1">
-                    <Label>Qty</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        className="w-16 text-center"
-                        readOnly
-                        value={row.qty ?? 1}
-                        disabled={readOnly}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() =>
-                          patchRow(i, {
-                            qty: clamp(Number(row.qty ?? 1) - 1, 0, 99),
-                          })
-                        }
-                        disabled={readOnly}
-                      >
-                        −
-                      </Button>
-                      <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        if ((currentTotal ?? 0) < (maxItems ?? Infinity)) {
-                          patchRow(i, {
-                            qty: clamp(Number(row.qty ?? 1) + 1, 0, 99),
-                          });
-                        }
-                      }}
-                      disabled={readOnly || (currentTotal ?? 0) >= (maxItems ?? Infinity)}
-                      title={
-                        (currentTotal ?? 0) >= (maxItems ?? Infinity)
-                          ? "Inventory is full"
-                          : undefined
-                      }
-                    >
-                      +
-                    </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* --- Remove Button --- */}
-                <div className="mt-2 flex justify-end">
+                {/* Qty field */}
+                <div className="flex items-center gap-1">
+                  <Input
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="w-14 h-8 text-center text-sm"
+                    readOnly
+                    value={row.qty ?? 1}
+                    disabled={readOnly}
+                  />
                   <Button
                     type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 px-2"
                     onMouseDown={(e) => e.preventDefault()}
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeRow(i)}
+                    onClick={() =>
+                      patchRow(i, {
+                        qty: clamp(Number(row.qty ?? 1) - 1, 0, 99),
+                      })
+                    }
                     disabled={readOnly}
-                    aria-label="Remove item"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    −
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 px-2"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      if ((currentTotal ?? 0) < (maxItems ?? Infinity)) {
+                        patchRow(i, {
+                          qty: clamp(Number(row.qty ?? 1) + 1, 0, 99),
+                        });
+                      }
+                    }}
+                    disabled={
+                      readOnly || (currentTotal ?? 0) >= (maxItems ?? Infinity)
+                    }
+                    title={
+                      (currentTotal ?? 0) >= (maxItems ?? Infinity)
+                        ? "Inventory is full"
+                        : undefined
+                    }
+                  >
+                    +
                   </Button>
                 </div>
+
+                {/* Remove Button */}
+                <Button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto"
+                  onClick={() => removeRow(i)}
+                  disabled={readOnly}
+                  aria-label="Remove item"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             );
           })}
@@ -3311,6 +3265,7 @@ const ItemsTable: React.FC<{
     </Card>
   );
 };
+
 
 const EquippedGear: React.FC<{
   accessories: string[];
