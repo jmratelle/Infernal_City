@@ -3200,44 +3200,44 @@ const ItemsTable: React.FC<{
                     disabled={readOnly}
                   />
                   <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 px-2"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() =>
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="h-9 w-9 text-base"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() =>
+                    patchRow(i, {
+                      qty: clamp(Number(row.qty ?? 1) - 1, 0, 99),
+                    })
+                  }
+                  disabled={readOnly}
+                >
+                  −
+                </Button>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="h-9 w-9 text-base"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if ((currentTotal ?? 0) < (maxItems ?? Infinity)) {
                       patchRow(i, {
-                        qty: clamp(Number(row.qty ?? 1) - 1, 0, 99),
-                      })
+                        qty: clamp(Number(row.qty ?? 1) + 1, 0, 99),
+                      });
                     }
-                    disabled={readOnly}
-                  >
-                    −
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 px-2"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      if ((currentTotal ?? 0) < (maxItems ?? Infinity)) {
-                        patchRow(i, {
-                          qty: clamp(Number(row.qty ?? 1) + 1, 0, 99),
-                        });
-                      }
-                    }}
-                    disabled={
-                      readOnly || (currentTotal ?? 0) >= (maxItems ?? Infinity)
-                    }
-                    title={
-                      (currentTotal ?? 0) >= (maxItems ?? Infinity)
-                        ? "Inventory is full"
-                        : undefined
-                    }
-                  >
-                    +
-                  </Button>
+                  }}
+                  disabled={readOnly || (currentTotal ?? 0) >= (maxItems ?? Infinity)}
+                  title={
+                    (currentTotal ?? 0) >= (maxItems ?? Infinity)
+                      ? "Inventory is full"
+                      : undefined
+                  }
+                >
+                  +
+                </Button>
+
                 </div>
 
                 {/* Remove Button */}
