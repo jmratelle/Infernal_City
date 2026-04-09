@@ -306,6 +306,7 @@ export type Character = {
   money?: number;
   abilities?: AbilityEntry[];
   tallySpent?: Record<string, number>;      // tallies consumed by level-ups
+  abilityUnlocksAvailable?: number;
   attributes: Record<string, number>;
   resources: Record<string, number>;
   items: Array<Record<string, string | number>>;
@@ -1908,6 +1909,7 @@ export const GENERAL_UNLOCK_DEFS: GeneralUnlockDef[] = [
   {
     name: "Expertise",
     desc: "Choose a skill. At the start of each mission, gain specific rerolls for that skill equal to its current level. These rerolls do not stack between missions. You may take this ability multiple times for different skills.",
+    stackMax: 99,
   },
   {
     name: "Base Competency",
@@ -2722,6 +2724,7 @@ const ResourcesPanel: React.FC<{
   resourceDefs: ResourceDef[];
   resourceValues: Record<string, number>;
   onChangeResources: (next: Record<string, number>) => void;
+  abilities: AbilityEntry[];
   skillDefs: AttributeDef[];
   skillValues: Record<string, number>;
   skillRerolls: Record<string, number>;
@@ -2735,6 +2738,7 @@ const ResourcesPanel: React.FC<{
   resourceDefs,
   resourceValues,
   onChangeResources,
+  abilities,
   skillDefs,
   skillValues,
   skillRerolls,
@@ -2746,6 +2750,13 @@ const ResourcesPanel: React.FC<{
   readOnly,
 }) => {
   const groups = groupBy(skillDefs);
+  const expertiseAbilities = (abilities ?? []).filter(
+    (ability) => ability.kind === 'general' && ability.name === 'Expertise' && ability.linkedSkillId
+  );
+  const expertiseSkillIds = Array.from(new Set(expertiseAbilities.map((ability) => ability.linkedSkillId!)));
+  const expertiseDefs = expertiseSkillIds
+    .map((id) => skillDefs.find((def) => def.id === id))
+    .filter((def): def is AttributeDef => Boolean(def));
   const addDebt = () =>
     onChangeDebt([...(debt || []), { id: makeId('debt'), creditor: '', amount: 0 }]);
   /*const removeDebt = (id: string) =>
@@ -2827,16 +2838,18 @@ const ResourcesPanel: React.FC<{
           </div>
 
       {/* Per-skill rerolls */}
-          <div className="mt-4">
-            <div className="text-sm font-medium text-white">Specific Rerolls</div>
-            <div className="mt-1 text-xs leading-relaxed text-white/70">
-              Track 5.2 specific rerolls here manually. These are not granted automatically by skill level and are
-              usually gained from abilities such as Expertise.
-            </div>
-          </div>
-          {(['combat', 'magic', 'specialized'] as SkillGroup[]).map((grp) => {
-            const skills = groups[grp];
-            if (skills.length === 0) return null;
+          {expertiseDefs.length > 0 && (
+            <>
+              <div className="mt-4">
+                <div className="text-sm font-medium text-white">Specific Rerolls</div>
+                <div className="mt-1 text-xs leading-relaxed text-white/70">
+                  These only appear for skills selected by the Expertise ability. Set them manually at the start of each
+                  mission to match the chosen skill's current level.
+                </div>
+              </div>
+              {(['combat', 'magic', 'specialized'] as SkillGroup[]).map((grp) => {
+                const skills = expertiseDefs.filter((def) => def.group === grp);
+                if (skills.length === 0) return null;
             const title = grp === 'combat' ? 'Combat' : grp === 'magic' ? 'Magic' : 'Specialized';
             return (
               <div key={grp} className="mb-3">
@@ -2902,7 +2915,9 @@ const ResourcesPanel: React.FC<{
                 </div>
               </div>
             );
-          })}
+              })}
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -4427,12 +4442,14 @@ const ConditionsPanel: React.FC<{
 
 const AbilitiesPanel: React.FC<{
   abilities: AbilityEntry[];
+  abilityUnlocksAvailable: number;
+  onChangeAbilityUnlocks: (next: number) => void;
   skillDefs: AttributeDef[];
   raceName?: RaceName;
   attrValues?: Record<string, number>;
-  onChange: (next: AbilityEntry[]) => void;
+  onChange: (next: AbilityEntry[], nextAbilityUnlocks?: number) => void;
   readOnly?: boolean;
-}> = ({ abilities, skillDefs, raceName, attrValues, onChange, readOnly }) => {
+}> = ({ abilities, abilityUnlocksAvailable, onChangeAbilityUnlocks, skillDefs, raceName, attrValues, onChange, readOnly }) => {
 
   const [showKindPicker, setShowKindPicker] = React.useState(false);
   const [pickingRace, setPickingRace] = React.useState(false);
@@ -4444,6 +4461,7 @@ const AbilitiesPanel: React.FC<{
 
   const [addingGeneral, setAddingGeneral] = React.useState(false);
   const [addingGeneralChoice, setAddingGeneralChoice] = useState<string | undefined>(undefined);
+  const [addingGeneralLinkedSkillId, setAddingGeneralLinkedSkillId] = useState<string | undefined>(undefined);
   
 
   const rowClass =
@@ -4468,14 +4486,23 @@ const AbilitiesPanel: React.FC<{
   // Auto-populate defaults whenever the selected race changes
   const prevRaceRef = React.useRef<RaceName | undefined>(undefined);
   // Minimal add helper — adjust to your data shape if needed
-  const addAbilityRow = (kind: 'skill' | 'general', name: string) => {
-  // If you have a context/store mutation, call it instead of setState below.
-  add({
-    id: makeId('ab'),
-    kind,
-    name,
-  });
-};
+  const addAbilityRow = (
+    kind: 'skill' | 'general',
+    name: string,
+    extra?: Partial<AbilityEntry>
+  ) => {
+    const nextAbilities = [
+      ...(abilities ?? []),
+      {
+        id: makeId('ab'),
+        kind,
+        name,
+        ...extra,
+      },
+    ];
+    const nextUnlocks = Math.max(0, abilityUnlocksAvailable - 1);
+    onChange(nextAbilities, nextUnlocks);
+  };
 
   React.useEffect(() => {
     if (!raceName) {
@@ -4545,7 +4572,15 @@ const AbilitiesPanel: React.FC<{
   }, [raceName, abilities]);
 
   const add = (entry: AbilityEntry) => onChange([...(abilities ?? []), entry]);
-  const remove = (id: string) => onChange((abilities ?? []).filter(a => a.id !== id));
+  const remove = (id: string, refundMarker = false) => {
+    const removed = (abilities ?? []).find((a) => a.id === id);
+    const nextAbilities = (abilities ?? []).filter(a => a.id !== id);
+    const nextUnlocks =
+      refundMarker && removed && !(removed.kind === 'race' && isDefaultEntry(removed))
+        ? abilityUnlocksAvailable + 1
+        : undefined;
+    onChange(nextAbilities, nextUnlocks);
+  };
   const patch  = (id: string, p: Partial<AbilityEntry>) =>
     onChange((abilities ?? []).map(a => (a.id === id ? { ...a, ...p } : a)));
 
@@ -4593,9 +4628,6 @@ const AbilitiesPanel: React.FC<{
 const skillLevel = (id?: string) => (id ? (attrValues?.[id] ?? 0) : 0);
 
 // Lookups for already-chosen names
-const chosenSkillNames = new Set((abilities ?? []).filter(a => a.kind === 'skill').map(a => a.name));
-const chosenGeneralNames = new Set((abilities ?? []).filter(a => a.kind === 'general').map(a => a.name));
-
 // Gating for skill unlocks
 const meetsSkillUnlockPrereqs = (choice?: SkillUnlockChoice) => {
   if (!choice) return true;
@@ -4622,6 +4654,22 @@ const meetsSkillUnlockPrereqs = (choice?: SkillUnlockChoice) => {
   }
 
   return true;
+};
+
+const canAddExpertiseForSkill = (skillId?: string, currentId?: string) => {
+  if (!skillId) return false;
+  return !(abilities ?? []).some(
+    (a) => a.kind === 'general' && a.name === 'Expertise' && a.linkedSkillId === skillId && a.id !== currentId
+  );
+};
+
+const canAddGeneralDef = (def?: GeneralUnlockDef, linkedSkillId?: string, currentId?: string) => {
+  if (!def) return true;
+  if (!meetsGeneralUnlockPrereqs(def)) return false;
+  if (def.name === 'Expertise') {
+    return canAddExpertiseForSkill(linkedSkillId, currentId);
+  }
+  return !(abilities ?? []).some((a) => a.kind === 'general' && a.name === def.name && a.id !== currentId);
 };
 
 // Map each skill choice name -> its (skill, level) group using requiresSkillId/requiresMinLevel
@@ -4719,15 +4767,11 @@ const skillDisplayOptionsFor = (currentId: string, currentName?: string) => {
 
 // Build options for a specific General row, letting the current row's selection remain selectable
 const generalDisplayOptionsFor = (currentId: string, currentName?: string) => {
-  const pickedByOthers = new Set(
-    (abilities ?? [])
-      .filter(a => a.kind === 'general' && a.id !== currentId)
-      .map(a => a.name)
-  );
-
   const opts = GENERAL_UNLOCK_DEFS
-    .filter(def => meetsGeneralUnlockPrereqs(def))
-    .filter(def => !pickedByOthers.has(def.name))
+    .filter(def => {
+      if (def.name === 'Expertise') return skillDefs.some((skill) => canAddExpertiseForSkill(skill.id, currentId));
+      return canAddGeneralDef(def, undefined, currentId);
+    })
     .map(def => def.name);
 
   // Keep current selection visible so <select> doesn’t snap back
@@ -4845,7 +4889,7 @@ const canAddName = (name: string) => {
 
 
   const startAddRaceAbility = () => {
-    if (!raceName || raceDefs.length === 0) return;
+    if (!raceName || raceDefs.length === 0 || abilityUnlocksAvailable <= 0) return;
     const first = raceDefs.find(d => canAddName(d.name))?.name ?? '';
     if (!first) return; // nothing addable under current constraints
     setDraftRaceAbility(first);
@@ -4855,7 +4899,8 @@ const canAddName = (name: string) => {
   const confirmAddRaceAbility = () => {
     if (!draftRaceAbility) { setPickingRace(false); return; }
     if (!canAddName(draftRaceAbility)) { setPickingRace(false); setShowKindPicker(false); return; }
-    add({ id: makeId('ab'), kind: 'race', name: draftRaceAbility });
+    const nextAbilities = [...(abilities ?? []), { id: makeId('ab'), kind: 'race', name: draftRaceAbility }];
+    onChange(nextAbilities, Math.max(0, abilityUnlocksAvailable - 1));
     setPickingRace(false);
     setShowKindPicker(false);
   };
@@ -4863,6 +4908,11 @@ const canAddName = (name: string) => {
   const cancelPickers = () => {
     setPickingRace(false);
     setShowKindPicker(false);
+    setAddingGeneral(false);
+    setAddingGeneralChoice(undefined);
+    setAddingGeneralLinkedSkillId(undefined);
+    setAddingSkill(false);
+    setAddingSkillChoice(undefined);
   };
 
   // for the row <select>: disable options that would BREAK rules when chosen
@@ -4922,6 +4972,9 @@ const canAddName = (name: string) => {
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="text-sm font-medium">Abilities</div>
+            <span className="rounded-full bg-black/40 px-2 py-0.5 text-[11px]">
+              Unlock Markers: {abilityUnlocksAvailable}
+            </span>
             {raceName === 'Abomination' && (
               <StatusPill
                 ok={abomMutationCount >= 1 && abomMutationCount <= mutationMax}
@@ -4933,13 +4986,37 @@ const canAddName = (name: string) => {
             )}
           </div>
 
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onChangeAbilityUnlocks(Math.max(0, abilityUnlocksAvailable - 1))}
+              disabled={readOnly || abilityUnlocksAvailable <= 0}
+            >
+              −
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onChangeAbilityUnlocks(abilityUnlocksAvailable + 1)}
+              disabled={readOnly}
+            >
+              +
+            </Button>
+          </div>
+
           {!showKindPicker ? (
             <Button
               type="button"
               size="sm"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setShowKindPicker(true)}
-              disabled={readOnly}
+              disabled={readOnly || abilityUnlocksAvailable <= 0}
+              title={abilityUnlocksAvailable <= 0 ? 'Gain an ability unlock marker by improving a skill first' : ''}
             >
               + Add Ability
             </Button>
@@ -4956,14 +5033,18 @@ const canAddName = (name: string) => {
                     // closing
                     setAddingGeneral(false);
                     setAddingGeneralChoice(undefined);
+                    setAddingGeneralLinkedSkillId(undefined);
                   } else {
                     // opening: preselect first eligible option
                     const opts = generalDisplayOptionsFor("new-general");
                     setAddingGeneral(true);
                     setAddingGeneralChoice(opts[0] ?? undefined);
+                    setAddingGeneralLinkedSkillId(
+                      skillDefs.find((skill) => canAddExpertiseForSkill(skill.id))?.id
+                    );
                   }
                 }}
-                
+                disabled={readOnly || abilityUnlocksAvailable <= 0}
               >
                 Add General
               </Button>
@@ -4986,7 +5067,7 @@ const canAddName = (name: string) => {
                     setAddingSkillChoice(opts[0] ?? undefined);
                   }
                 }}
-              
+                disabled={readOnly || abilityUnlocksAvailable <= 0}
               >
                 Add Skill
               </Button>
@@ -4997,8 +5078,14 @@ const canAddName = (name: string) => {
                 variant="secondary"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={startAddRaceAbility}
-                disabled={readOnly || !raceName || !anyAddable}
-                title={!raceName ? 'Select a race first' : (!anyAddable ? 'No addable abilities under current constraints' : '')}
+                disabled={readOnly || abilityUnlocksAvailable <= 0 || !raceName || !anyAddable}
+                title={
+                  !raceName
+                    ? 'Select a race first'
+                    : abilityUnlocksAvailable <= 0
+                    ? 'Gain an ability unlock marker by improving a skill first'
+                    : (!anyAddable ? 'No addable abilities under current constraints' : '')
+                }
               >
                 Race Acquired
               </Button>
@@ -5088,31 +5175,73 @@ const canAddName = (name: string) => {
     selectTitle="Select a race ability to add"
     onConfirm={confirmAddRaceAbility}
     onCancel={() => setPickingRace(false)}
-    confirmDisabled={!draftRaceAbility || !canAddName(draftRaceAbility)}
+    confirmDisabled={abilityUnlocksAvailable <= 0 || !draftRaceAbility || !canAddName(draftRaceAbility)}
   />
 )}
 
 {/* GENERAL ability picker */}
 {addingGeneral && (
-  <InlinePicker
-    label="Select General Ability"
-    value={addingGeneralChoice ?? ""}
-    onChange={(v) => setAddingGeneralChoice(v)}
-    options={generalDisplayOptionsFor("new-general", addingGeneralChoice || undefined)}
-    optionKeyPrefix="general"
-    selectTitle="Select a general ability to add"
-    onConfirm={() => {
-      if (!addingGeneralChoice) return;
-      addAbilityRow("general", addingGeneralChoice);
-      setAddingGeneral(false);
-      setAddingGeneralChoice(undefined);
-    }}
-    onCancel={() => {
-      setAddingGeneral(false);
-      setAddingGeneralChoice(undefined);
-    }}
-    confirmDisabled={!addingGeneralChoice}
-  />
+  <div className="space-y-3 rounded-lg border border-white/10 bg-black/30 p-3">
+    <InlinePicker
+      label="Select General Ability"
+      value={addingGeneralChoice ?? ""}
+      onChange={(v) => {
+        setAddingGeneralChoice(v);
+        if (v === 'Expertise' && !addingGeneralLinkedSkillId) {
+          setAddingGeneralLinkedSkillId(
+            skillDefs.find((skill) => canAddExpertiseForSkill(skill.id))?.id
+          );
+        }
+      }}
+      options={generalDisplayOptionsFor("new-general", addingGeneralChoice || undefined)}
+      optionKeyPrefix="general"
+      selectTitle="Select a general ability to add"
+      onConfirm={() => {
+        if (!addingGeneralChoice) return;
+        if (addingGeneralChoice === 'Expertise') {
+          if (!addingGeneralLinkedSkillId || !canAddExpertiseForSkill(addingGeneralLinkedSkillId)) return;
+          addAbilityRow("general", addingGeneralChoice, { linkedSkillId: addingGeneralLinkedSkillId });
+        } else {
+          addAbilityRow("general", addingGeneralChoice);
+        }
+        setAddingGeneral(false);
+        setAddingGeneralChoice(undefined);
+        setAddingGeneralLinkedSkillId(undefined);
+      }}
+      onCancel={() => {
+        setAddingGeneral(false);
+        setAddingGeneralChoice(undefined);
+        setAddingGeneralLinkedSkillId(undefined);
+      }}
+      confirmDisabled={
+        abilityUnlocksAvailable <= 0 ||
+        !addingGeneralChoice ||
+        (addingGeneralChoice === 'Expertise' &&
+          (!addingGeneralLinkedSkillId || !canAddExpertiseForSkill(addingGeneralLinkedSkillId)))
+      }
+    />
+
+    {addingGeneralChoice === 'Expertise' && (
+      <div className="grid gap-1">
+        <Label className="text-sm">Expertise Skill</Label>
+        <select
+          className="h-10 w-full rounded-md border border-white/20 bg-background px-3 text-sm"
+          value={addingGeneralLinkedSkillId ?? ''}
+          onChange={(e) => setAddingGeneralLinkedSkillId(e.target.value || undefined)}
+          disabled={readOnly}
+        >
+          <option value="">Select skill...</option>
+          {skillDefs
+            .filter((def) => canAddExpertiseForSkill(def.id))
+            .map((def) => (
+              <option key={def.id} value={def.id}>
+                {def.label}
+              </option>
+            ))}
+        </select>
+      </div>
+    )}
+  </div>
 )}
 
 {/* SKILL unlock picker */}
@@ -5134,7 +5263,7 @@ const canAddName = (name: string) => {
       setAddingSkill(false);
       setAddingSkillChoice(undefined);
     }}
-    confirmDisabled={!addingSkillChoice}
+    confirmDisabled={abilityUnlocksAvailable <= 0 || !addingSkillChoice}
   />
 )}
         
@@ -5178,7 +5307,7 @@ const canAddName = (name: string) => {
                               variant="ghost"
                               size="icon"
                               onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => remove(a.id)} // or safeRemove(a.id) if you prefer
+                              onClick={() => remove(a.id, true)} // or safeRemove(a.id) if you prefer
                               disabled={readOnly}
                               aria-label="Remove race ability"
                               title="Remove"
@@ -5231,9 +5360,6 @@ const canAddName = (name: string) => {
           // Find full choice def (for description)
           const choice = SKILL_UNLOCK_DEFS.find(d => d.name === a.name);
 
-          // Build visible options: always keep the current row's value at top if it’s not otherwise eligible
-          const displayOptions = skillDisplayOptionsFor(a.id, a.name);
-
           return (
             <div key={a.id} className="rounded-xl border border-white/10 p-3">
               {/* header row: static label + remove + show/hide */}
@@ -5251,7 +5377,7 @@ const canAddName = (name: string) => {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         // remove the row…
-                        remove(a.id);
+                        remove(a.id, true);
                         // …then reopen the “Add Skill” picker so they can choose again
                         setAddingSkill(true);
                         setAddingSkillChoice(undefined); // no preselect; user will pick
@@ -5306,11 +5432,7 @@ const canAddName = (name: string) => {
       {(abilities ?? [])
         .filter(a => a.kind === 'general')
         .map((a) => {
-          // Find full def (for description)
-          const def = GENERAL_UNLOCK_DEFS.find(d => d.name === a.name);
-
-          // Build visible options: always keep the current row's value at top if it’s not otherwise eligible
-          const displayOptions = generalDisplayOptionsFor(a.id, a.name);
+          const linkedSkillLabel = a.linkedSkillId ? skillDefs.find((skill) => skill.id === a.linkedSkillId)?.label : undefined;
 
           return (
             <div key={a.id} className="rounded-xl border border-white/10 p-3">
@@ -5319,7 +5441,14 @@ const canAddName = (name: string) => {
               <div className="grid gap-1">
                 <div className="flex items-center justify-between gap-2">
                   {/* LEFT: static name (no dropdown) */}
-                  <div className="text-sm font-semibold text-white">{a.name}</div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <span>{a.name}</span>
+                    {a.name === 'Expertise' && linkedSkillLabel && (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-normal">
+                        {linkedSkillLabel}
+                      </span>
+                    )}
+                  </div>
 
                   {/* RIGHT: actions */}
                   <div className="flex items-center gap-2">
@@ -5328,7 +5457,7 @@ const canAddName = (name: string) => {
                       variant="ghost"
                       size="icon"
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => remove(a.id)}
+                      onClick={() => remove(a.id, true)}
                       disabled={readOnly}
                       aria-label="Remove general ability"
                       title="Remove"
@@ -5353,6 +5482,26 @@ const canAddName = (name: string) => {
               {/* rules text */}
               {isOpen(a.id) && (
                 <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
+                  {a.name === 'Expertise' && (
+                    <div className="mb-3 grid gap-1 whitespace-normal">
+                      <Label className="text-xs text-white/80">Chosen Skill</Label>
+                      <select
+                        className="h-9 rounded-md border border-white/20 bg-background px-2 text-sm"
+                        value={a.linkedSkillId ?? ''}
+                        onChange={(e) => patch(a.id, { linkedSkillId: e.target.value || undefined })}
+                        disabled={readOnly}
+                      >
+                        <option value="">Select skill...</option>
+                        {skillDefs
+                          .filter((skill) => canAddExpertiseForSkill(skill.id, a.id))
+                          .map((skill) => (
+                            <option key={skill.id} value={skill.id}>
+                              {skill.label}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
                   {GENERAL_UNLOCK_DEFS.find(d => d.name === a.name)?.desc ?? `No description found for "${a.name}".`}
                 </div>
               )}
@@ -5431,8 +5580,9 @@ const LevelUpPanel: React.FC<{
   onCommit: () => void;
   history: MissionLogEntry[];
   spent?: Record<string, number>;
+  abilityUnlocksAvailable?: number;
   readOnly?: boolean;
-}> = ({ defs, values, ticked, onToggle, onCommit, history, spent = {}, readOnly }) => {
+}> = ({ defs, values, ticked, onToggle, onCommit, history, spent = {}, abilityUnlocksAvailable = 0, readOnly }) => {
   const totals = effectiveTallies(history || [], spent);
 
   const groups = groupBy(defs);
@@ -5478,6 +5628,20 @@ const LevelUpPanel: React.FC<{
 
   return (
     <div className="grid gap-4">
+      <Card className="shadow-sm bg-red-900">
+        <CardContent className="flex items-center justify-between gap-3 p-4 text-white">
+          <div>
+            <div className="text-sm font-medium text-white">Ability Unlock Markers</div>
+            <div className="text-xs text-white/70">
+              In 5.2, each successful skill improvement grants one new ability. These no longer come automatically from reaching level 4 or 5.
+            </div>
+          </div>
+          <div className="rounded-full bg-black/40 px-3 py-1 text-sm font-semibold">
+            {abilityUnlocksAvailable}
+          </div>
+        </CardContent>
+      </Card>
+
       <Section title="Combat" items={groups.combat} />
       <Section title="Magic" items={groups.magic} />
       <Section title="Specialized" items={groups.specialized} />
@@ -5607,6 +5771,7 @@ const DEFAULT_CHARACTER: Character = {
   currentMissionSkills: {},
   missionHistory: [],
   tallySpent: {},                   // 
+  abilityUnlocksAvailable: 0,
   injuries: 0,
   conditions: [],
   debt: [],
@@ -5661,12 +5826,14 @@ useEffect(() => {
 
   const spent = { ...(char.tallySpent ?? {}) };
   const eff = effectiveTallies(char.missionHistory ?? [], spent);
+  let unlockedAbilities = char.abilityUnlocksAvailable ?? 0;
 
   let changed = false;
   for (const id of Object.keys(next)) {
     const before = prev[id] ?? 0;
     const after = next[id] ?? 0;
     if (after > before) {
+      unlockedAbilities += after - before;
       const e = eff[id] ?? 0;
       if (e > 0) {
         spent[id] = (spent[id] || 0) + e;
@@ -5676,11 +5843,13 @@ useEffect(() => {
   }
 
   if (changed) {
-    onChange({ ...char, tallySpent: spent });
+    onChange({ ...char, tallySpent: spent, abilityUnlocksAvailable: unlockedAbilities });
+  } else if (unlockedAbilities !== (char.abilityUnlocksAvailable ?? 0)) {
+    onChange({ ...char, abilityUnlocksAvailable: unlockedAbilities });
   }
 
   prevAttrsRef.current = next;
-}, [char.attributes, char.missionHistory, char.tallySpent]);
+}, [char.attributes, char.missionHistory, char.tallySpent, char.abilityUnlocksAvailable]);
 
 // Autosave on any change
 useEffect(() => {
@@ -5867,6 +6036,7 @@ const equippedArmorTotals = sumArmorValues(char.armor);
             resourceDefs={registry.resources}
             resourceValues={char.resources}
             onChangeResources={(v) => onChange(set(char, 'resources', v))}
+            abilities={char.abilities ?? []}
             skillDefs={registry.attributes}
             skillValues={char.attributes}
             skillRerolls={char.skillRerolls ?? {}}
@@ -5883,10 +6053,18 @@ const equippedArmorTotals = sumArmorValues(char.armor);
         <TabsContent value="abilities" className="grid gap-4">
           <AbilitiesPanel
             abilities={char.abilities ?? []}
+            abilityUnlocksAvailable={char.abilityUnlocksAvailable ?? 0}
+            onChangeAbilityUnlocks={(next) => onChange(set(char, 'abilityUnlocksAvailable', next))}
             skillDefs={registry.attributes}
             raceName={char.race as RaceName | undefined}
             attrValues={char.attributes ?? {}}
-            onChange={(next) => onChange({ ...char, abilities: next })}
+            onChange={(nextAbilities, nextAbilityUnlocks) =>
+              onChange({
+                ...char,
+                abilities: nextAbilities,
+                abilityUnlocksAvailable: nextAbilityUnlocks ?? (char.abilityUnlocksAvailable ?? 0),
+              })
+            }
             readOnly={readOnly}
           />
         </TabsContent>
@@ -6130,6 +6308,7 @@ const equippedArmorTotals = sumArmorValues(char.armor);
             onCommit={commitMission}
             history={char.missionHistory ?? []}
             spent={char.tallySpent ?? {}}
+            abilityUnlocksAvailable={char.abilityUnlocksAvailable ?? 0}
             readOnly={readOnly}
           />
         </TabsContent>
