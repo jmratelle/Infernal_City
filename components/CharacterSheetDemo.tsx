@@ -11,11 +11,11 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Lock, Unlock } from 'lucide-react';
 import clsx from "clsx";
 import { SelectableField } from "@/components/ui/SelectableField";
-import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
+import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, ARMOR_STATS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
 
 /**
  * Infernal City – Character Sheet (Applied Features)
- * - Stats: Identity + Skills + Resources (Generic Rerolls, Skill Rerolls, Goldbacks, Debt list, Recurring Costs list)
+ * - Stats: Identity + Skills + Resources (Generic Rerolls, Specific Rerolls, Goldbacks, Debt list, Recurring Costs list)
  * - Items: Armor slots with per-damage AVs, Accessories (max 4), Weapons as cards (max 2), Inventory, Stash, Vehicles
  * - Housing: Rent Cost, Apartment Tier dropdown, Upgrades list (repeatable)
  * - Conditions: Injuries counter + Condition rows (dropdown, optional Severity (X), Notes)
@@ -312,7 +312,7 @@ export type Character = {
   stash?: Array<Record<string, string | number>>;
 
   armor: ArmorSlots;
-  totalArmor?: ArmorAV;            // user-entered totals (no auto calc)
+  totalArmor?: ArmorAV;            // manual modifiers layered on top of equipped armor
   accessories?: string[];
   weapons?: WeaponEntry[];
 
@@ -358,7 +358,6 @@ export type CharacterSheetProps = {
 };
 
 // ---------- Constants ----------
-const SKILL_REROLL_THRESHOLD = 3;
 const SKILL_REROLL_MIN = 0;
 const SKILL_REROLL_MAX = 5;
 const STORAGE_KEY = 'characterSheet:v1';
@@ -1907,8 +1906,12 @@ export const GENERAL_UNLOCK_DEFS: GeneralUnlockDef[] = [
     desc: "Gain 1 innate Armor Value against the Curse damage type.",
   },
   {
+    name: "Expertise",
+    desc: "Choose a skill. At the start of each mission, gain specific rerolls for that skill equal to its current level. These rerolls do not stack between missions. You may take this ability multiple times for different skills.",
+  },
+  {
     name: "Base Competency",
-    desc: "If a Die Level penalty would cause you to roll with disadvantage, instead roll at Die Level 1.",
+    desc: "Die Level modifiers cannot force you to roll below Die Level 1.",
   },
   {
     name: "Heavy Armor Proficiency",
@@ -1924,17 +1927,17 @@ export const GENERAL_UNLOCK_DEFS: GeneralUnlockDef[] = [
   },
   {
     name: "Learn from Mistakes",
-    desc: "Each time you fail a Specialized Skill DC for a specific action (e.g., the same door or stabilize attempt), the next attempt on that same DC gets +1 Die Level. Does not stack and ends once you succeed.",
+    desc: "Each time you fail a Specialized Skill DC for a specific action, the next attempt on that same DC gets +1 Die Level. This does not stack and ends once you succeed.",
   },
   {
     name: "Mentorship",
-    desc: "When an ally within 3 Units performs a Specialized Skill DC with a lower skill level than yours, they gain +1 Die Level to that Specialized Skill DC.",
+    desc: "When an ally within 3 Units performs a Specialized Skill DC with a lower skill level than yours, you may have them gain +1 Die Level on that DC.",
   },
   {
     name: "Emergency Resuscitation",
-    desc: "Attempt to revive one dead target by making a Medical DC (once per target per turn, within 1 round of death). The revived target keeps any injuries/conditions they had upon death.",
+    desc: "Attempt to revive one dead target by making a Medical DC. This can only be used once per target per turn and must be done within one round of that target's death. The revived target keeps any injuries and conditions they had upon death.",
     requiresSkillId: "medical",
-    requiresMinLevel: 4,
+    requiresMinLevel: 3,
   },
   {
     name: "Industry Contact",
@@ -2453,6 +2456,21 @@ function clamp(n: number, min = 0, max = 9999) {
 function set<K extends keyof Character>(draft: Character, key: K, val: Character[K]): Character {
   return { ...draft, [key]: val } as Character;
 }
+function sumArmorValues(slots: ArmorSlots): ArmorAV {
+  const total = emptyAV();
+  for (const slot of Object.values(slots)) {
+    for (const damageType of DAMAGE_TYPES) {
+      total[damageType] += slot.av?.[damageType] ?? 0;
+    }
+  }
+  return total;
+}
+function armorTierLabel(value: number) {
+  if (value <= 0) return 'None';
+  if (value === 1) return 'Armored (D8)';
+  if (value === 2) return 'Heavily Armored (D12)';
+  return 'Impervious (Auto)';
+}
 function groupBy<T extends { group: SkillGroup }>(arr: T[]): Record<SkillGroup, T[]> {
   return arr.reduce(
     (acc, item) => {
@@ -2728,26 +2746,6 @@ const ResourcesPanel: React.FC<{
   readOnly,
 }) => {
   const groups = groupBy(skillDefs);
-    // Auto-initialize per-skill rerolls to match skill level when a box first appears
-  useEffect(() => {
-    const next: Record<string, number> = {};
-    let changed = false;
-
-    for (const def of skillDefs) {
-      const level = skillValues[def.id] ?? (def.min ?? 1);
-      const eligible = level >= SKILL_REROLL_THRESHOLD;
-      const current = skillRerolls[def.id];
-      if (eligible && (current === undefined || current === null)) {
-        next[def.id] = clamp(level, SKILL_REROLL_MIN, SKILL_REROLL_MAX);
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      onChangeSkillRerolls({ ...skillRerolls, ...next });
-    }
-  }, [skillDefs, skillValues, skillRerolls, onChangeSkillRerolls]);
-
   const addDebt = () =>
     onChangeDebt([...(debt || []), { id: makeId('debt'), creditor: '', amount: 0 }]);
   /*const removeDebt = (id: string) =>
@@ -2829,35 +2827,15 @@ const ResourcesPanel: React.FC<{
           </div>
 
       {/* Per-skill rerolls */}
-                    <div className="mb-2 flex items-center justify-between">
-            <div className="mt-4 text-sm font-medium text-white">Skill Rerolls</div>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                const next: Record<string, number> = { ...skillRerolls };
-                (['combat','magic','specialized'] as SkillGroup[]).forEach((grp) => {
-                  groups[grp].forEach((def) => {
-                    const level = skillValues[def.id] ?? (def.min ?? 1);
-                    if (level >= SKILL_REROLL_THRESHOLD) {
-                      next[def.id] = clamp(level, SKILL_REROLL_MIN, SKILL_REROLL_MAX);
-                    }
-                  });
-                });
-                onChangeSkillRerolls(next);
-              }}
-              disabled={readOnly}
-              className="bg-black text-white hover:bg-black/80"
-            >
-              Reset to Skill Level
-            </Button>
+          <div className="mt-4">
+            <div className="text-sm font-medium text-white">Specific Rerolls</div>
+            <div className="mt-1 text-xs leading-relaxed text-white/70">
+              Track 5.2 specific rerolls here manually. These are not granted automatically by skill level and are
+              usually gained from abilities such as Expertise.
+            </div>
           </div>
           {(['combat', 'magic', 'specialized'] as SkillGroup[]).map((grp) => {
-            const skills = groups[grp].filter(
-              (def) => (skillValues[def.id] ?? (def.min ?? 1)) >= SKILL_REROLL_THRESHOLD
-            );
+            const skills = groups[grp];
             if (skills.length === 0) return null;
             const title = grp === 'combat' ? 'Combat' : grp === 'magic' ? 'Magic' : 'Specialized';
             return (
@@ -2873,7 +2851,7 @@ const ResourcesPanel: React.FC<{
                     return (
                       <div key={def.id} className="grid items-start gap-1.5">
                         <Label htmlFor={`reroll-${def.id}`} className="text-xs">
-                          {def.label} Rerolls
+                          {def.label} Specific Rerolls
                         </Label>
                         <div className="flex items-center gap-2">
 
@@ -3789,9 +3767,7 @@ const ArmorSlot: React.FC<{
     }
   }, [slot.name, options]);
 
-  const commitName = (newName: string) => {
-    onChange(k, { ...slot, name: newName });
-  };
+  const autoStats = ARMOR_STATS[slot.name];
 
   return (
     <div className="space-y-2">
@@ -3803,7 +3779,13 @@ const ArmorSlot: React.FC<{
           onChange={(e) => {
             const val = e.target.value;
             setSelected(val);
-            if (val !== "Other") commitName(val);
+            if (val !== "Other") {
+              const stats = ARMOR_STATS[val];
+              onChange(k, {
+                name: val,
+                av: stats?.av ?? slot.av,
+              });
+            }
           }}
           disabled={readOnly}
         >
@@ -3822,10 +3804,21 @@ const ArmorSlot: React.FC<{
             placeholder={`Enter custom ${label.toLowerCase()} armor`}
             value={localOther}
             onChange={(e) => setLocalOther(e.target.value)}
-            onBlur={() => commitName(localOther)}
+            onBlur={() => onChange(k, { name: localOther, av: slot.av })}
             disabled={readOnly}
           />
         )}
+      </div>
+
+      <div className="rounded-lg border border-white/10 bg-black/30 p-2 text-xs leading-relaxed">
+        {slot.name && (
+          <div className="mb-1 text-white/80">
+            {DAMAGE_TYPES.filter((damageType) => (slot.av?.[damageType] ?? 0) > 0)
+              .map((damageType) => `${damageType} ${slot.av[damageType]}`)
+              .join(' • ') || 'No direct armor values'}
+          </div>
+        )}
+        {autoStats?.notes ? autoStats.notes : "Custom armor piece. Use the modifier panel below for any manual or situational armor bonuses this sheet cannot infer."}
       </div>
     </div>
   );
@@ -3884,10 +3877,11 @@ const ArmorSlotsBox: React.FC<{
 
 
 const ArmorTotalsBox: React.FC<{
-  av: ArmorAV;
-  onChange: (next: ArmorAV) => void;
+  equipped: ArmorAV;
+  modifiers: ArmorAV;
+  onChangeModifiers: (next: ArmorAV) => void;
   readOnly?: boolean;
-}> = ({ av, onChange, readOnly }) => {
+}> = ({ equipped, modifiers, onChangeModifiers, readOnly }) => {
   const MIN = 0;
   const MAX = 9;
 
@@ -3895,23 +3889,45 @@ const ArmorTotalsBox: React.FC<{
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
         <div className="mb-2 text-sm font-medium text-muted-foreground text-white">
-          Armor Values (Total)
+          Armor Values
+        </div>
+        <div className="mb-3 text-xs leading-relaxed text-white/70">
+          Equipped armor is calculated automatically from your selected body, lining, and head pieces. Use modifiers
+          for temporary bonuses, innate armor, accessories, or special effects the sheet cannot infer.
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {DAMAGE_TYPES.map((dt) => {
-            const val = clamp(av[dt] ?? 0, MIN, MAX);
+            const equippedValue = clamp(equipped[dt] ?? 0, MIN, MAX);
+            const modifierValue = clamp(modifiers[dt] ?? 0, MIN, MAX);
+            const totalValue = clamp(equippedValue + modifierValue, MIN, 99);
             return (
-              <div key={dt} className="grid gap-1">
+              <div key={dt} className="grid gap-1 rounded-lg border border-white/10 bg-black/20 p-2">
                 <Label className="text-xs">{dt}</Label>
+                <div className="text-[11px] text-white/60">
+                  Equipped {equippedValue} • Modifier {modifierValue}
+                </div>
                 <div className="flex items-center gap-2">
                   <Input
                     inputMode="numeric"
-                    value={val}
+                    value={totalValue}
                     readOnly
                     className="w-15"
                     disabled={readOnly}
-                    aria-label={`${dt} value`}
+                    aria-label={`${dt} total armor value`}
+                  />
+                  <div className="min-w-[7.5rem] text-[11px] text-white/70">
+                    {dt === 'Burn' ? armorTierLabel(totalValue) : '\u00A0'}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    inputMode="numeric"
+                    value={modifierValue}
+                    readOnly
+                    className="w-15"
+                    disabled={readOnly}
+                    aria-label={`${dt} modifier value`}
                   />
                   <Button
                     type="button"
@@ -3919,10 +3935,10 @@ const ArmorTotalsBox: React.FC<{
                     size="sm"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() =>
-                      onChange({ ...av, [dt]: clamp(val - 1, MIN, MAX) })
+                      onChangeModifiers({ ...modifiers, [dt]: clamp(modifierValue - 1, MIN, MAX) })
                     }
                     disabled={readOnly}
-                    aria-label={`${dt} decrement`}
+                    aria-label={`${dt} modifier decrement`}
                   >
                     −
                   </Button>
@@ -3932,10 +3948,10 @@ const ArmorTotalsBox: React.FC<{
                     size="sm"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() =>
-                      onChange({ ...av, [dt]: clamp(val + 1, MIN, MAX) })
+                      onChangeModifiers({ ...modifiers, [dt]: clamp(modifierValue + 1, MIN, MAX) })
                     }
                     disabled={readOnly}
-                    aria-label={`${dt} increment`}
+                    aria-label={`${dt} modifier increment`}
                   >
                     +
                   </Button>
@@ -5777,6 +5793,7 @@ const selectedHideout = char.housing?.apartmentTier
 const selectedUpgradeDetails = (char.housing?.upgrades ?? [])
   .map((upgrade) => (upgrade ? { name: upgrade, data: HIDEOUT_UPGRADE_DETAILS[upgrade as (typeof HIDEOUT_UPGRADES)[number]] } : undefined))
   .filter((entry): entry is { name: string; data: { price: number; summary: string } } => Boolean(entry?.data));
+const equippedArmorTotals = sumArmorValues(char.armor);
 
   /*const handleResetSave = () => {
     try {
@@ -5884,8 +5901,9 @@ const selectedUpgradeDetails = (char.housing?.upgrades ?? [])
           />
 
           <ArmorTotalsBox
-             av={char.totalArmor ?? emptyAV()}
-             onChange={(next) => onChange(set(char, 'totalArmor', next))}
+             equipped={equippedArmorTotals}
+             modifiers={char.totalArmor ?? emptyAV()}
+             onChangeModifiers={(next) => onChange(set(char, 'totalArmor', next))}
              readOnly={readOnly}
           />
 
