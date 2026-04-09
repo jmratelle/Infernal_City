@@ -20,6 +20,7 @@ import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, ARMOR_STATS, WEAPON_
  * - Conditions: Injuries counter + Condition rows (dropdown, optional Severity (X), Notes)
  * - Notes: Notes, People Met, Secrets
  * - Level Up: Current Mission checklist + Mission History
+ 
  */
 type InlinePickerProps = {
   /** Main label. You can pass text or JSX. */
