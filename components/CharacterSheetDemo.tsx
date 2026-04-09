@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
-import { Lock, Unlock } from 'lucide-react';
 import clsx from "clsx";
 import { SelectableField } from "@/components/ui/SelectableField";
 import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, ARMOR_STATS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
@@ -231,10 +230,6 @@ export type RaceName =
   | 'Rat Kings'
   | 'Succubus/Incubus';
 
-type RaceRule =
-  | { type: 'atLeastAtMost'; label: string; names: string[]; min: number; max: number }
-  | { type: 'exactlyOne';   label: string; names: string[] };
-
 export type ConditionName =
   | 'Addiction Tremors'
   | 'Bleeding'
@@ -410,7 +405,7 @@ const CONDITION_TEXT: Record<ConditionName, (x?: number) => string> = {
   'Poisoned (Deadly)': (x = 1) =>
     `At the beginning of each of their turns, the target must make a Cumulative Survivability DC with ${x} as the target number. On a fail, they receive two injuries. At the end of each turn, ${x} decreases by one. If ${x} is equal to zero, remove this condition.`,
 
-  'Transformed': () =>
+  'Transformed': (x = 1) =>
     `While under this condition, the target is transformed into a small animal (e.g., mouse, hedgehog, chicken). At the end of each turn, reduce X by one; when X is zero, remove this condition. All equipment disappears until the transformation ends. Lose all skills/abilities; use: Reflex 3, all other skills 1. Injuries transfer to the actual form. If the target dies while transformed, they die and immediately regain original form.`,
 
   'Unconscious': () =>
@@ -2726,6 +2721,7 @@ const ResourcesPanel: React.FC<{
   onChangeResources: (next: Record<string, number>) => void;
   abilities: AbilityEntry[];
   skillDefs: AttributeDef[];
+  skillValues: Record<string, number>;
   skillRerolls: Record<string, number>;
   onChangeSkillRerolls: (next: Record<string, number>) => void;
   debt: DebtEntry[];
@@ -2739,6 +2735,7 @@ const ResourcesPanel: React.FC<{
   onChangeResources,
   abilities,
   skillDefs,
+  skillValues,
   skillRerolls,
   onChangeSkillRerolls,
   debt,
@@ -2747,6 +2744,7 @@ const ResourcesPanel: React.FC<{
   onChangeRecurring,
   readOnly,
 }) => {
+  const groups = groupBy(skillDefs);
   const expertiseAbilities = (abilities ?? []).filter(
     (ability) => ability.kind === 'general' && ability.name === 'Expertise' && ability.linkedSkillId
   );
@@ -2841,7 +2839,7 @@ const ResourcesPanel: React.FC<{
                 <div className="text-sm font-medium text-white">Specific Rerolls</div>
                 <div className="mt-1 text-xs leading-relaxed text-white/70">
                   These only appear for skills selected by the Expertise ability. Set them manually at the start of each
-                  mission to match the chosen skill&apos;s current level.
+                  mission to match the chosen skill's current level.
                 </div>
               </div>
               {(['combat', 'magic', 'specialized'] as SkillGroup[]).map((grp) => {
@@ -3121,7 +3119,7 @@ const ItemsTable: React.FC<{
   readOnly?: boolean;
   maxItems?: number;
   currentTotal?: number;
-}> = ({ title, rows, onChange, readOnly, maxItems = Infinity, currentTotal = 0 }) => {
+}> = ({ title, fields, rows, onChange, readOnly, maxItems = Infinity, currentTotal = 0 }) => {
   const idBase = useId();
 
   // Adds a new blank item row
@@ -4461,6 +4459,11 @@ const AbilitiesPanel: React.FC<{
   const [addingGeneralLinkedSkillId, setAddingGeneralLinkedSkillId] = useState<string | undefined>(undefined);
   
 
+  const rowClass =
+   "flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5";
+  const labelClass = "text-[12px] text-white";
+  const compactSelect =
+  "h-8 w-70 text-xs px-2 py-0.5 leading-tight rounded-md border border-white/20 bg-background focus:outline-none focus-visible:ring-0";
   const raceDefs: RaceAbilityDef[] = raceName ? (RACE_ABILITIES[raceName] ?? []) : [];
   const byName = new Map(raceDefs.map(d => [d.name, d]));
   const isDefaultEntry = (x: AbilityEntry) => !!byName.get(x.name)?.auto;
@@ -4471,6 +4474,9 @@ const AbilitiesPanel: React.FC<{
   const toggle = (id: string) =>
     setOpen(o => ({ ...o, [id]: !(o[id] ?? true) }));
   const isOpen = (id: string) => open[id] ?? true; // default open
+
+  const isPicked = (name: string) =>
+  (abilities ?? []).some(x => x.kind === 'race' && x.name === name);
 
   // Auto-populate defaults whenever the selected race changes
   const prevRaceRef = React.useRef<RaceName | undefined>(undefined);
@@ -4573,6 +4579,8 @@ const AbilitiesPanel: React.FC<{
   const patch  = (id: string, p: Partial<AbilityEntry>) =>
     onChange((abilities ?? []).map(a => (a.id === id ? { ...a, ...p } : a)));
 
+  const skillUnlocks   = (abilities ?? []).filter(a => a.kind === 'skill');
+  const generalUnlocks = (abilities ?? []).filter(a => a.kind === 'general');
   const raceUnlocks    = (abilities ?? []).filter(a => a.kind === 'race');
 
   // Sum-aware counter (uses count if present, else 1)
@@ -4593,8 +4601,7 @@ const AbilitiesPanel: React.FC<{
   // How many stacks it currently has (0 if not present)
   const emCount = emRow ? (emRow.count ?? 1) : 0;
   const hasRaceAbility = (name: string) => raceUnlocks.some(a => a.name === name);
-  // Pretty name for a skill id
-  const skillLabel = (id: string) => skillDefs.find(s => s.id === id)?.label ?? id;
+
   // Check skill prerequisites
   const meetsSkillReqs = (def?: RaceAbilityDef) => {
     if (!def) return true;
@@ -4668,7 +4675,7 @@ const SKILL_CHOICE_GROUP = React.useMemo(() => {
     }
   }
   return m;
-}, []);
+}, [SKILL_UNLOCK_DEFS]);
 
 
 // Gating for general unlocks
@@ -4777,7 +4784,6 @@ const generalDisplayOptionsFor = (currentId: string, currentName?: string) => {
   return true;
 };
 
-
   // ---- Rule checks ----
   const abomMutationCount = React.useMemo(() => {
   if (raceName !== 'Abomination') return 0;
@@ -4801,6 +4807,13 @@ const generalDisplayOptionsFor = (currentId: string, currentName?: string) => {
       ? raceUnlocks.filter(a => byName.get(a.name)?.oneOf === 'altered-core').length
       : 0;
 
+  const abomOK =
+  raceName !== 'Abomination' || (abomMutationCount >= 1 && abomMutationCount <= mutationMax);
+  const alteredOK = raceName !== 'Altered'     || alteredCoreCount === 1;
+  // Add/remove one instance of a stackable ability (e.g., Emerging Mutation)
+  const addOne = (name: string) => {
+  onChange([...(abilities ?? []), { id: makeId('ab'), kind: 'race', name }]);
+};
 
 
 /*const removeOne = (name: string) => {
@@ -4859,7 +4872,10 @@ const canAddName = (name: string) => {
   const confirmAddRaceAbility = () => {
     if (!draftRaceAbility) { setPickingRace(false); return; }
     if (!canAddName(draftRaceAbility)) { setPickingRace(false); setShowKindPicker(false); return; }
-    const nextAbilities = [...(abilities ?? []), { id: makeId('ab'), kind: 'race', name: draftRaceAbility }];
+    const nextAbilities: AbilityEntry[] = [
+      ...(abilities ?? []),
+      { id: makeId('ab'), kind: 'race', name: draftRaceAbility } as AbilityEntry,
+    ];
     onChange(nextAbilities, Math.max(0, abilityUnlocksAvailable - 1));
     setPickingRace(false);
     setShowKindPicker(false);
@@ -4875,6 +4891,42 @@ const canAddName = (name: string) => {
     setAddingSkillChoice(undefined);
   };
 
+  // for the row <select>: disable options that would BREAK rules when chosen
+ const optionDisabled = (currentName: string, candidate: string) => {
+  const currentDef = byName.get(currentName);
+  const candDef    = byName.get(candidate);
+
+  // Lock defaults
+  if (currentDef?.auto && candidate !== currentName) return true;
+
+  // Special-case: don't allow selecting Emerging Mutation into another row
+  if (candidate === 'Emerging Mutation' && candidate !== currentName &&
+      (abilities ?? []).some(a => a.kind === 'race' && a.name === 'Emerging Mutation')) {
+    return true;
+  }
+
+  // No dupes for non-stackables
+  if (!candDef?.stackable &&
+      candidate !== currentName &&
+      (abilities ?? []).some(a => a.kind === 'race' && a.name === candidate)) {
+    return true;
+  }
+
+  // Abomination mutation cap
+  if (raceName === 'Abomination' && candDef?.group === 'mutation') {
+    const currentIsMutation = currentDef?.group === 'mutation';
+    if (!currentIsMutation && abomMutationCount >= mutationMax) return true;
+  }
+
+  // Altered core cap
+  if (raceName === 'Altered' && candDef?.oneOf === 'altered-core') {
+    const currentIsCore = currentDef?.oneOf === 'altered-core';
+    if (!currentIsCore && alteredCoreCount >= 1) return true;
+  }
+
+  if (!meetsPrereqs(candDef)) return true;
+  return false;
+};
 
   // Is there anything addable right now?
   const anyAddable = !!raceName && raceDefs.some(d => canAddName(d.name));
@@ -4886,6 +4938,10 @@ const canAddName = (name: string) => {
     </span>
   );
 
+  const pickedRaceNames = React.useMemo(
+  () => new Set((abilities ?? []).filter(x => x.kind === 'race').map(x => x.name)),
+  [abilities]
+    );
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
@@ -5278,6 +5334,7 @@ const canAddName = (name: string) => {
         .filter(a => a.kind === 'skill')
         .map((a) => {
           // Find full choice def (for description)
+          const choice = SKILL_UNLOCK_DEFS.find(d => d.name === a.name);
 
           return (
             <div key={a.id} className="rounded-xl border border-white/10 p-3">
@@ -5768,7 +5825,7 @@ useEffect(() => {
   }
 
   prevAttrsRef.current = next;
-}, [char, onChange]);
+}, [char.attributes, char.missionHistory, char.tallySpent, char.abilityUnlocksAvailable]);
 
 // Autosave on any change
 useEffect(() => {
@@ -5957,6 +6014,7 @@ const equippedArmorTotals = sumArmorValues(char.armor);
             onChangeResources={(v) => onChange(set(char, 'resources', v))}
             abilities={char.abilities ?? []}
             skillDefs={registry.attributes}
+            skillValues={char.attributes}
             skillRerolls={char.skillRerolls ?? {}}
             onChangeSkillRerolls={(next) => onChange(set(char, 'skillRerolls', next))}
             debt={char.debt ?? []}
