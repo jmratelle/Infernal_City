@@ -17,6 +17,8 @@ export const ACCESSORY_OPTIONS = [
   "Disruptor Earrings",
   "Parachute",
   "Exterior Pacemaker",
+  "Talisman of Demonic Protection",
+  "Talisman of Absolute Protection",
   "X-Ray Goggles",
   "Grapple Harness",
   "Launch Shoes",
@@ -33,6 +35,10 @@ export const ACCESSORY_OPTIONS = [
   "Mark of the Hunted",
   "Guardian Centipede",
   "Ring of the Infernal Gaze",
+  "Communication Implant",
+  "Hacking Neurolink",
+  "Drone Neurolink",
+  "Cursed Fetish",
 ];
 
 export type ItemOptions = {
@@ -55,6 +61,8 @@ export const ITEM_OPTIONS = {
     "Disruptor Earrings",
     "Parachute",
     "Exterior Pacemaker",
+    "Talisman of Demonic Protection",
+    "Talisman of Absolute Protection",
     "X-Ray Goggles",
     "Grapple Harness",
     "Launch Shoes",
@@ -71,6 +79,10 @@ export const ITEM_OPTIONS = {
     "Mark of the Hunted",
     "Guardian Centipede",
     "Ring of the Infernal Gaze",
+    "Communication Implant",
+    "Hacking Neurolink",
+    "Drone Neurolink",
+    "Cursed Fetish",
   ],
 
   Armor: {
@@ -81,6 +93,8 @@ export const ITEM_OPTIONS = {
       "Mag Field Generator",
       "Battle Plate",
       "Hazard Suit",
+      "Exo Suit",
+      "Hell Plate",
     ],
     "Armor Lining": [
       "Thermal Lining",
@@ -91,8 +105,10 @@ export const ITEM_OPTIONS = {
     ],
     "Head Pieces": [
       "Gas Mask",
+      "Kevlar Helmet",
       "Enchanted Circlet",
-      "Darkvision Goggles",
+      "Darkvision",
+      "Hood of Shadows",
       "Heat Eye 3",
     ],
   },
@@ -107,7 +123,7 @@ export const ITEM_OPTIONS = {
     "Cheap Lockpicks",
     "High Quality Lockpicks",
     "Blood Pack",
-    "Extinguisher",
+    "Extinguishers",
     "Algae Injection",
     "Clarity Inhalant",
     "Bliss",
@@ -186,6 +202,8 @@ export const ARMOR_OPTIONS = {
     "Mag Field Generator",
     "Battle Plate",
     "Hazard Suit",
+    "Exo Suit",
+    "Hell Plate",
   ],
   lining: [
     "Thermal Lining",
@@ -194,7 +212,7 @@ export const ARMOR_OPTIONS = {
     "Blessed Vestiments",
     "Nanomesh",
   ],
-  head: ["Gas Mask", "Enchanted Circlet", "Darkvision", "Heat Eye 3"],
+  head: ["Gas Mask", "Kevlar Helmet", "Enchanted Circlet", "Darkvision", "Hood of Shadows", "Heat Eye 3"],
 };
 
 // -----------------------------
@@ -203,15 +221,17 @@ export const ARMOR_OPTIONS = {
 export const VEHICLE_OPTIONS = [
   "Icarus",
   "Babylon Taxi",
+  "Refurbished Babylon Taxi",
   "Chopper Bike",
   "SUV",
   "Armored SUV",
   "Armored Limo",
+  "Scrapbike",
 ];
 
 export const VEHICLE_DATA = {
-  Ground: ["SUV", "Armored SUV", "Armored Limo"],
-  Flying: ["Icarus", "Babylon Taxi", "Chopper Bike"],
+  Ground: ["Chopper Bike", "SUV", "Armored SUV", "Armored Limo", "Scrapbike"],
+  Flying: ["Icarus", "Babylon Taxi", "Refurbished Babylon Taxi"],
 } as const;
 
 // -----------------------------
@@ -226,7 +246,7 @@ export const WEAPON_OPTIONS = {
     "Vulcan",
   ],
   Pistols: ["Quad", "Safe Cracker", "Red Eye", "-196 C", "Stinger"],
-  Melee: {
+  "Melee Weapons": {
     Crushing: ["Crow Bar", "Stun Batton", "Bone Crusher", "Gravity Mace"],
     Piercing: ["Spear", "Trident", "Hydraulic Piercer"],
     Slashing: ["Matchette", "Cane Sword", "Plasma Cutter", "Zephyr Blade"],
@@ -258,7 +278,58 @@ export const WEAPON_OPTIONS = {
     "Heart Seekers",
     "Runic Daggers",
   ],
-  Drones: ["Spy Drone", "Defender Drone", "Hunter Drone", "Assassin Drone"],
+  "Drone Operation": ["Spy Drone", "Defender Drone", "Hunter Drone", "Assassin Drone"],
+};
+
+export const ACCESSORY_RULES: Record<string, string> = {
+  Backpack:
+    "Carry 5 extra unequipped inventory items. While equipped, you cannot spend rerolls on Reflex DCs.",
+  "Utility Belt":
+    "Carry 3 extra unequipped inventory items.",
+  "Basic Amulet of Protection":
+    "Provides 2 curse armor levels and breaks if its curse armor save fails.",
+  "Brass Knuckles":
+    "Add 1 ArP to Martial Arts attacks.",
+  "Safe Retreat":
+    "Triggered smoke device. Creates an AOE 2 smoke cloud centered on the wearer, then breaks.",
+  "Ring of Skill":
+    "Gain 1 die level on one specified skill while worn. Does not stack with other Rings of Skill.",
+  Rebreather:
+    "Lets the wearer breathe underwater or in other oxygenated liquids.",
+  "X-Ray Goggles":
+    "See rough outlines through thin walls, panels, and bags within 1 Unit.",
+  "Grapple Harness":
+    "Lets the wearer use a grapple gun without Bodybuilding or Endurance DCs.",
+  "Launch Shoes":
+    "Destroy the shoes to leap 4 Units in any direction.",
+  "Insulated Boots":
+    "Ignore shocks from electrified surfaces or shallow electrified liquids.",
+  "Seven League Boots":
+    "Move 1 extra Unit for each AP spent on movement.",
+  "Arcane Tattoo of Protection":
+    "Gain 1 innate curse armor value that replenishes every 24 hours.",
+  "Arcane Tattoo of Cursed Infusion":
+    "Reduce the AP cost of a temptation curse spell by 1, but still suffer temptation on failure.",
+  "Enchanted Ring of Armor":
+    "Gain 1 innate armor value of a chosen type that regenerates every 24 hours.",
+  "Enchanted Ring of Superior Armor":
+    "Gain 2 innate armor values of a chosen type that regenerate every 24 hours.",
+  "Ash Coat":
+    "Provides 1 Burn armor value.",
+  "Ring of the Infernal Gaze":
+    "Spend 1 AP to apply Burning to a target within line of sight.",
+  "Talisman of Demonic Protection":
+    "If worn with no other armor, gain 1 armor level against every damage type.",
+  "Talisman of Absolute Protection":
+    "If worn with no other armor, gain 1 armor value against every damage type.",
+  "Communication Implant":
+    "Allows encrypted mental communication with linked implants within 5 km.",
+  "Hacking Neurolink":
+    "Perform Hacking DCs on targets up to 5 Units away.",
+  "Drone Neurolink":
+    "Control drones through a neural implant instead of a handheld control panel.",
+  "Cursed Fetish":
+    "You may force a failed spell DC to succeed, but the fetish is destroyed.",
 };
 
 // Optional structured stats lookup for auto-population
@@ -754,14 +825,75 @@ export const WEAPON_STATS: Record<
 
 export const VEHICLE_STATS: Record<
   string,
-  { type: string; capacity: number; size: string; speed: string }
+  {
+    type: string;
+    capacity: number;
+    size: string;
+    speed: string;
+    survivability: number;
+    notes?: string;
+  }
 > = {
-  SUV: { type: "Ground", capacity: 4, size: "2x3", speed: "10 Units" },
-  "Armored SUV": { type: "Ground", capacity: 6, size: "3x4", speed: "8 Units" },
-  "Armored Limo": { type: "Ground", capacity: 5, size: "3x6", speed: "8 Units" },
-  Icarus: { type: "Flying", capacity: 2, size: "2x3", speed: "14 Units" },
-  "Babylon Taxi": { type: "Ground", capacity: 3, size: "2x3", speed: "10 Units" },
-  "Chopper Bike": { type: "Ground", capacity: 1, size: "1x2", speed: "12 Units" },
+  Icarus: {
+    type: "Flying",
+    capacity: 4,
+    size: "3x4",
+    speed: "40 Units/turn",
+    survivability: 4,
+    notes:
+      "Smokescreen (2 AP, 3 uses per mission). Gains 1 armor level against Pierce.",
+  },
+  "Babylon Taxi": {
+    type: "Flying",
+    capacity: 5,
+    size: "3x4",
+    speed: "20 Units/turn",
+    survivability: 3,
+  },
+  "Refurbished Babylon Taxi": {
+    type: "Flying",
+    capacity: 5,
+    size: "3x4",
+    speed: "20 Units/turn",
+    survivability: 3,
+    notes: "Origin vehicle. Unsellable in the 5.2 rules.",
+  },
+  "Chopper Bike": {
+    type: "Ground",
+    capacity: 2,
+    size: "1x2",
+    speed: "20 Units/turn",
+    survivability: 3,
+  },
+  SUV: {
+    type: "Ground",
+    capacity: 6,
+    size: "2x3",
+    speed: "20 Units/turn",
+    survivability: 3,
+  },
+  "Armored SUV": {
+    type: "Ground",
+    capacity: 6,
+    size: "3x4",
+    speed: "20 Units/turn",
+    survivability: 5,
+  },
+  "Armored Limo": {
+    type: "Ground",
+    capacity: 12,
+    size: "3x6",
+    speed: "20 Units/turn",
+    survivability: 5,
+  },
+  Scrapbike: {
+    type: "Ground",
+    capacity: 2,
+    size: "1x2",
+    speed: "20 Units/turn",
+    survivability: 3,
+    notes: "Origin vehicle. Unsellable in the 5.2 rules.",
+  },
 };
 
 // -----------------------------
