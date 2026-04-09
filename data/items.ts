@@ -215,6 +215,92 @@ export const ARMOR_OPTIONS = {
   head: ["Gas Mask", "Kevlar Helmet", "Enchanted Circlet", "Darkvision", "Hood of Shadows", "Heat Eye 3"],
 };
 
+export const ARMOR_STATS: Record<
+  string,
+  {
+    av: {
+      Burn: number;
+      Corrosive: number;
+      Crush: number;
+      Slash: number;
+      Electric: number;
+      Freeze: number;
+      Pierce: number;
+      Curse: number;
+    };
+    notes?: string;
+  }
+> = {
+  "Flak Suit": {
+    av: { Burn: 0, Corrosive: 0, Crush: 1, Slash: 1, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
+    notes: "Bulky: one Die Level penalty to Reflex DCs.",
+  },
+  "Flak Vest": {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
+  },
+  "Bomb Suit": {
+    av: { Burn: 0, Corrosive: 0, Crush: 2, Slash: 0, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
+    notes: "Bulky: one Die Level penalty to Reflex DCs.",
+  },
+  "Mag Field Generator": {
+    av: { Burn: 1, Corrosive: 0, Crush: 0, Slash: 0, Electric: 2, Freeze: 0, Pierce: 1, Curse: 0 },
+  },
+  "Battle Plate": {
+    av: { Burn: 1, Corrosive: 0, Crush: 2, Slash: 2, Electric: 0, Freeze: 1, Pierce: 2, Curse: 0 },
+    notes: "Bulky: one Die Level penalty to Reflex DCs.",
+  },
+  "Hazard Suit": {
+    av: { Burn: 1, Corrosive: 3, Crush: 0, Slash: 0, Electric: 2, Freeze: 1, Pierce: 0, Curse: 0 },
+    notes: "Bulky: one Die Level penalty to Reflex DCs.",
+  },
+  "Exo Suit": {
+    av: { Burn: 1, Corrosive: 1, Crush: 1, Slash: 1, Electric: 1, Freeze: 1, Pierce: 2, Curse: 0 },
+    notes: "Hydraulic Strength; Bulky: one Die Level penalty to Reflex DCs.",
+  },
+  "Hell Plate": {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 3 },
+    notes: "Infernal Protection can add situational armor on successful curse-skill DCs.",
+  },
+  "Thermal Lining": {
+    av: { Burn: 1, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 1, Pierce: 0, Curse: 0 },
+  },
+  "Insulated Lining": {
+    av: { Burn: 0, Corrosive: 1, Crush: 0, Slash: 0, Electric: 1, Freeze: 0, Pierce: 0, Curse: 0 },
+  },
+  "Combat Mesh": {
+    av: { Burn: 0, Corrosive: 0, Crush: 1, Slash: 1, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
+    notes: "Bulky: one Die Level penalty to Reflex DCs.",
+  },
+  "Blessed Vestiments": {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 1 },
+  },
+  Nanomesh: {
+    av: { Burn: 0, Corrosive: 0, Crush: 1, Slash: 1, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
+  },
+  "Gas Mask": {
+    av: { Burn: 0, Corrosive: 1, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
+    notes: "Immune to airborne poisons and similar effects while equipped.",
+  },
+  "Kevlar Helmet": {
+    av: { Burn: 0, Corrosive: 0, Crush: 1, Slash: 0, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
+  },
+  "Enchanted Circlet": {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 1 },
+  },
+  Darkvision: {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
+    notes: "See in darkness.",
+  },
+  "Hood of Shadows": {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
+    notes: "Adds one Die Level to Hide DCs.",
+  },
+  "Heat Eye 3": {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
+    notes: "Sense infrared heat through darkness, smoke, and thinner cover.",
+  },
+};
+
 // -----------------------------
 // VEHICLES
 // -----------------------------
