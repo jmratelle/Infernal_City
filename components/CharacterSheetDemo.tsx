@@ -11,8 +11,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Lock, Unlock } from 'lucide-react';
 import clsx from "clsx";
 import { SelectableField } from "@/components/ui/SelectableField";
-import { ACCESSORY_OPTIONS, ARMOR_OPTIONS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_DATA, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
-import { read } from 'fs';
+import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
 
 /**
  * Infernal City – Character Sheet (Applied Features)
@@ -54,6 +53,21 @@ type InlinePickerProps = {
 
   /** If true, the picker will scroll into view when mounted/toggled. */
   autoScrollIntoView?: boolean;
+};
+
+const CONDITION_TEXT_OVERRIDES: Partial<Record<ConditionName, (x?: number) => string>> = {
+  'Addiction Tremors': () =>
+    'Reduce the Die Level of all DCs by one until you take another hit of the addictive substance that caused this condition or one day passes.',
+  'Burning': (x = 1) =>
+    `At the beginning of the target's turn they must make a burn armor DC. No burn armor uses a D4, armored uses a D8, heavily armored uses a D12, and impervious armor auto-succeeds. On a failure they take one injury. The target or another character may spend 2 AP to reduce this condition's X by one. Its X also drops by one at the end of the target's turn. Remove it when X reaches 0.`,
+  'Crippled': (x = 1) =>
+    `While under this condition, the target receives a negative ${x} Die Level modifier to all DCs they make. If Crippled reaches 4 or more, they also gain Unconscious at the start of each turn until it is removed. This condition can only be removed at a clinic or hospital.`,
+  Corroded: () =>
+    'While under this condition, all attacks against the target gain the Armor Piercing attribute. It can be removed with an Engineering DC and is also cleared between missions.',
+  Unconscious: () =>
+    'The target cannot spend any AP. Remove this condition at the end of the target\'s subsequent turn. All attacks against unconscious targets automatically hit, and their Reflex save result counts as a one for critical-hit purposes.',
+  Critical: () =>
+    'The target must make a Critical condition DC at the end of each subsequent turn. If they take another injury while Critical, they must make an immediate Critical condition DC. Another adjacent character can remove this with a Medical DC.',
 };
 
 
@@ -276,6 +290,7 @@ export type ArmorCategory = "body" | "lining" | "head";
 export type VehicleEntry = {
   id: string;
   name: string; // ← allows custom names too
+  survivability?: number;
   capacity: number;
   topSpeed: string;
   flying: boolean;
@@ -2315,6 +2330,118 @@ const HIDEOUT_UPGRADES = [
   'Practice Vault',
 ] as const;
 
+const HIDEOUT_TIER_DETAILS = {
+  'Wasteland Hovel': {
+    rentCost: 0,
+    rooms: '1 bedroom',
+    threat: 'High',
+    summary: 'Makeshift wasteland shelter with the roughest event table in the game.',
+    events: 'Abaddon, raiders, ferals, and food theft are all on the table in 5.2.',
+  },
+  'Dead End Apartment': {
+    rentCost: 1000,
+    rooms: '1 bedroom + 1 empty room',
+    threat: 'Medium',
+    summary: 'Cheap two-room apartment on the bad side of town.',
+    events: 'Protection rackets, burglary, and drive-by shootings.',
+  },
+  'Incognito Dwelling': {
+    rentCost: 2000,
+    rooms: '1 bedroom + 1 empty room',
+    threat: 'Low',
+    summary: 'Hidden dwelling with better secrecy than a Dead End Apartment.',
+    events: 'Mostly peaceful, but it can still roll into Dead End Apartment events.',
+  },
+  'Incognito Compound': {
+    rentCost: 3000,
+    rooms: '1 bedroom + 2 empty rooms',
+    threat: 'Low',
+    summary: 'Three-room secret compound tailored for privacy.',
+    events: 'Mostly peaceful, but it can still roll into Dead End Apartment events.',
+  },
+  'Luxury Apartment': {
+    rentCost: 5000,
+    rooms: '1 bedroom + 3 empty rooms',
+    threat: 'Low',
+    summary: 'Respectable spire apartment with room to expand.',
+    events: 'Security bribes and burglary are the main 5.2 risks here.',
+  },
+  Penthouse: {
+    rentCost: 10000,
+    rooms: '1 bedroom + 5 empty rooms',
+    threat: 'Low',
+    summary: 'Top-tier residence with the safest event table in the ruleset.',
+    events: 'The 5.2 event table is pure peace on a D6.',
+  },
+} as const;
+
+const HIDEOUT_UPGRADE_DETAILS: Record<(typeof HIDEOUT_UPGRADES)[number], { price: number; summary: string }> = {
+  Bedroom: {
+    price: 2000,
+    summary: 'Required sleeping space. Each occupant needs a bedroom unless they are sharing a bed.',
+  },
+  'Occult Library': {
+    price: 3500,
+    summary: 'Adds one future success tally each Infernal Living phase for Arcane or Demonology.',
+  },
+  'Chemistry Lab': {
+    price: 3500,
+    summary: 'Required 5.2 workspace for crafting drugs, medicines, and poisons.',
+  },
+  Workstation: {
+    price: 3500,
+    summary: 'Required 5.2 workspace for crafting equipment and consumables.',
+  },
+  'Garage (Small)': {
+    price: 3500,
+    summary: 'Stores 1 vehicle. Without a garage, vehicles cost 500 Goldbacks to store safely between missions.',
+  },
+  'Garage (Large)': {
+    price: 10000,
+    summary: 'Stores up to 3 vehicles and covers ongoing maintenance space.',
+  },
+  Menagerie: {
+    price: 3500,
+    summary: 'Required for pets. Supports up to 3 small animals.',
+  },
+  Clinic: {
+    price: 3500,
+    summary: 'Provides the treatment space needed for injury recovery during Infernal Living.',
+  },
+  Gym: {
+    price: 3500,
+    summary: 'Adds one future success tally each Infernal Living phase for Bodybuilding or Parkour.',
+  },
+  Simulator: {
+    price: 3500,
+    summary: 'Adds one future success tally each Infernal Living phase for Drone Operation or Pilot.',
+  },
+  'Shooting Range': {
+    price: 6500,
+    summary: 'Adds one future success tally each Infernal Living phase for Automatics, Marksman, Pistols, Propellants, or Shotguns.',
+  },
+  'Personal Dojo': {
+    price: 3500,
+    summary: 'Adds one future success tally each Infernal Living phase for Martial Arts, Melee Weapons, or Shurikens.',
+  },
+  'Ritual Chamber': {
+    price: 3500,
+    summary: 'Adds one future success tally each Infernal Living phase for the seven curse skills.',
+  },
+  'CCTV and Server Room': {
+    price: 3500,
+    summary: 'Adds one future success tally each Infernal Living phase for Hacking or Observation.',
+  },
+  'Game Room': {
+    price: 3500,
+    summary: 'Adds one future success tally each Infernal Living phase for Bluff or Negotiation.',
+  },
+  'Practice Vault': {
+    price: 3500,
+    summary: 'Adds one future success tally each Infernal Living phase for Hide or Thievery.',
+  },
+};
+
 const DAMAGE_TYPES: DamageType[] = [
   'Burn','Corrosive','Crush','Slash','Electric','Freeze','Pierce','Curse'
 ];
@@ -2342,7 +2469,7 @@ function formatDate(iso: string) {
 
 
 function renderConditionText(name: ConditionName, severity?: number) {
-  const fn = CONDITION_TEXT[name];
+  const fn = CONDITION_TEXT_OVERRIDES[name] ?? CONDITION_TEXT[name];
   if (!fn) {
     // Defensive: show a visible fallback if a key ever mismatches
     return `No rules text found for "${name}".`;
@@ -3277,6 +3404,17 @@ const EquippedGear: React.FC<{
   const addAccessory = () => accessories.length < 4 && onChangeAccessories([...accessories, '']);
   const removeAccessory = (i: number) =>
     onChangeAccessories(accessories.filter((_, idx) => idx !== i));
+  const accessoryNotes = Array.from(
+    new Set(accessories.map((name) => name.trim()).filter(Boolean))
+  )
+    .map((name) => ({ name, text: ACCESSORY_RULES[name] }))
+    .filter((entry): entry is { name: string; text: string } => Boolean(entry.text));
+  const normalizeWeaponCategory = (category: string) => {
+    if (category === 'Melee') return 'Melee Weapons';
+    if (category === 'Drones') return 'Drone Operation';
+    return category;
+  };
+  const weaponCategories = Object.keys(WEAPON_OPTIONS);
 
   const addWeapon = () =>
     weapons.length < 2 &&
@@ -3357,6 +3495,19 @@ const EquippedGear: React.FC<{
               <div className="text-sm text-muted-foreground text-white">No accessories equipped.</div>
             )}
           </div>
+
+          {accessoryNotes.length > 0 && (
+            <div className="mt-3 rounded-lg border border-white/10 bg-black/30 p-3 text-xs leading-relaxed">
+              <div className="mb-2 font-medium text-white">5.2 accessory notes</div>
+              <div className="space-y-2 text-white/90">
+                {accessoryNotes.map(({ name, text }) => (
+                  <div key={name}>
+                    <span className="font-semibold">{name}:</span> {text}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -3386,8 +3537,8 @@ const EquippedGear: React.FC<{
                     {/* Weapon Type (Skill) Dropdown */}
                     <SelectableField
                       label="Weapon Type"
-                      value={w.skill}
-                      options={Object.keys(WEAPON_OPTIONS)}
+                      value={normalizeWeaponCategory(w.skill)}
+                      options={weaponCategories}
                       onChange={(val) => {
                         // Reset weapon name if category changes
                         patchWeapon(w.id, { skill: val, name: "" });
@@ -3397,15 +3548,15 @@ const EquippedGear: React.FC<{
                   </div>
                   <div className="grid gap-1">
                     {/* Weapon Name Dropdown (depends on type) */}
-                    {w.skill && WEAPON_OPTIONS[w.skill as keyof typeof WEAPON_OPTIONS] && (
+                    {normalizeWeaponCategory(w.skill) && WEAPON_OPTIONS[normalizeWeaponCategory(w.skill) as keyof typeof WEAPON_OPTIONS] && (
                       <SelectableField
                         label="Weapon"
                         value={w.name}
                         options={
-                          Array.isArray(WEAPON_OPTIONS[w.skill as keyof typeof WEAPON_OPTIONS])
-                            ? (WEAPON_OPTIONS[w.skill as keyof typeof WEAPON_OPTIONS] as string[])
+                          Array.isArray(WEAPON_OPTIONS[normalizeWeaponCategory(w.skill) as keyof typeof WEAPON_OPTIONS])
+                            ? (WEAPON_OPTIONS[normalizeWeaponCategory(w.skill) as keyof typeof WEAPON_OPTIONS] as string[])
                             : Object.values(
-                                WEAPON_OPTIONS[w.skill as keyof typeof WEAPON_OPTIONS]
+                                WEAPON_OPTIONS[normalizeWeaponCategory(w.skill) as keyof typeof WEAPON_OPTIONS]
                               ).flat()
                         }
                         onChange={(val) => {
@@ -3419,7 +3570,7 @@ const EquippedGear: React.FC<{
 
                           patchWeapon(w.id, {
                             name: val,
-                            skill: base.type ?? w.skill,
+                            skill: normalizeWeaponCategory(base.type ?? w.skill),
                             action: base.action ?? w.action,
                             idealRange: base.idealRange ?? w.idealRange,
                             maxRange: base.maxRange ?? w.maxRange,
@@ -3812,6 +3963,7 @@ const VehiclesPanel: React.FC<{
       {
         id: makeId("veh"),
         name: "",
+        survivability: 0,
         capacity: 0,
         topSpeed: "",
         flying: false,
@@ -3849,11 +4001,17 @@ const VehiclesPanel: React.FC<{
           </Button>
         </div>
 
+        <div className="mb-4 rounded-lg border border-white/10 bg-black/30 p-3 text-xs leading-relaxed text-white/90">
+          5.2 vehicle rules: vehicles only take the Critical, Crippled, Burning, Impaled, and Bound conditions.
+          Without a garage, storing a vehicle safely between missions costs 500 Goldbacks. Repairs cost 200
+          Goldbacks per injury and 2000 Goldbacks per Crippled condition.
+        </div>
+
         <div className="grid grid-cols-1 gap-4">
           {vehicles.map((v) => {
             const base = (VEHICLE_STATS as Record<
               string,
-              { type?: string; size?: string; speed?: string; capacity?: number }
+              { type?: string; size?: string; speed?: string; capacity?: number; survivability?: number; notes?: string }
             >)[v.name];
 
             const vehicleType = base
@@ -3884,10 +4042,12 @@ const VehiclesPanel: React.FC<{
                         if (model === "Other") {
                           patchVehicle(v.id, {
                             name: "",
+                            survivability: 0,
                             capacity: 0,
                             topSpeed: "",
                             flying: false,
                             size: "",
+                            notes: "",
                           });
                         } else if (VEHICLE_STATS[model]) {
                           const info = VEHICLE_STATS[model] as {
@@ -3895,13 +4055,17 @@ const VehiclesPanel: React.FC<{
                             size?: string;
                             speed?: string;
                             capacity?: number;
+                            survivability?: number;
+                            notes?: string;
                           };
                           patchVehicle(v.id, {
                             name: model,
+                            survivability: info.survivability ?? 0,
                             capacity: info.capacity ?? 0,
                             size: info.size ?? "",
                             topSpeed: info.speed ?? "",
                             flying: info.type === "Flying",
+                            notes: info.notes ?? "",
                           });
                         } else {
                           patchVehicle(v.id, { name: model });
@@ -3933,6 +4097,20 @@ const VehiclesPanel: React.FC<{
                   </div>
 
                   {/* Passenger Capacity */}
+                  <div className="grid gap-1">
+                    <Label>Survivability</Label>
+                    <Input
+                      inputMode="numeric"
+                      value={v.survivability ?? 0}
+                      onChange={(e) =>
+                        patchVehicle(v.id, {
+                          survivability: clamp(parseInt(e.target.value || "0", 10), 0, 99),
+                        })
+                      }
+                      disabled={readOnly}
+                    />
+                  </div>
+
                   <div className="grid gap-1">
                     <Label>Passenger Capacity</Label>
                     <Input
@@ -4081,7 +4259,6 @@ const ConditionsPanel: React.FC<{
     name === 'Bound' ||
     name === 'Burning' ||
     name === 'Crippled' ||
-    name === 'Corroded' ||
     name === 'Disoriented' ||
     name === 'Frightened' ||
     name === 'Impaled' ||
@@ -5594,6 +5771,12 @@ const currentInventoryCount = (char.items ?? []).reduce(
   (sum, item) => sum + Number(item.qty || 0),
   0
 );
+const selectedHideout = char.housing?.apartmentTier
+  ? HIDEOUT_TIER_DETAILS[char.housing.apartmentTier]
+  : undefined;
+const selectedUpgradeDetails = (char.housing?.upgrades ?? [])
+  .map((upgrade) => (upgrade ? { name: upgrade, data: HIDEOUT_UPGRADE_DETAILS[upgrade as (typeof HIDEOUT_UPGRADES)[number]] } : undefined))
+  .filter((entry): entry is { name: string; data: { price: number; summary: string } } => Boolean(entry?.data));
 
   /*const handleResetSave = () => {
     try {
@@ -5603,6 +5786,18 @@ const currentInventoryCount = (char.items ?? []).reduce(
   };*/ //Commented this out as it in unused currently. Leaving in case I want it again
   return (
     <div className="mx-auto grid max-w-6xl gap-4 p-4">
+      <Card className="border-white/10 bg-black/40 text-white">
+        <CardContent className="flex flex-col gap-2 p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">Ruleset</div>
+            <div className="text-lg font-semibold">Infernal City RPG v5.2</div>
+          </div>
+          <div className="max-w-2xl text-sm leading-relaxed text-white/80">
+            This sheet now includes 5.2-derived hideout rent and room guidance, updated vehicle stats, accessory notes,
+            and corrected condition text for the newer ruleset.
+          </div>
+        </CardContent>
+      </Card>
 
       <IdentitySection value={char} onChange={onChange} readOnly={readOnly} raceLocked={raceLocked} onToggleRaceLock={() => setRaceLocked((v) => !v)}/>
 
@@ -5756,7 +5951,13 @@ const currentInventoryCount = (char.items ?? []).reduce(
                   value={char.housing?.apartmentTier ?? ''}
                   onChange={(e) => {
                     const val = (e.target.value || undefined) as Character['housing']['apartmentTier'];
-                    onChange(set(char, 'housing', { ...(char.housing ?? {}), apartmentTier: val }));
+                    onChange(
+                      set(char, 'housing', {
+                        ...(char.housing ?? {}),
+                        apartmentTier: val,
+                        rentCost: val ? HIDEOUT_TIER_DETAILS[val].rentCost : char.housing?.rentCost ?? 0,
+                      })
+                    );
                   }}
                   disabled={readOnly}
                 >
@@ -5771,7 +5972,34 @@ const currentInventoryCount = (char.items ?? []).reduce(
               </div>
             </CardContent>
           </Card>
-                    <Card className="shadow-sm bg-red-900">
+
+          {selectedHideout && (
+            <Card className="shadow-sm bg-red-900">
+              <CardContent className="grid gap-4 p-4 text-white md:grid-cols-3">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-white/60">5.2 base rent</div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {selectedHideout.rentCost === 0 ? 'Zero' : `${selectedHideout.rentCost.toLocaleString()} Goldbacks`}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-white/60">Starting rooms</div>
+                  <div className="mt-1 text-sm leading-relaxed">{selectedHideout.rooms}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-white/60">Threat level</div>
+                  <div className="mt-1 text-sm leading-relaxed">{selectedHideout.threat}</div>
+                </div>
+                <div className="md:col-span-3 rounded-lg border border-white/10 bg-black/30 p-3 text-sm leading-relaxed">
+                  <div className="font-medium text-white">Tier summary</div>
+                  <div className="mt-1 text-white/85">{selectedHideout.summary}</div>
+                  <div className="mt-2 text-white/70">{selectedHideout.events}</div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="shadow-sm bg-red-900">
             <CardContent className="grid gap-4 p-4 text-white">
               <div className="grid gap-1.5">
                 <Label>Upgrades</Label>
@@ -5831,6 +6059,19 @@ const currentInventoryCount = (char.items ?? []).reduce(
                   </Button>
                 </div>
               </div>
+
+              {selectedUpgradeDetails.length > 0 && (
+                <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm leading-relaxed">
+                  <div className="mb-2 font-medium text-white">Selected upgrade effects</div>
+                  <div className="space-y-2 text-white/85">
+                    {selectedUpgradeDetails.map(({ name, data }, index) => (
+                      <div key={`${name}-${index}`}>
+                        <span className="font-semibold">{name}</span> ({data.price.toLocaleString()} Goldbacks): {data.summary}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
