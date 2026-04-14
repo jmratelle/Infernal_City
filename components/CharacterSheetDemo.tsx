@@ -12,6 +12,7 @@ import clsx from "clsx";
 import { SelectableField } from "@/components/ui/SelectableField";
 import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, ARMOR_STATS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
 
+
 /**
  * Infernal City – Character Sheet (Applied Features)
  * - Stats: Identity + Skills + Resources (Generic Rerolls, Specific Rerolls, Goldbacks, Debt list, Recurring Costs list)
@@ -20,7 +21,6 @@ import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, ARMOR_STATS, WEAPON_
  * - Conditions: Injuries counter + Condition rows (dropdown, optional Severity (X), Notes)
  * - Notes: Notes, People Met, Secrets
  * - Level Up: Current Mission checklist + Mission History
- 
  */
 type InlinePickerProps = {
   /** Main label. You can pass text or JSX. */
