@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
-import { Lock, Unlock } from 'lucide-react';
 import clsx from "clsx";
 import { SelectableField } from "@/components/ui/SelectableField";
 import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, ARMOR_STATS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
+
 
 /**
  * Infernal City – Character Sheet (Applied Features)
@@ -58,7 +58,7 @@ type InlinePickerProps = {
 const CONDITION_TEXT_OVERRIDES: Partial<Record<ConditionName, (x?: number) => string>> = {
   'Addiction Tremors': () =>
     'Reduce the Die Level of all DCs by one until you take another hit of the addictive substance that caused this condition or one day passes.',
-  'Burning': (x = 1) =>
+  'Burning': () =>
     `At the beginning of the target's turn they must make a burn armor DC. No burn armor uses a D4, armored uses a D8, heavily armored uses a D12, and impervious armor auto-succeeds. On a failure they take one injury. The target or another character may spend 2 AP to reduce this condition's X by one. Its X also drops by one at the end of the target's turn. Remove it when X reaches 0.`,
   'Crippled': (x = 1) =>
     `While under this condition, the target receives a negative ${x} Die Level modifier to all DCs they make. If Crippled reaches 4 or more, they also gain Unconscious at the start of each turn until it is removed. This condition can only be removed at a clinic or hospital.`,
@@ -230,10 +230,6 @@ export type RaceName =
   | 'Outsiders'
   | 'Rat Kings'
   | 'Succubus/Incubus';
-
-type RaceRule =
-  | { type: 'atLeastAtMost'; label: string; names: string[]; min: number; max: number }
-  | { type: 'exactlyOne';   label: string; names: string[] };
 
 export type ConditionName =
   | 'Addiction Tremors'
@@ -3115,7 +3111,6 @@ const ResourcesPanel: React.FC<{
 
 const ItemsTable: React.FC<{
   title: string;
-  fields: ItemFieldDef[];
   rows: Array<Record<string, string | number>>;
   onChange: (next: Array<Record<string, string | number>>) => void;
   readOnly?: boolean;
@@ -4593,8 +4588,7 @@ const AbilitiesPanel: React.FC<{
   // How many stacks it currently has (0 if not present)
   const emCount = emRow ? (emRow.count ?? 1) : 0;
   const hasRaceAbility = (name: string) => raceUnlocks.some(a => a.name === name);
-  // Pretty name for a skill id
-  const skillLabel = (id: string) => skillDefs.find(s => s.id === id)?.label ?? id;
+
   // Check skill prerequisites
   const meetsSkillReqs = (def?: RaceAbilityDef) => {
     if (!def) return true;
@@ -4777,7 +4771,6 @@ const generalDisplayOptionsFor = (currentId: string, currentName?: string) => {
   return true;
 };
 
-
   // ---- Rule checks ----
   const abomMutationCount = React.useMemo(() => {
   if (raceName !== 'Abomination') return 0;
@@ -4801,6 +4794,10 @@ const generalDisplayOptionsFor = (currentId: string, currentName?: string) => {
       ? raceUnlocks.filter(a => byName.get(a.name)?.oneOf === 'altered-core').length
       : 0;
 
+  const alteredOK = raceName !== 'Altered'     || alteredCoreCount === 1;
+/*const addOne = (name: string) => {
+  onChange([...(abilities ?? []), { id: makeId('ab'), kind: 'race', name }]);
+};
 
 
 /*const removeOne = (name: string) => {
@@ -4859,7 +4856,10 @@ const canAddName = (name: string) => {
   const confirmAddRaceAbility = () => {
     if (!draftRaceAbility) { setPickingRace(false); return; }
     if (!canAddName(draftRaceAbility)) { setPickingRace(false); setShowKindPicker(false); return; }
-    const nextAbilities = [...(abilities ?? []), { id: makeId('ab'), kind: 'race', name: draftRaceAbility }];
+    const nextAbilities: AbilityEntry[] = [
+      ...(abilities ?? []),
+      { id: makeId('ab'), kind: 'race', name: draftRaceAbility } as AbilityEntry,
+    ];
     onChange(nextAbilities, Math.max(0, abilityUnlocksAvailable - 1));
     setPickingRace(false);
     setShowKindPicker(false);
@@ -4875,6 +4875,42 @@ const canAddName = (name: string) => {
     setAddingSkillChoice(undefined);
   };
 
+  // for the row <select>: disable options that would BREAK rules when chosen
+ const optionDisabled = (currentName: string, candidate: string) => {
+  const currentDef = byName.get(currentName);
+  const candDef    = byName.get(candidate);
+
+  // Lock defaults
+  if (currentDef?.auto && candidate !== currentName) return true;
+
+  // Special-case: don't allow selecting Emerging Mutation into another row
+  if (candidate === 'Emerging Mutation' && candidate !== currentName &&
+      (abilities ?? []).some(a => a.kind === 'race' && a.name === 'Emerging Mutation')) {
+    return true;
+  }
+
+  // No dupes for non-stackables
+  if (!candDef?.stackable &&
+      candidate !== currentName &&
+      (abilities ?? []).some(a => a.kind === 'race' && a.name === candidate)) {
+    return true;
+  }
+
+  // Abomination mutation cap
+  if (raceName === 'Abomination' && candDef?.group === 'mutation') {
+    const currentIsMutation = currentDef?.group === 'mutation';
+    if (!currentIsMutation && abomMutationCount >= mutationMax) return true;
+  }
+
+  // Altered core cap
+  if (raceName === 'Altered' && candDef?.oneOf === 'altered-core') {
+    const currentIsCore = currentDef?.oneOf === 'altered-core';
+    if (!currentIsCore && alteredCoreCount >= 1) return true;
+  }
+
+  if (!meetsPrereqs(candDef)) return true;
+  return false;
+};
 
   // Is there anything addable right now?
   const anyAddable = !!raceName && raceDefs.some(d => canAddName(d.name));
@@ -4886,6 +4922,10 @@ const canAddName = (name: string) => {
     </span>
   );
 
+  const pickedRaceNames = React.useMemo(
+  () => new Set((abilities ?? []).filter(x => x.kind === 'race').map(x => x.name)),
+  [abilities]
+    );
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
@@ -5278,6 +5318,7 @@ const canAddName = (name: string) => {
         .filter(a => a.kind === 'skill')
         .map((a) => {
           // Find full choice def (for description)
+          const choice = SKILL_UNLOCK_DEFS.find(d => d.name === a.name);
 
           return (
             <div key={a.id} className="rounded-xl border border-white/10 p-3">
@@ -5769,7 +5810,7 @@ useEffect(() => {
   }
 
   prevAttrsRef.current = next;
-}, [char, onChange]);
+}, [char.attributes, char.missionHistory, char.tallySpent, char.abilityUnlocksAvailable]);
 
 // Autosave on any change
 useEffect(() => {
@@ -6020,7 +6061,6 @@ const equippedArmorTotals = sumArmorValues(char.armor);
 
           <ItemsTable
             title={`Inventory (${currentInventoryCount}/${maxInventory})`}
-            fields={registry.itemFields}
             rows={char.items}
             onChange={(rows) => onChange(set(char, 'items', rows))}
             readOnly={readOnly}
@@ -6030,7 +6070,6 @@ const equippedArmorTotals = sumArmorValues(char.armor);
 
           <ItemsTable
             title="Stash"
-            fields={registry.itemFields}
             rows={char.stash ?? []}
             onChange={(rows) => onChange(set(char, 'stash', rows))}
             readOnly={readOnly}
