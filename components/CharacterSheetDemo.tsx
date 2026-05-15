@@ -5737,6 +5737,7 @@ export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) 
 
 // Tracks previous attribute levels so we can detect increases for tally consumption
 const prevAttrsRef = React.useRef<Record<string, number>>(char.attributes);
+const onChange = props.onChange ?? setChar;
 
 // When any attribute goes up, consume all effective tallies for that skill
 useEffect(() => {
@@ -5781,7 +5782,6 @@ useEffect(() => {
 
 
 const registry = useMemo(() => props.registry ?? DEFAULT_REGISTRY, [props.registry]);
-const onChange = props.onChange ?? setChar;
 const readOnly = props.readOnly ?? false;
 
 const handleArmorChange = React.useCallback(
