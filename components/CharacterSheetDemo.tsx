@@ -4944,9 +4944,9 @@ const canAddName = (name: string) => {
             {raceName === 'Altered' && (
               <StatusPill ok={alteredOK} text={`Core Power ${alteredCoreCount}/1`} />
             )}
-          </div>
+          
 
-          <div className="flex items-center gap-2">
+          
             <Button
               type="button"
               size="sm"
@@ -5007,29 +5007,6 @@ const canAddName = (name: string) => {
                 disabled={readOnly || abilityUnlocksAvailable <= 0}
               >
                 Add General
-              </Button>
-
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  const isOpen = addingSkill;
-                  if (isOpen) {
-                    // closing
-                    setAddingSkill(false);
-                    setAddingSkillChoice(undefined);
-                  } else {
-                    // opening: preselect first eligible option
-                    const opts = skillDisplayOptionsFor("new-skill");
-                    setAddingSkill(true);
-                    setAddingSkillChoice(opts[0] ?? undefined);
-                  }
-                }}
-                disabled={readOnly || abilityUnlocksAvailable <= 0}
-              >
-                Add Skill
               </Button>
 
               <Button
@@ -5935,12 +5912,7 @@ const equippedArmorTotals = sumArmorValues(char.armor);
       <Card className="border-white/10 bg-black/40 text-white">
         <CardContent className="flex flex-col gap-2 p-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">Ruleset</div>
             <div className="text-lg font-semibold">Infernal City RPG v5.2</div>
-          </div>
-          <div className="max-w-2xl text-sm leading-relaxed text-white/80">
-            This sheet now includes 5.2-derived hideout rent and room guidance, updated vehicle stats, accessory notes,
-            and corrected condition text for the newer ruleset.
           </div>
         </CardContent>
       </Card>
