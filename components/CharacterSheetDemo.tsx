@@ -4495,7 +4495,7 @@ const AbilitiesPanel: React.FC<{
   const prevRaceRef = React.useRef<RaceName | undefined>(undefined);
   // Minimal add helper — adjust to your data shape if needed
   const addAbilityRow = (
-    kind: 'skill' | 'general',
+    kind: 'general',
     name: string,
     extra?: Partial<AbilityEntry>
   ) => {
