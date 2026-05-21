@@ -87,6 +87,7 @@ export const ITEM_OPTIONS = {
 
   Armor: {
     "Body Armor": [
+      "Empty",
       "Flak Suit",
       "Flak Vest",
       "Bomb Suit",
@@ -97,6 +98,7 @@ export const ITEM_OPTIONS = {
       "Hell Plate",
     ],
     "Armor Lining": [
+      "Empty",
       "Thermal Lining",
       "Insulated Lining",
       "Combat Mesh",
@@ -104,6 +106,7 @@ export const ITEM_OPTIONS = {
       "Nanomesh",
     ],
     "Head Pieces": [
+      "Empty",
       "Gas Mask",
       "Kevlar Helmet",
       "Enchanted Circlet",
@@ -196,6 +199,7 @@ export const ITEM_OPTIONS = {
 // -----------------------------
 export const ARMOR_OPTIONS = {
   body: [
+    "Empty",
     "Flak Suit",
     "Flak Vest",
     "Bomb Suit",
@@ -206,13 +210,14 @@ export const ARMOR_OPTIONS = {
     "Hell Plate",
   ],
   lining: [
+    "Empty",
     "Thermal Lining",
     "Insulated Lining",
     "Combat Mesh",
     "Blessed Vestiments",
     "Nanomesh",
   ],
-  head: ["Gas Mask", "Kevlar Helmet", "Enchanted Circlet", "Darkvision", "Hood of Shadows", "Heat Eye 3"],
+  head: ["Empty", "Gas Mask", "Kevlar Helmet", "Enchanted Circlet", "Darkvision", "Hood of Shadows", "Heat Eye 3"],
 };
 
 export const ARMOR_STATS: Record<
@@ -231,6 +236,10 @@ export const ARMOR_STATS: Record<
     notes?: string;
   }
 > = {
+  "Empty": {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
+    notes: "More naked than a gambler who was sure they were gonna hit it big",
+  },
   "Flak Suit": {
     av: { Burn: 0, Corrosive: 0, Crush: 1, Slash: 1, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
     notes: "Bulky: one Die Level penalty to Reflex DCs.",
