@@ -3756,7 +3756,7 @@ const ArmorSlot: React.FC<{
       : ARMOR_OPTIONS.lining;
 
   const [selected, setSelected] = React.useState(
-    options.includes(slot.name) ? slot.name : "Other"
+  options.includes(slot.name) ? slot.name : "Clothes"
   );
   const [localOther, setLocalOther] = React.useState(
     options.includes(slot.name) ? "" : slot.name
@@ -3770,13 +3770,31 @@ const ArmorSlot: React.FC<{
       setSelected("Other");
       setLocalOther(slot.name);
     } else {
-      setSelected("");
+      setSelected("Clothes");
       setLocalOther("");
     }
   }, [slot.name, options]);
 
   const autoStats = ARMOR_STATS[slot.name];
+  const emptyArmorNotes: Record<keyof ArmorSlots, string> = {
+    head: "Nothing on the noggin but confidence and poor risk assessment.",
+    body: "Bold choice. Soft target.",
+    lining: "Linings are for losers",
+  };
 
+  const clothingArmorNotes: Record<keyof ArmorSlots, string> = {
+  head: "Hair styled, face exposed, skull regrettably unarmored.",
+  body: "Street legal. Combat questionable.",
+  lining: "Comfortable enough to wear under armor, useless at stopping a blade.",
+  };
+
+  const armorNote =
+    slot.name === "Empty"
+      ? emptyArmorNotes[k]
+      : slot.name === "Clothes"
+      ? clothingArmorNotes[k]
+      : autoStats?.notes ??
+        "Custom armor piece. Use the modifier panel below for any manual or situational armor bonuses this sheet cannot infer.";
   return (
     <div className="space-y-2">
       <div className="grid gap-1.5">
@@ -3797,7 +3815,6 @@ const ArmorSlot: React.FC<{
           }}
           disabled={readOnly}
         >
-          <option value="">Select...</option>
           {options.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
@@ -3823,10 +3840,10 @@ const ArmorSlot: React.FC<{
           <div className="mb-1 text-white/80">
             {DAMAGE_TYPES.filter((damageType) => (slot.av?.[damageType] ?? 0) > 0)
               .map((damageType) => `${damageType} ${slot.av[damageType]}`)
-              .join(' • ') || 'No direct armor values'}
+              .join(' • ')}
           </div>
         )}
-        {autoStats?.notes ? autoStats.notes : "Custom armor piece. Use the modifier panel below for any manual or situational armor bonuses this sheet cannot infer."}
+        {armorNote}
       </div>
     </div>
   );
@@ -5534,9 +5551,9 @@ const DEFAULT_CHARACTER: Character = {
   items: [],
   stash: [],
   armor: {
-    head: { name: "", av: emptyAV() },
-    body: { name: "", av: emptyAV() },
-    lining: { name: "", av: emptyAV() },
+    head: { name: "Clothes", av: ARMOR_STATS["Clothes"].av },
+    body: { name: "Clothes", av: ARMOR_STATS["Clothes"].av },
+    lining: { name: "Clothes", av: ARMOR_STATS["Clothes"].av },
   },
   totalArmor: emptyAV(),
   accessories: [],
@@ -5563,10 +5580,14 @@ export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) 
   const [tabValue, setTabValue] = useState("stats");
   const [raceLocked, setRaceLocked] = React.useState(false);
   const [char, setChar] = useState<Character>(() => {
-  const ensureAV = (slot?: { name: string; av?: ArmorAV }): { name: string; av: ArmorAV } => ({
-    name: slot?.name ?? "",
-    av: slot?.av ?? emptyAV(),
-  });
+  const ensureAV = (slot?: { name: string; av?: ArmorAV }): { name: string; av: ArmorAV } => {
+    const name = slot?.name || "Empty";
+
+    return {
+      name,
+      av: slot?.av ?? ARMOR_STATS[name]?.av ?? emptyAV(),
+    };
+  };
 
   let base: Character;
 

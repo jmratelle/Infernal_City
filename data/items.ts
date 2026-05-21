@@ -87,6 +87,7 @@ export const ITEM_OPTIONS = {
 
   Armor: {
     "Body Armor": [
+      "Clothes",
       "Empty",
       "Flak Suit",
       "Flak Vest",
@@ -98,14 +99,16 @@ export const ITEM_OPTIONS = {
       "Hell Plate",
     ],
     "Armor Lining": [
+      "Clothes",
       "Empty",
       "Thermal Lining",
       "Insulated Lining",
       "Combat Mesh",
-      "Blessed Vestments",
+      "Blessed Vestiments",
       "Nanomesh",
     ],
     "Head Pieces": [
+      "Clothes",
       "Empty",
       "Gas Mask",
       "Kevlar Helmet",
@@ -199,6 +202,7 @@ export const ITEM_OPTIONS = {
 // -----------------------------
 export const ARMOR_OPTIONS = {
   body: [
+    "Clothes",
     "Empty",
     "Flak Suit",
     "Flak Vest",
@@ -210,6 +214,7 @@ export const ARMOR_OPTIONS = {
     "Hell Plate",
   ],
   lining: [
+    "Clothes",
     "Empty",
     "Thermal Lining",
     "Insulated Lining",
@@ -217,7 +222,7 @@ export const ARMOR_OPTIONS = {
     "Blessed Vestiments",
     "Nanomesh",
   ],
-  head: ["Empty", "Gas Mask", "Kevlar Helmet", "Enchanted Circlet", "Darkvision", "Hood of Shadows", "Heat Eye 3"],
+  head: ["Clothes", "Empty", "Gas Mask", "Kevlar Helmet", "Enchanted Circlet", "Darkvision", "Hood of Shadows", "Heat Eye 3"],
 };
 
 export const ARMOR_STATS: Record<
@@ -236,9 +241,13 @@ export const ARMOR_STATS: Record<
     notes?: string;
   }
 > = {
+  "Clothes": {
+    av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
+    notes: "",
+  },
   "Empty": {
     av: { Burn: 0, Corrosive: 0, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
-    notes: "More naked than a gambler who was sure they were gonna hit it big",
+    notes: "",
   },
   "Flak Suit": {
     av: { Burn: 0, Corrosive: 0, Crush: 1, Slash: 1, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
