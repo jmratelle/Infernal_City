@@ -2464,12 +2464,6 @@ function sumArmorValues(slots: ArmorSlots): ArmorAV {
   }
   return total;
 }
-function armorTierLabel(value: number) {
-  if (value <= 0) return 'None';
-  if (value === 1) return 'Armored (D8)';
-  if (value === 2) return 'Heavily Armored (D12)';
-  return 'Impervious (Auto)';
-}
 function groupBy<T extends { group: SkillGroup }>(arr: T[]): Record<SkillGroup, T[]> {
   return arr.reduce(
     (acc, item) => {
@@ -3909,16 +3903,29 @@ const ArmorTotalsBox: React.FC<{
 }> = ({ equipped, modifiers, onChangeModifiers, readOnly }) => {
   const MIN = 0;
   const MAX = 9;
+  const [showDetails, setShowDetails] = React.useState(true);
 
   return (
     <Card className="shadow-sm bg-red-900">
       <CardContent className="p-4 text-white">
-        <div className="mb-2 text-sm font-medium text-muted-foreground text-white">
-          Armor Values
-        </div>
-        <div className="mb-3 text-xs leading-relaxed text-white/70">
-          Equipped armor is calculated automatically from your selected body, lining, and head pieces. Use modifiers
-          for temporary bonuses, innate armor, accessories, or special effects the sheet cannot infer.
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium text-white">Armor Values</div>
+            <div className="mt-1 text-xs leading-relaxed text-white/70">
+              Equipped armor is calculated automatically from your selected body, lining, and head pieces.
+              Use modifiers for temporary bonuses, innate armor, accessories, or special effects the sheet cannot infer.
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setShowDetails((prev) => !prev)}
+          >
+            {showDetails ? "Hide Details" : "Show Details"}
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -3926,12 +3933,17 @@ const ArmorTotalsBox: React.FC<{
             const equippedValue = clamp(equipped[dt] ?? 0, MIN, MAX);
             const modifierValue = clamp(modifiers[dt] ?? 0, MIN, MAX);
             const totalValue = clamp(equippedValue + modifierValue, MIN, 99);
+
             return (
               <div key={dt} className="grid gap-1 rounded-lg border border-white/10 bg-black/20 p-2">
                 <Label className="text-xs">{dt}</Label>
-                <div className="text-[11px] text-white/60">
-                  Equipped {equippedValue} • Modifier {modifierValue}
-                </div>
+
+                {showDetails && (
+                  <div className="text-[11px] text-white/60">
+                    Equipped {equippedValue} • Modifier {modifierValue}
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2">
                   <Input
                     inputMode="numeric"
@@ -3941,46 +3953,55 @@ const ArmorTotalsBox: React.FC<{
                     disabled={readOnly}
                     aria-label={`${dt} total armor value`}
                   />
-                  <div className="min-w-[7.5rem] text-[11px] text-white/70">
-                    {dt === 'Burn' ? armorTierLabel(totalValue) : '\u00A0'}
+
+                </div>
+
+                {showDetails && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      inputMode="numeric"
+                      value={modifierValue}
+                      readOnly
+                      className="w-15"
+                      disabled={readOnly}
+                      aria-label={`${dt} modifier value`}
+                    />
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() =>
+                        onChangeModifiers({
+                          ...modifiers,
+                          [dt]: clamp(modifierValue - 1, MIN, MAX),
+                        })
+                      }
+                      disabled={readOnly}
+                      aria-label={`${dt} modifier decrement`}
+                    >
+                      −
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() =>
+                        onChangeModifiers({
+                          ...modifiers,
+                          [dt]: clamp(modifierValue + 1, MIN, MAX),
+                        })
+                      }
+                      disabled={readOnly}
+                      aria-label={`${dt} modifier increment`}
+                    >
+                      +
+                    </Button>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    inputMode="numeric"
-                    value={modifierValue}
-                    readOnly
-                    className="w-15"
-                    disabled={readOnly}
-                    aria-label={`${dt} modifier value`}
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() =>
-                      onChangeModifiers({ ...modifiers, [dt]: clamp(modifierValue - 1, MIN, MAX) })
-                    }
-                    disabled={readOnly}
-                    aria-label={`${dt} modifier decrement`}
-                  >
-                    −
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() =>
-                      onChangeModifiers({ ...modifiers, [dt]: clamp(modifierValue + 1, MIN, MAX) })
-                    }
-                    disabled={readOnly}
-                    aria-label={`${dt} modifier increment`}
-                  >
-                    +
-                  </Button>
-                </div>
+                )}
               </div>
             );
           })}
