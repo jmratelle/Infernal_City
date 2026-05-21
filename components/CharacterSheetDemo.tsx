@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
 import clsx from "clsx";
 import { SelectableField } from "@/components/ui/SelectableField";
+import DiceRoller from "@/components/DiceRoller";
 import { ACCESSORY_OPTIONS, ACCESSORY_RULES, ARMOR_OPTIONS, ARMOR_STATS, WEAPON_OPTIONS, WEAPON_STATS, VEHICLE_STATS, ITEM_OPTIONS } from "@/data/items";
 
 
@@ -4681,44 +4682,6 @@ const meetsGeneralUnlockPrereqs = (def?: GeneralUnlockDef) => {
   return true;
 };
 
-
-// Display lists that hide already-chosen choices and those that fail prereqs
-// Build options for a specific Skill row, letting the current row's selection remain selectable
-const skillDisplayOptionsFor = (currentId: string, currentName?: string) => {
-  // Names picked by other skill rows
-  const pickedByOthers = new Set(
-    (abilities ?? [])
-      .filter(a => a.kind === 'skill' && a.id !== currentId)
-      .map(a => a.name)
-  );
-
-  // Which (skill,level) groups are already taken by other rows?
-  const groupsTaken = new Set<string>();
-  for (const n of pickedByOthers) {
-    const grp = SKILL_CHOICE_GROUP.get(n);
-    if (grp) groupsTaken.add(`${grp.skill}:${grp.level}`);
-  }
-
-  const opts = SKILL_UNLOCK_DEFS
-    .filter(choice => {
-      if (!meetsSkillUnlockPrereqs(choice)) return false;
-      const grp = SKILL_CHOICE_GROUP.get(choice.name);
-      if (!grp) return false;
-      const key = `${grp.skill}:${grp.level}`;
-      if (groupsTaken.has(key)) return false;
-      if (pickedByOthers.has(choice.name)) return false;
-      return true;
-    })
-    .map(c => c.name);
-
-  // Keep current selection visible so <select> doesn’t snap back
-  if (currentName && !opts.includes(currentName)) {
-    opts.unshift(currentName);
-  }
-
-  return opts;
-};
-
 // Build options for a specific General row, letting the current row's selection remain selectable
 const generalDisplayOptionsFor = (currentId: string, currentName?: string) => {
   const opts = GENERAL_UNLOCK_DEFS
@@ -5153,29 +5116,6 @@ const canAddName = (name: string) => {
     )}
   </div>
 )}
-
-{/* SKILL unlock picker */}
-{addingSkill && (
-  <InlinePicker
-    label="Select Skill Unlock"
-    value={addingSkillChoice ?? ""}
-    onChange={(v) => setAddingSkillChoice(v)}
-    options={skillDisplayOptionsFor("new-skill", addingSkillChoice || undefined)}
-    optionKeyPrefix="skill"
-    selectTitle="Select a skill unlock to add"
-    onConfirm={() => {
-      if (!addingSkillChoice) return;
-      addAbilityRow("skill", addingSkillChoice);
-      setAddingSkill(false);
-      setAddingSkillChoice(undefined);
-    }}
-    onCancel={() => {
-      setAddingSkill(false);
-      setAddingSkillChoice(undefined);
-    }}
-    confirmDisabled={abilityUnlocksAvailable <= 0 || !addingSkillChoice}
-  />
-)}
         
 
         {/* RACE ACQUIRED */}
@@ -5252,6 +5192,7 @@ const canAddName = (name: string) => {
             </div>
           )}
         </div>
+
 
         {/* GENERAL UNLOCKS */}
 <div className="space-y-2">
@@ -5837,6 +5778,7 @@ const equippedArmorTotals = sumArmorValues(char.armor);
             <TabsTrigger value="conditions">Conditions</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="levelup">Level Up</TabsTrigger>
+            <TabsTrigger value="dice">Dice</TabsTrigger>
           </TabsList>
 
           {/* Button only shows when Stats tab is selected */}
@@ -6138,6 +6080,10 @@ const equippedArmorTotals = sumArmorValues(char.armor);
             abilityUnlocksAvailable={char.abilityUnlocksAvailable ?? 0}
             readOnly={readOnly}
           />
+        </TabsContent>
+
+        <TabsContent value="dice" className="grid gap-4">
+          <DiceRoller />
         </TabsContent>
       </Tabs>
 
