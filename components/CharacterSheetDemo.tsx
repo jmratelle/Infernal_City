@@ -4609,33 +4609,6 @@ const AbilitiesPanel: React.FC<{
 const skillLevel = (id?: string) => (id ? (attrValues?.[id] ?? 0) : 0);
 
 // Lookups for already-chosen names
-// Gating for skill unlocks
-const meetsSkillUnlockPrereqs = (choice?: SkillUnlockChoice) => {
-  if (!choice) return true;
-
-  if (choice.requiresSkillId && choice.requiresMinLevel != null) {
-    if (skillLevel(choice.requiresSkillId) < choice.requiresMinLevel) return false;
-  }
-
-  // oneOf group: allow picking if player does not already have some other in that group
-  if (choice.oneOf) {
-    const hasSameGroup = (abilities ?? []).some(a =>
-      a.kind === 'skill' &&
-      SKILL_UNLOCK_DEFS.find(d => d.name === a.name)?.oneOf === choice.oneOf
-    );
-    if (hasSameGroup) return false;
-  }
-
-  // stack limits if you later convert to stackable via count
-  if (choice.stackMax != null) {
-    const have = (abilities ?? [])
-      .filter(a => a.kind === 'skill' && a.name === choice.name)
-      .reduce((s, a) => s + (a.count ?? 1), 0);
-    if (have >= choice.stackMax) return false;
-  }
-
-  return true;
-};
 
 const canAddExpertiseForSkill = (skillId?: string, currentId?: string) => {
   if (!skillId) return false;
@@ -5279,81 +5252,6 @@ const canAddName = (name: string) => {
             </div>
           )}
         </div>
-
-        {/* SKILL UNLOCKS */}
-<div className="space-y-2">
-  <div className="space-above text-xs font-semibold uppercase text-white/80">Skill Unlocks</div>
-
-  {/* Empty state (parity with Race) */}
-  {(abilities ?? []).filter(a => a.kind === 'skill').length === 0 && (
-    <div className="mt-2 mb-4 text-sm text-white/70">No skill unlocks added yet.</div>
-  )}
-
-  {(abilities ?? []).filter(a => a.kind === 'skill').length > 0 && (
-    <div className="grid gap-2">
-      {(abilities ?? [])
-        .filter(a => a.kind === 'skill')
-        .map((a) => {
-          // Find full choice def (for description)
-          const choice = SKILL_UNLOCK_DEFS.find(d => d.name === a.name);
-
-          return (
-            <div key={a.id} className="rounded-xl border border-white/10 p-3">
-              {/* header row: static label + remove + show/hide */}
-              <div className="grid gap-1">
-                <div className="flex items-center justify-between gap-2">
-                  {/* LEFT: static name (no dropdown) */}
-                  <div className="text-sm font-semibold text-white">{a.name}</div>
-
-                  {/* RIGHT: actions */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        // remove the row…
-                        remove(a.id, true);
-                        // …then reopen the “Add Skill” picker so they can choose again
-                        setAddingSkill(true);
-                        setAddingSkillChoice(undefined); // no preselect; user will pick
-                      }}
-                      disabled={readOnly}
-                      aria-label="Remove skill unlock"
-                      title="Remove"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => toggle(a.id)}
-                      title={isOpen(a.id) ? 'Hide' : 'Show'}
-                    >
-                      {isOpen(a.id) ? 'Hide' : 'Show'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* rules text */}
-              {isOpen(a.id) && (
-                <div className="mt-2 rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed whitespace-pre-line">
-                  {SKILL_UNLOCK_DEFS.find(d => d.name === a.name)?.desc ?? `No description found for "${a.name}".`}
-                </div>
-              )}
-            </div>
-          );
-        })}
-    </div>
-  )}
-</div>
-
-
 
         {/* GENERAL UNLOCKS */}
 <div className="space-y-2">
