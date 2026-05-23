@@ -340,6 +340,8 @@ export type CharacterSheetProps = {
   value: Character;
   onChange: (updated: Character) => void;
   readOnly?: boolean;
+
+  initialCharacter?: Character;
 };
 
 // ---------- Constants ----------
@@ -405,7 +407,7 @@ const CONDITION_TEXT: Record<ConditionName, (x?: number) => string> = {
 };
 
 
-const RACE_OPTIONS: RaceName[] = [
+export const RACE_OPTIONS: RaceName[] = [
   'Abomination',
   'Altered',
   'Ascended',
@@ -3878,7 +3880,7 @@ const LevelUpPanel: React.FC<{
 };
 
 // ---------- Registry & Defaults ----------
-const DEFAULT_REGISTRY: RulesRegistry = {
+export const DEFAULT_REGISTRY: RulesRegistry = {
   attributes: [
     // Combat
     { id: 'automatics', label: 'Automatics', group: 'combat', min: 1, max: 5 },
@@ -3937,7 +3939,7 @@ const DEFAULT_ATTRIBUTES: Record<string, number> = Object.fromEntries(
 const emptyAV = (): ArmorAV =>
   Object.fromEntries(DAMAGE_TYPES.map((d) => [d, 0])) as ArmorAV;
 
-const DEFAULT_CHARACTER: Character = {
+export const DEFAULT_CHARACTER: Character = {
   id: 'temp-1',
   name: '',
   race: '',
@@ -3989,8 +3991,11 @@ export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) 
 
   let base: Character;
 
-  if (props.value) base = props.value;
-  else if (typeof window !== "undefined") {
+    if (props.value) {
+    base = props.value;
+  } else if (props.initialCharacter) {
+    base = props.initialCharacter;
+  } else if (typeof window !== "undefined") {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       base = raw ? (JSON.parse(raw) as Character) : DEFAULT_CHARACTER;
@@ -4014,7 +4019,11 @@ export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) 
 // Tracks previous attribute levels so we can detect increases for tally consumption
 const prevAttrsRef = React.useRef<Record<string, number>>(char.attributes);
 const onChange = props.onChange ?? setChar;
-
+useEffect(() => {
+  if (props.value) {
+    setChar(props.value);
+  }
+}, [props.value]);
 // When any attribute goes up, consume all effective tallies for that skill
 useEffect(() => {
   const prev = prevAttrsRef.current || {};
