@@ -1,11 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useMemo, useState } from 'react';
 import {
   Backpack,
   BookOpenText,
   Castle,
   CheckCircle2,
+  Camera,
   CircleAlert,
   Check,
   Dice5,
@@ -17,6 +19,7 @@ import {
   Save,
   Sparkles,
   Swords,
+  Trash2,
   X,
   UserRound,
 } from 'lucide-react';
@@ -97,6 +100,7 @@ export default function CharacterSheetDemo(props: Partial<CharacterSheetProps>) 
   const [tabValue, setTabValue] = useState("home");
   const [draftChar, setDraftChar] = useState<Character>(() => normalizeCharacter(props.initialCharacter ?? DEFAULT_CHARACTER));
   const [isEditingName, setIsEditingName] = useState(false);
+  const [showPortraitActions, setShowPortraitActions] = useState(false);
   const [draftName, setDraftName] = useState('');
 
   const char = useMemo(
@@ -166,6 +170,23 @@ const saveName = () => {
   onChange(set(char, 'name', draftName.trim()));
   setIsEditingName(false);
 };
+const handlePortraitUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file || !file.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (typeof reader.result === 'string') {
+      onChange(set(char, 'portraitUrl', reader.result));
+      setShowPortraitActions(false);
+    }
+  };
+  reader.readAsDataURL(file);
+};
+const togglePortraitActions = () => {
+  if (!readOnly) setShowPortraitActions((show) => !show);
+};
 
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 overflow-x-hidden p-3 sm:p-4 lg:gap-5 lg:p-6">
@@ -174,8 +195,81 @@ const saveName = () => {
           <div className="border-b border-amber-200/10 bg-gradient-to-r from-red-950/70 via-zinc-950/60 to-black/40 p-4 sm:p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex min-w-0 items-start gap-3">
-                <div className="mt-1 rounded-md border border-amber-200/15 bg-red-950/70 p-2.5 shadow-inner shadow-black/40">
-                  <UserRound className="h-6 w-6 text-amber-100" />
+                <div
+                  className="group relative mt-1 h-20 w-20 shrink-0 overflow-hidden rounded-md border border-amber-200/15 bg-red-950/70 shadow-inner shadow-black/40 sm:h-24 sm:w-24"
+                  role={readOnly ? undefined : 'button'}
+                  tabIndex={readOnly ? undefined : 0}
+                  onClick={togglePortraitActions}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      togglePortraitActions();
+                    }
+                  }}
+                  aria-label={readOnly ? undefined : 'Show character portrait actions'}
+                >
+                  {char.portraitUrl ? (
+                    <Image
+                      src={char.portraitUrl}
+                      alt={`${characterTitle} portrait`}
+                      width={96}
+                      height={96}
+                      unoptimized
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <UserRound className="h-10 w-10 text-amber-100/85 sm:h-12 sm:w-12" />
+                    </div>
+                  )}
+                  {!readOnly && (
+                    <div
+                      className={[
+                        'absolute inset-x-1 bottom-1 flex justify-center gap-1 transition-opacity',
+                        showPortraitActions ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+                        '[@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:opacity-0',
+                        '[@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100',
+                        '[@media(hover:hover)]:group-focus-within:pointer-events-auto [@media(hover:hover)]:group-focus-within:opacity-100',
+                      ].join(' ')}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <input
+                        id="character-portrait-upload"
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={handlePortraitUpload}
+                        aria-label="Upload character portrait"
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="secondary"
+                        className="h-8 w-8 border border-amber-200/20 bg-black/70 text-amber-100 hover:bg-black/85"
+                        asChild
+                        aria-label={char.portraitUrl ? 'Change character portrait' : 'Upload character portrait'}
+                        title={char.portraitUrl ? 'Change portrait' : 'Upload portrait'}
+                      >
+                        <label htmlFor="character-portrait-upload">
+                          <Camera className="h-4 w-4" />
+                        </label>
+                      </Button>
+                      {char.portraitUrl && (
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="secondary"
+                          className="h-8 w-8 border border-amber-200/20 bg-black/70 text-amber-100 hover:bg-black/85"
+                          onClick={() => onChange(set(char, 'portraitUrl', ''))}
+                          onMouseDown={(event) => event.stopPropagation()}
+                          aria-label="Remove character portrait"
+                          title="Remove portrait"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <div className="sheet-kicker">Infernal City RPG v5.2</div>

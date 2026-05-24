@@ -62,6 +62,7 @@ export const DEFAULT_CHARACTER: Character = {
   id: 'temp-1',
   schemaVersion: 1,
   name: '',
+  portraitUrl: '',
   race: '',
   origin: '',
   money: 0,

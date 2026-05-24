@@ -148,6 +148,7 @@ export type Character = {
   id: string;
   schemaVersion?: number;
   name: string;
+  portraitUrl?: string;
   race?: string;
   origin?: string;
   money?: number;
