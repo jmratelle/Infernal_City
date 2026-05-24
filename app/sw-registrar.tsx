@@ -4,13 +4,20 @@ import { useEffect } from 'react';
 
 export default function SWRegistrar() {
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      // Only register on production (optional)
-      const isLocalhost = typeof window !== 'undefined' && location.hostname === 'localhost';
-      if (process.env.NODE_ENV === 'production' || !isLocalhost) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-      }
+    if (!('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      .catch(() => {});
+
+    if ('caches' in window) {
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+        .catch(() => {});
     }
   }, []);
+
   return null;
 }

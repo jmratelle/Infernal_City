@@ -1,26 +1,32 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import clsx from 'clsx';
 
+import { makeId } from '@/domain/character.helpers';
+import { meetsGeneralAbilityPrereqs } from '@/domain/character.abilityPrereqs';
+import { ORIGIN_DEFS, type OriginDef } from '@/domain/character.origins';
 import type {
   Character,
   RulesRegistry,
   AbilityEntry,
   RaceName,
   VehicleEntry
-} from './CharacterSheetDemo';
+} from '@/domain/character.types';
 
 import {
+  applyRaceStartingSurvivability,
   RACE_OPTIONS,
   RACE_ABILITIES,
-} from './CharacterSheetDemo';
+} from '@/domain/character.races';
 
 import {
   GENERAL_UNLOCK_DEFS,
+  type GeneralUnlockDef,
 } from '@/data/abilities';
 
 type CharacterCreationWizardProps = {
@@ -31,401 +37,19 @@ type CharacterCreationWizardProps = {
 };
 
 type CreationStep =
+  | 'name'
   | 'race'
+  | 'race_choices'
   | 'skills'
   | 'abilities'
   | 'origin'
   | 'origin_bonus'
   | 'review';
 
-type OriginRewardChoice =
-  | {
-      type: 'skill_boost';
-      amount: number;
-      choose: number;
-      skillCategory?: string;
-    }
-  | {
-      type: 'free_ability';
-      choose: number;
-      ignoreQualifications?: boolean;
-      category?: string;
-    }
-  | {
-      type: 'item';
-      itemName: string;
-    }
-  | {
-      type: 'custom';
-      description: string;
-    };
-
-type OriginVehicle = {
-  name: string;
-
-  buyValue?: number;
-
-  unsellable?: boolean;
-
-  survivability?: number;
-  capacity?: number;
-
-  speed?: string;
-
-  movementType?: string;
-
-  size?: string;
-
-  armor?: {
-    burn: number;
-    corrosive: number;
-    crush: number;
-    slash: number;
-    electric: number;
-    freeze: number;
-    pierce: number;
-    curse: number;
-  };
-
-  abilities?: string[];
-};
-
-type OriginHousing = {
-  name: string;
-
-  upgrades?: string[];
-};
-
-type OriginDef = {
-  id: string;
-
-  name: string;
-
-  description: string;
-
-  startingCash: number;
-
-  housing: OriginHousing;
-
-  startingAbilities?: string[];
-
-  startingItems?: string[];
-
-  vehicles?: OriginVehicle[];
-
-  choices?: OriginRewardChoice[];
-
-  notes?: string[];
-};
-
-const ORIGIN_DEFS: OriginDef[] = [
-  {
-    id: 'damned',
-    name: 'Damned',
-
-    description:
-      'You are indebted to a demon after bargaining away your soul for power, wealth, or another terrible boon.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Dead End Apartment',
-    },
-
-    startingItems: [
-      'Pact Ring',
-    ],
-
-    choices: [
-      {
-        type: 'skill_boost',
-        amount: 2,
-        choose: 1,
-      },
-
-      {
-        type: 'item',
-        itemName:
-          'Vial of Temporary Resurrection',
-      },
-
-      {
-        type: 'free_ability',
-        choose: 1,
-        ignoreQualifications: true,
-      },
-
-      {
-        type: 'custom',
-        description:
-          'Custom ability or roleplaying element approved by GM',
-      },
-    ],
-
-    notes: [
-      'Character owes 100,000 GoldBacks to a demon.',
-      'Defaulting on the contract causes the demon to claim the character’s soul.',
-      'If the demon dies by the character’s hand or command, the contract defaults automatically.',
-    ],
-  },
-
-  {
-    id: 'hell-taxi-driver',
-    name: 'Hell Taxi Driver',
-
-    description:
-      'You restored or inherited one of Babylon’s armored flying taxis.',
-
-    startingCash: 800,
-
-    housing: {
-      name: 'Dead End Apartment',
-      upgrades: ['Garage (Small)'],
-    },
-
-    vehicles: [
-      {
-        name: 'Refurbished Babylon Taxi',
-
-        buyValue: 12000,
-
-        unsellable: true,
-
-        survivability: 3,
-        capacity: 5,
-
-        speed:
-          '20 Units per turn',
-
-        movementType: 'Flying',
-
-        size: '3 x 4 Units',
-
-        armor: {
-          burn: 1,
-          corrosive: 0,
-          crush: 2,
-          slash: 2,
-          electric: 1,
-          freeze: 1,
-          pierce: 2,
-          curse: 0,
-        },
-
-        abilities: [],
-      },
-    ],
-  },
-
-  {
-    id: 'crusader',
-    name: 'Crusader',
-
-    description:
-      'You or your family were involved in the Third Crusade and learned the horrors of war.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Dead End Apartment',
-    },
-
-    choices: [
-      {
-        type: 'skill_boost',
-        amount: 1,
-        choose: 1,
-        skillCategory: 'combat',
-      },
-    ],
-  },
-
-  {
-    id: 'gatekeeper',
-    name: 'Gatekeeper',
-
-    description:
-      'You belong to an ancient arcane order dedicated to limiting Hell’s influence.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Dead End Apartment',
-    },
-
-    choices: [
-      {
-        type: 'free_ability',
-        choose: 1,
-        category: 'arcane',
-      },
-    ],
-  },
-
-  {
-    id: 'commando',
-    name: 'Commando',
-
-    description:
-      'You are a specialist trained for destruction and covert operations.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Incognito Dwelling',
-      upgrades: ['Workstation'],
-    },
-  },
-
-  {
-    id: 'ex-hellcorp',
-    name: 'Ex-Hellcorp',
-
-    description:
-      'You once held a position within one of Babylon’s massive Hellcorps.',
-
-    startingCash: 5000,
-
-    housing: {
-      name: 'Luxury Apartment',
-    },
-  },
-
-  {
-    id: 'wall-hopper',
-    name: 'Wall Hopper',
-
-    description:
-      'You illegally entered Babylon through the Quarantine Zone.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Dead End Apartment',
-    },
-
-    choices: [
-      {
-        type: 'skill_boost',
-        amount: 1,
-        choose: 1,
-        skillCategory: 'specialized',
-      },
-    ],
-  },
-
-  {
-    id: 'lab-rat',
-    name: 'Lab Rat',
-
-    description:
-      'You inherited, escaped from, or discovered a hidden laboratory.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Incognito Dwelling',
-      upgrades: ['Chemistry Lab'],
-    },
-  },
-
-  {
-    id: 'cultist',
-    name: 'Cultist',
-
-    description:
-      'Your history is tied to one of Babylon’s demonic cults.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Dead End Apartment',
-    },
-
-    choices: [
-      {
-        type: 'free_ability',
-        choose: 1,
-        category: 'curse',
-      },
-    ],
-  },
-
-  {
-    id: 'hired-gun',
-    name: 'Hired Gun',
-
-    description:
-      'You already spent time working as a mercenary in Babylon.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Dead End Apartment',
-    },
-
-    startingAbilities: [
-      'Underworld Contact',
-    ],
-
-    notes: [
-      'Choose one weapon under 1000 GoldBacks for free during character creation.',
-    ],
-  },
-
-  {
-    id: 'wastelander',
-    name: 'Wastelander',
-
-    description:
-      'You survived the deadly wastelands beyond Babylon.',
-
-    startingCash: 1200,
-
-    housing: {
-      name: 'Wasteland Hovel',
-      upgrades: [
-        'Garage/Bedroom Hybrid Room',
-      ],
-    },
-
-    vehicles: [
-      {
-        name: 'Scrapbike',
-
-        buyValue: 6000,
-
-        unsellable: true,
-
-        survivability: 3,
-        capacity: 2,
-
-        speed:
-          '20 Units per turn',
-
-        movementType: 'Land',
-
-        size: '1 x 2 Units',
-
-        armor: {
-          burn: 0,
-          corrosive: 0,
-          crush: 0,
-          slash: 0,
-          electric: 0,
-          freeze: 0,
-          pierce: 0,
-          curse: 0,
-        },
-
-        abilities: [],
-      },
-    ],
-  },
-];
-
 const STEPS: CreationStep[] = [
+  'name',
   'race',
+  'race_choices',
   'skills',
   'abilities',
   'origin',
@@ -433,9 +57,16 @@ const STEPS: CreationStep[] = [
   'review',
 ];
 
-function makeId(prefix = 'id') {
-  return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
-}
+const STEP_LABELS: Record<CreationStep, string> = {
+  name: 'Name',
+  race: 'Race',
+  race_choices: 'Race Abilities',
+  skills: 'Skills',
+  abilities: 'Abilities',
+  origin: 'Origin',
+  origin_bonus: 'Origin Bonus',
+  review: 'Review',
+};
 
 function createAbility(
   name: string,
@@ -445,6 +76,18 @@ function createAbility(
     id: makeId('ability'),
     kind,
     name,
+    count: 1,
+  };
+}
+
+function createRaceAbility(name: string): AbilityEntry {
+  const def = Object.values(RACE_ABILITIES).flat().find((ability) => ability.name === name);
+
+  return {
+    id: makeId('race'),
+    kind: 'race',
+    name,
+    notes: def?.desc,
     count: 1,
   };
 }
@@ -464,21 +107,18 @@ function applyRace(
   const autoAbilities = raceDefs
     .filter((a) => a.auto)
     .map((a) => ({
-      id: makeId('race'),
-      kind: 'race' as const,
-      name: a.name,
+      ...createRaceAbility(a.name),
       notes: a.desc,
-      count: 1,
     }));
 
-  return {
+  return applyRaceStartingSurvivability({
     ...character,
     race,
     abilities: [
       ...removeRaceAbilities(character.abilities),
       ...autoAbilities,
     ],
-  };
+  }, race);
 }
 
 function applyOrigin(
@@ -557,6 +197,66 @@ function applyOrigin(
 };
 }
 
+function abilityMatchesOriginCategory(ability: GeneralUnlockDef, category?: string) {
+  if (!category) return true;
+
+  return (
+    ability.category === category ||
+    ability.subcategory === category ||
+    ability.tags?.includes(category) ||
+    ability.requiresSkillId === category ||
+    ability.requiresAnySkillIds?.includes(category) ||
+    Boolean(ability.requiresSkillLevels?.[category])
+  );
+}
+
+type RaceChoiceGroup = {
+  id: string;
+  label: string;
+  min: number;
+  max: number;
+  options: Array<{ name: string; desc: string }>;
+};
+
+function getRaceChoiceGroups(race?: RaceName): RaceChoiceGroup[] {
+  if (!race) return [];
+
+  const defs = RACE_ABILITIES[race] ?? [];
+  const groups: RaceChoiceGroup[] = [];
+  const mutationOptions = defs
+    .filter((ability) => ability.group === 'mutation')
+    .map((ability) => ({ name: ability.name, desc: ability.desc }));
+
+  if (race === 'Abomination' && mutationOptions.length) {
+    groups.push({
+      id: 'mutation',
+      label: 'Choose 0-3 Starting Mutations',
+      min: 0,
+      max: 3,
+      options: mutationOptions,
+    });
+  }
+
+  const oneOfIds = [...new Set(defs.map((ability) => ability.oneOf).filter(Boolean))] as string[];
+  oneOfIds.forEach((oneOfId) => {
+    const options = defs
+      .filter((ability) => ability.oneOf === oneOfId)
+      .map((ability) => ({ name: ability.name, desc: ability.desc }));
+
+    if (options.length) {
+      groups.push({
+        id: oneOfId,
+        label: oneOfId === 'altered-core' ? 'Choose Your Core Power' : 'Choose One',
+        min: 1,
+        max: 1,
+        options,
+      });
+    }
+  });
+
+  return groups;
+}
+
 export default function CharacterCreationWizard({
   registry,
   value,
@@ -574,9 +274,17 @@ export default function CharacterCreationWizard({
         registry.attributes.map((a) => [a.id, 1])
       ),
   }));
+  const preSkillsCharacterRef = useRef<Character | null>(null);
+  const preAbilityCharacterRef = useRef<Character | null>(null);
+  const preOriginCharacterRef = useRef<Character | null>(null);
+  const originAppliedCharacterRef = useRef<Character | null>(null);
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedAbilities, setSelectedAbilities] = useState<string[]>([]);
+  const [selectedRaceAbilities, setSelectedRaceAbilities] = useState<string[]>([]);
+  const [selectedRaceChoices, setSelectedRaceChoices] = useState<Record<string, string[]>>({});
+  const [abilitySearch, setAbilitySearch] = useState('');
+  const [originAbilitySearch, setOriginAbilitySearch] = useState('');
   const [
   selectedOrigin,
   setSelectedOrigin,
@@ -597,24 +305,162 @@ export default function CharacterCreationWizard({
     ] = useState<number | null>(null);
 
   const step = STEPS[stepIndex];
+  const raceChoiceGroups = useMemo(() => getRaceChoiceGroups(character.race as RaceName | undefined), [character.race]);
+  const hasRaceChoices = raceChoiceGroups.length > 0;
+  const raceChoicesComplete = raceChoiceGroups.every((group) =>
+    (selectedRaceChoices[group.id] ?? []).length >= group.min &&
+    (selectedRaceChoices[group.id] ?? []).length <= group.max
+  );
 
   const availableGeneralAbilities = useMemo(() => {
+    const selectedAbilityEntries: AbilityEntry[] = selectedAbilities.map((name) => ({
+      id: `selected-${name}`,
+      kind: 'general',
+      name,
+    }));
+    const currentAbilities = [...(character.abilities ?? []), ...selectedAbilityEntries];
+
     return GENERAL_UNLOCK_DEFS.filter((a) => {
-      return !selectedAbilities.includes(a.name);
+      return (
+        !selectedAbilities.includes(a.name) &&
+        meetsGeneralAbilityPrereqs(a, {
+          abilities: currentAbilities,
+          attrValues: character.attributes,
+          skillDefs: registry.attributes,
+        })
+      );
     });
-  }, [selectedAbilities]);
+  }, [character.abilities, character.attributes, registry.attributes, selectedAbilities]);
+
+  const availableOriginBonusAbilities = useMemo(() => {
+    const freeAbilityChoice = selectedOrigin?.choices?.find((choice) => choice.type === 'free_ability');
+
+    return GENERAL_UNLOCK_DEFS.filter((ability) => {
+      if (!abilityMatchesOriginCategory(ability, freeAbilityChoice?.category)) return false;
+      if (freeAbilityChoice?.ignoreQualifications) return true;
+
+      return meetsGeneralAbilityPrereqs(ability, {
+        abilities: character.abilities ?? [],
+        attrValues: character.attributes,
+        skillDefs: registry.attributes,
+      });
+    });
+  }, [character.abilities, character.attributes, registry.attributes, selectedOrigin]);
+
+  const abilitySearchTerm = abilitySearch.trim().toLowerCase();
+  const visibleGeneralAbilities = abilitySearchTerm
+    ? availableGeneralAbilities.filter((ability) =>
+        [ability.name, ability.desc].join(' ').toLowerCase().includes(abilitySearchTerm)
+      )
+    : availableGeneralAbilities;
+  const creationAbilityTotal = selectedAbilities.length + selectedRaceAbilities.length;
+  const visibleRaceAbilities = (RACE_ABILITIES[character.race as RaceName] ?? []).filter((ability) => {
+    if (ability.auto || ability.group === 'mutation' || ability.oneOf) return false;
+    if ((character.abilities ?? []).some((owned) => owned.kind === 'race' && owned.name === ability.name)) return false;
+
+    const ownedRaceNames = new Set([
+      ...(character.abilities ?? []).filter((owned) => owned.kind === 'race').map((owned) => owned.name),
+      ...selectedRaceAbilities,
+    ]);
+    if (ability.requiresAll?.some((name) => !ownedRaceNames.has(name))) return false;
+    if (ability.requiresAny && !ability.requiresAny.some((name) => ownedRaceNames.has(name))) return false;
+
+    const attrValues = character.attributes ?? {};
+    if (ability.requiresAnySkillLevel != null && !Object.values(attrValues).some((level) => (level ?? 0) >= ability.requiresAnySkillLevel!)) {
+      return false;
+    }
+    if (ability.requiresSkillLevels) {
+      for (const [skillId, level] of Object.entries(ability.requiresSkillLevels)) {
+        if ((attrValues[skillId] ?? 0) < level) return false;
+      }
+    }
+
+    return !abilitySearchTerm || [ability.name, ability.desc].join(' ').toLowerCase().includes(abilitySearchTerm);
+  });
+
+  const originAbilitySearchTerm = originAbilitySearch.trim().toLowerCase();
+  const visibleOriginBonusAbilities = originAbilitySearchTerm
+    ? availableOriginBonusAbilities.filter((ability) =>
+        [ability.name, ability.desc].join(' ').toLowerCase().includes(originAbilitySearchTerm)
+      )
+    : availableOriginBonusAbilities;
+
+  const notableSkills = registry.attributes.filter((attr) => (character.attributes[attr.id] ?? 1) !== 1);
 
   function next() {
     setStepIndex((s) => Math.min(STEPS.length - 1, s + 1));
   }
 
   function back() {
+    if (step === 'skills' && !hasRaceChoices) {
+      setStepIndex(STEPS.indexOf('race'));
+      return;
+    }
+
     setStepIndex((s) => Math.max(0, s - 1));
   }
 
   function handleRaceSelect(race: RaceName) {
-    const updated = applyRace(character, race);
+    const updated = applyRace(
+      {
+        ...character,
+        abilities: character.abilities ?? [],
+        attributes:
+          character.attributes ??
+          Object.fromEntries(
+            registry.attributes.map((a) => [a.id, 1])
+          ),
+      },
+      race
+    );
+    preSkillsCharacterRef.current = null;
+    preAbilityCharacterRef.current = null;
+    preOriginCharacterRef.current = null;
+    originAppliedCharacterRef.current = null;
+    setSelectedRaceChoices({});
     setCharacter(updated);
+  }
+
+  function confirmRace() {
+    if (hasRaceChoices) {
+      setStepIndex(STEPS.indexOf('race_choices'));
+      return;
+    }
+
+    setStepIndex(STEPS.indexOf('skills'));
+  }
+
+  function toggleRaceChoice(group: RaceChoiceGroup, name: string) {
+    setSelectedRaceChoices((current) => {
+      const selected = current[group.id] ?? [];
+      const nextSelected = selected.includes(name)
+        ? selected.filter((item) => item !== name)
+        : group.max === 1
+          ? [name]
+          : selected.length >= group.max
+            ? selected
+            : [...selected, name];
+
+      return {
+        ...current,
+        [group.id]: nextSelected,
+      };
+    });
+  }
+
+  function confirmRaceChoices() {
+    const choiceNames = raceChoiceGroups.flatMap((group) => selectedRaceChoices[group.id] ?? []);
+    const raceChoiceIds = new Set(raceChoiceGroups.flatMap((group) => group.options.map((option) => option.name)));
+    const nextAbilities = [
+      ...(character.abilities ?? []).filter((ability) => !(ability.kind === 'race' && raceChoiceIds.has(ability.name))),
+      ...choiceNames.map(createRaceAbility),
+    ];
+
+    setCharacter({
+      ...character,
+      abilities: nextAbilities,
+    });
+    setStepIndex(STEPS.indexOf('skills'));
   }
 
   function toggleSkill(skillId: string) {
@@ -632,8 +478,13 @@ export default function CharacterCreationWizard({
   }
 
   function confirmSkills() {
+    const skillBase = preSkillsCharacterRef.current ?? character;
+    preAbilityCharacterRef.current = null;
+    preOriginCharacterRef.current = null;
+    originAppliedCharacterRef.current = null;
+
     const nextAttributes = {
-      ...character.attributes,
+      ...skillBase.attributes,
     };
 
     selectedSkills.forEach((skillId) => {
@@ -641,9 +492,10 @@ export default function CharacterCreationWizard({
     });
 
     setCharacter({
-      ...character,
+      ...skillBase,
       attributes: nextAttributes,
     });
+    preSkillsCharacterRef.current = skillBase;
 
     next();
   }
@@ -654,7 +506,21 @@ export default function CharacterCreationWizard({
         return prev.filter((a) => a !== name);
       }
 
-      if (prev.length >= 2) {
+      if (creationAbilityTotal >= 2) {
+        return prev;
+      }
+
+      return [...prev, name];
+    });
+  }
+
+  function toggleRaceAbility(name: string) {
+    setSelectedRaceAbilities((prev) => {
+      if (prev.includes(name)) {
+        return prev.filter((a) => a !== name);
+      }
+
+      if (creationAbilityTotal >= 2) {
         return prev;
       }
 
@@ -663,17 +529,27 @@ export default function CharacterCreationWizard({
   }
 
   function confirmAbilities() {
+    const abilityBase =
+      preAbilityCharacterRef.current ??
+      preOriginCharacterRef.current ??
+      character;
     const nextAbilities = [
-      ...(character.abilities ?? []),
+      ...(abilityBase.abilities ?? []),
       ...selectedAbilities.map((a) =>
         createAbility(a, 'general')
       ),
+      ...selectedRaceAbilities.map(createRaceAbility),
     ];
 
-    setCharacter({
-      ...character,
+    const updated = {
+      ...abilityBase,
       abilities: nextAbilities,
-    });
+    };
+
+    preAbilityCharacterRef.current = abilityBase;
+    preOriginCharacterRef.current = null;
+    originAppliedCharacterRef.current = null;
+    setCharacter(updated);
 
     next();
   }
@@ -681,11 +557,14 @@ export default function CharacterCreationWizard({
     function confirmOrigin() {
     if (!selectedOrigin) return;
 
+    const originBase = preOriginCharacterRef.current ?? character;
     const updated = applyOrigin(
-        character,
+        originBase,
         selectedOrigin
     );
 
+    preOriginCharacterRef.current = originBase;
+    originAppliedCharacterRef.current = updated;
     setCharacter(updated);
 
     const hasChoices =
@@ -704,8 +583,11 @@ export default function CharacterCreationWizard({
     function confirmOriginBonus() {
   if (!selectedOrigin) return;
 
+  const originBase =
+    originAppliedCharacterRef.current ??
+    applyOrigin(preOriginCharacterRef.current ?? character, selectedOrigin);
   let updated: Character = {
-    ...character,
+    ...originBase,
   };
 
   const nextAttributes = {
@@ -784,6 +666,7 @@ const nextNotes = updated.notes ?? '';
   };
 
   setCharacter(updated);
+  originAppliedCharacterRef.current = originBase;
 
   setStepIndex(
     STEPS.indexOf('review')
@@ -791,7 +674,10 @@ const nextNotes = updated.notes ?? '';
 }
 
   function finishCreation() {
-    onComplete(character);
+    onComplete({
+      ...character,
+      name: character.name.trim(),
+    });
   }
 
   return (
@@ -807,13 +693,13 @@ const nextNotes = updated.notes ?? '';
               <div
                 key={s}
                 className={clsx(
-                  'rounded-full px-3 py-1 text-sm capitalize',
+                  'rounded-full px-3 py-1 text-sm',
                   idx === stepIndex
                     ? 'bg-red-700'
                     : 'bg-zinc-800'
                 )}
               >
-                {s}
+                {STEP_LABELS[s]}
               </div>
             ))}
           </div>
@@ -830,9 +716,56 @@ const nextNotes = updated.notes ?? '';
         )}
       </div>
 
+      {/* STEP: NAME */}
+      {step === 'name' && (
+        <Card className="sheet-card py-0">
+          <CardContent className="space-y-6 p-6">
+            <div>
+              <h2 className="text-2xl font-bold">
+                Name Your Character
+              </h2>
+
+              <p className="mt-2 text-sm text-white/70">
+                You can change this later from the sheet header.
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="creation-name">Name / Alias</Label>
+              <Input
+                id="creation-name"
+                value={character.name}
+                onChange={(event) =>
+                  setCharacter({
+                    ...character,
+                    name: event.target.value,
+                  })
+                }
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && character.name.trim()) next();
+                }}
+                placeholder="Character name"
+                className="border-white/15 bg-black/30 text-white placeholder:text-white/45"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                disabled={!character.name.trim()}
+                onClick={next}
+              >
+                Continue
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* STEP: RACE */}
       {step === 'race' && (
-        <Card className="bg-red-900">
+        <Card className="sheet-card py-0">
           <CardContent className="space-y-6 p-6">
             <div>
               <h2 className="text-2xl font-bold">
@@ -859,8 +792,8 @@ const nextNotes = updated.notes ?? '';
                     className={clsx(
                       'rounded-lg border p-4 text-left transition',
                       selected
-                        ? 'border-white bg-black/40'
-                        : 'border-white/10 bg-black/20 hover:border-white/40'
+                        ? 'border-amber-200/60 bg-amber-500/10'
+                        : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
                     )}
                   >
                     <div className="text-lg font-bold">
@@ -885,7 +818,82 @@ const nextNotes = updated.notes ?? '';
               <Button
                 type="button"
                 disabled={!character.race}
-                onClick={next}
+                onClick={confirmRace}
+              >
+                Continue
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* STEP: RACE CHOICES */}
+      {step === 'race_choices' && (
+        <Card className="sheet-card py-0">
+          <CardContent className="space-y-6 p-6">
+            <div>
+              <h2 className="text-2xl font-bold">
+                Race Abilities
+              </h2>
+
+              <p className="mt-2 text-sm text-white/70">
+                Choose the starting race abilities required for {character.race}.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {raceChoiceGroups.map((group) => {
+                const selected = selectedRaceChoices[group.id] ?? [];
+
+                return (
+                  <div key={group.id} className="space-y-3">
+                    <div>
+                      <div className="text-lg font-bold">{group.label}</div>
+                      <div className="text-sm text-white/70">
+                        Selected: {selected.length} / {group.max}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {group.options.map((option) => {
+                        const isSelected = selected.includes(option.name);
+
+                        return (
+                          <button
+                            key={option.name}
+                            type="button"
+                            onClick={() => toggleRaceChoice(group, option.name)}
+                            className={clsx(
+                              'rounded-lg border p-4 text-left transition',
+                              isSelected
+                                ? 'border-amber-200/60 bg-amber-500/10'
+                                : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
+                            )}
+                          >
+                            <div className="font-bold">{option.name}</div>
+                            <div className="mt-2 text-sm text-white/70">{option.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={back}
+              >
+                Back
+              </Button>
+
+              <Button
+                type="button"
+                disabled={!raceChoicesComplete}
+                onClick={confirmRaceChoices}
               >
                 Continue
               </Button>
@@ -896,7 +904,7 @@ const nextNotes = updated.notes ?? '';
 
       {/* STEP: SKILLS */}
       {step === 'skills' && (
-        <Card className="bg-red-900">
+        <Card className="sheet-card py-0">
           <CardContent className="space-y-6 p-6">
             <div>
               <h2 className="text-2xl font-bold">
@@ -928,8 +936,8 @@ const nextNotes = updated.notes ?? '';
                     className={clsx(
                       'rounded-lg border p-4 text-left transition',
                       selected
-                        ? 'border-white bg-black/40'
-                        : 'border-white/10 bg-black/20 hover:border-white/40'
+                        ? 'border-amber-200/60 bg-amber-500/10'
+                        : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
                     )}
                   >
                     <div className="font-medium">
@@ -967,7 +975,7 @@ const nextNotes = updated.notes ?? '';
 
       {/* STEP: ABILITIES */}
       {step === 'abilities' && (
-        <Card className="bg-red-900">
+        <Card className="sheet-card py-0">
           <CardContent className="space-y-6 p-6">
             <div>
               <h2 className="text-2xl font-bold">
@@ -975,12 +983,19 @@ const nextNotes = updated.notes ?? '';
               </h2>
 
               <div className="mt-2 text-sm">
-                Selected: {selectedAbilities.length} / 2
+                Selected: {creationAbilityTotal} / 2
               </div>
             </div>
 
+            <Input
+              value={abilitySearch}
+              onChange={(event) => setAbilitySearch(event.target.value)}
+              placeholder="Search abilities"
+              className="border-white/15 bg-black/30 text-white placeholder:text-white/45"
+            />
+
             <div className="grid gap-4 md:grid-cols-2">
-              {availableGeneralAbilities.map((ability) => {
+              {visibleGeneralAbilities.map((ability) => {
                 const selected =
                   selectedAbilities.includes(
                     ability.name
@@ -996,8 +1011,8 @@ const nextNotes = updated.notes ?? '';
                     className={clsx(
                       'rounded-lg border p-4 text-left transition',
                       selected
-                        ? 'border-white bg-black/40'
-                        : 'border-white/10 bg-black/20 hover:border-white/40'
+                        ? 'border-amber-200/60 bg-amber-500/10'
+                        : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
                     )}
                   >
                     <div className="font-bold">
@@ -1012,6 +1027,46 @@ const nextNotes = updated.notes ?? '';
               })}
             </div>
 
+            {character.race && (
+              <div className="space-y-3">
+                <div>
+                  <div className="text-lg font-bold">{character.race} Abilities</div>
+                  <div className="text-sm text-white/70">
+                    Race abilities can count toward your 2 starting ability choices.
+                  </div>
+                </div>
+
+                {visibleRaceAbilities.length ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {visibleRaceAbilities.map((ability) => {
+                      const selected = selectedRaceAbilities.includes(ability.name);
+
+                      return (
+                        <button
+                          key={ability.name}
+                          type="button"
+                          onClick={() => toggleRaceAbility(ability.name)}
+                          className={clsx(
+                            'rounded-lg border p-4 text-left transition',
+                            selected
+                              ? 'border-amber-200/60 bg-amber-500/10'
+                              : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
+                          )}
+                        >
+                          <div className="font-bold">{ability.name}</div>
+                          <div className="mt-2 text-sm text-white/70">{ability.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-amber-200/10 bg-black/20 p-4 text-sm text-white/70">
+                    No race abilities currently available for this race and skill build.
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-between">
               <Button
                 type="button"
@@ -1023,7 +1078,7 @@ const nextNotes = updated.notes ?? '';
 
               <Button
                 type="button"
-                disabled={selectedAbilities.length !== 2}
+                disabled={creationAbilityTotal !== 2}
                 onClick={confirmAbilities}
               >
                 Continue
@@ -1035,7 +1090,7 @@ const nextNotes = updated.notes ?? '';
 
       {/* STEP: ORIGIN */}
       {step === 'origin' && (
-        <Card className="bg-red-900">
+        <Card className="sheet-card py-0">
           <CardContent className="space-y-6 p-6">
             <div>
               <h2 className="text-2xl font-bold">
@@ -1058,8 +1113,8 @@ const nextNotes = updated.notes ?? '';
                     className={clsx(
                       'rounded-lg border p-4 text-left transition',
                       selected
-                        ? 'border-white bg-black/40'
-                        : 'border-white/10 bg-black/20 hover:border-white/40'
+                        ? 'border-amber-200/60 bg-amber-500/10'
+                        : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
                     )}
                   >
                     <div className="text-lg font-bold">
@@ -1135,7 +1190,7 @@ const nextNotes = updated.notes ?? '';
       )}
 {/* STEP: ORIGIN BONUS */}
 {step === 'origin_bonus' && selectedOrigin && (
-  <Card className="bg-red-900">
+  <Card className="sheet-card py-0">
     <CardContent className="space-y-6 p-6">
       <div>
         <h2 className="text-2xl font-bold">
@@ -1196,8 +1251,8 @@ const nextNotes = updated.notes ?? '';
                           className={clsx(
                             'rounded-lg border p-3 text-left',
                             selected
-                              ? 'border-white bg-black/40'
-                              : 'border-white/10 bg-black/20'
+                              ? 'border-amber-200/60 bg-amber-500/10'
+                              : 'border-amber-200/10 bg-black/20'
                           )}
                         >
                           <div>
@@ -1228,8 +1283,15 @@ const nextNotes = updated.notes ?? '';
                     Choose an Ability
                   </div>
 
+                  <Input
+                    value={originAbilitySearch}
+                    onChange={(event) => setOriginAbilitySearch(event.target.value)}
+                    placeholder="Search abilities"
+                    className="border-white/15 bg-black/30 text-white placeholder:text-white/45"
+                  />
+
                   <div className="grid gap-3 md:grid-cols-2">
-                    {GENERAL_UNLOCK_DEFS.map(
+                    {visibleOriginBonusAbilities.map(
                       (ability) => {
                         const selected =
                           selectedOriginAbility ===
@@ -1247,8 +1309,8 @@ const nextNotes = updated.notes ?? '';
                             className={clsx(
                               'rounded-lg border p-3 text-left',
                               selected
-                                ? 'border-white bg-black/40'
-                                : 'border-white/10 bg-black/20'
+                                ? 'border-amber-200/60 bg-amber-500/10'
+                                : 'border-amber-200/10 bg-black/20'
                             )}
                           >
                             <div className="font-bold">
@@ -1276,8 +1338,8 @@ const nextNotes = updated.notes ?? '';
                   'w-full rounded-lg border p-4 text-left',
                   selectedOriginReward ===
                     index
-                    ? 'border-white bg-black/40'
-                    : 'border-white/10 bg-black/20'
+                    ? 'border-amber-200/60 bg-amber-500/10'
+                    : 'border-amber-200/10 bg-black/20'
                 )}
               >
                 {choice.type === 'item' && (
@@ -1322,7 +1384,7 @@ const nextNotes = updated.notes ?? '';
 )}
       {/* STEP: REVIEW */}
       {step === 'review' && (
-        <Card className="bg-red-900">
+        <Card className="sheet-card py-0">
           <CardContent className="space-y-6 p-6">
             <div>
               <h2 className="text-2xl font-bold">
@@ -1331,6 +1393,14 @@ const nextNotes = updated.notes ?? '';
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <Label>Name / Alias</Label>
+
+                <div className="mt-1 text-lg">
+                  {character.name}
+                </div>
+              </div>
+
               <div>
                 <Label>Race</Label>
 
@@ -1369,7 +1439,12 @@ const nextNotes = updated.notes ?? '';
               <Label>Skills</Label>
 
               <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                {registry.attributes.map((attr) => (
+                {notableSkills.length === 0 && (
+                  <div className="rounded border border-white/10 bg-black/20 p-3 text-sm text-white/70">
+                    No skills above level 1.
+                  </div>
+                )}
+                {notableSkills.map((attr) => (
                   <div
                     key={attr.id}
                     className="rounded border border-white/10 bg-black/20 p-3"

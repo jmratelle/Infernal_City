@@ -38,7 +38,7 @@ export default function DiceRoller() {
   };
 
   return (
-    <Card className="shadow-sm bg-red-900">
+    <Card className="sheet-card py-0">
       <CardContent className="p-4 text-white">
         <div className="mb-4">
           <div className="text-sm font-medium">Dice Roller</div>
@@ -76,14 +76,14 @@ export default function DiceRoller() {
             Roll D{selectedDie}
           </Button>
 
-          <div className="rounded-xl bg-black/40 px-4 py-2 text-center">
+          <div className="sheet-panel px-4 py-2 text-center">
             <div className="text-xs text-white/60">Result</div>
             <div className="text-3xl font-bold">{result ?? "—"}</div>
           </div>
         </div>
 
         {history.length > 0 && (
-          <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+          <div className="sheet-panel p-3">
             <div className="mb-2 text-xs font-medium uppercase text-white/70">
               Recent Rolls
             </div>
