@@ -296,7 +296,7 @@ export const ARMOR_STATS: Record<
     av: { Burn: 0, Corrosive: 0, Crush: 1, Slash: 1, Electric: 0, Freeze: 0, Pierce: 1, Curse: 0 },
   },
   "Gas Mask": {
-    av: { Burn: 0, Corrosive: 1, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
+    av: { Burn: 0, Corrosive: 3, Crush: 0, Slash: 0, Electric: 0, Freeze: 0, Pierce: 0, Curse: 0 },
     notes: "Immune to airborne poisons and similar effects while equipped.",
   },
   "Kevlar Helmet": {
