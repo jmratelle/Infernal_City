@@ -14,7 +14,9 @@ import type {
   Character,
   RulesRegistry,
   AbilityEntry,
+  AttributeDef,
   RaceName,
+  SkillGroup,
   VehicleEntry
 } from '@/domain/character.types';
 
@@ -67,6 +69,55 @@ const STEP_LABELS: Record<CreationStep, string> = {
   origin_bonus: 'Origin Bonus',
   review: 'Review',
 };
+
+type AbilityCreationGroup = SkillGroup | 'general' | 'race';
+
+const SKILL_GROUP_LABELS: Record<SkillGroup, string> = {
+  combat: 'Combat',
+  magic: 'Magic',
+  specialized: 'Specialized',
+};
+
+const ABILITY_GROUP_LABELS: Record<AbilityCreationGroup, string> = {
+  general: 'General',
+  combat: 'Combat',
+  magic: 'Magic',
+  specialized: 'Specialized',
+  race: 'Race',
+};
+
+function CollapsibleChoiceSection({
+  title,
+  count,
+  selectedCount,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  count: number;
+  selectedCount: number;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-lg border border-amber-200/10 bg-black/15 p-3 sm:p-4">
+      <div className={clsx('flex items-center justify-between gap-3', open && 'mb-3')}>
+        <div>
+          <div className="text-lg font-bold">{title}</div>
+          <div className="text-xs text-white/60">
+            {count} available{selectedCount > 0 ? ` · ${selectedCount} selected` : ''}
+          </div>
+        </div>
+        <Button type="button" size="sm" variant="ghost" onClick={onToggle}>
+          {open ? 'Hide' : 'Show'}
+        </Button>
+      </div>
+      {open && children}
+    </section>
+  );
+}
 
 function createAbility(
   name: string,
@@ -285,6 +336,18 @@ export default function CharacterCreationWizard({
   const [selectedRaceChoices, setSelectedRaceChoices] = useState<Record<string, string[]>>({});
   const [abilitySearch, setAbilitySearch] = useState('');
   const [originAbilitySearch, setOriginAbilitySearch] = useState('');
+  const [openSkillGroups, setOpenSkillGroups] = useState<Record<SkillGroup, boolean>>({
+    combat: true,
+    magic: false,
+    specialized: false,
+  });
+  const [openAbilityGroups, setOpenAbilityGroups] = useState<Record<AbilityCreationGroup, boolean>>({
+    general: true,
+    combat: false,
+    magic: false,
+    specialized: false,
+    race: false,
+  });
   const [
   selectedOrigin,
   setSelectedOrigin,
@@ -384,6 +447,61 @@ export default function CharacterCreationWizard({
         [ability.name, ability.desc].join(' ').toLowerCase().includes(originAbilitySearchTerm)
       )
     : availableOriginBonusAbilities;
+
+  const skillsByGroup = useMemo(() => {
+    return registry.attributes.reduce(
+      (groups, skill) => {
+        groups[skill.group].push(skill);
+        return groups;
+      },
+      { combat: [], magic: [], specialized: [] } as Record<SkillGroup, AttributeDef[]>
+    );
+  }, [registry.attributes]);
+
+  const generalAbilitiesByGroup = useMemo(() => {
+    const skillGroups = new Map(registry.attributes.map((skill) => [skill.id, skill.group]));
+
+    return visibleGeneralAbilities.reduce(
+      (groups, ability) => {
+        const searchableText = [ability.name, ability.desc].join(' ').toLowerCase();
+        const requiredSkillIds = [
+          ability.requiresSkillId,
+          ...Object.keys(ability.requiresSkillLevels ?? {}),
+          ...(ability.requiresAnySkillIds ?? []),
+        ].filter((id): id is string => Boolean(id));
+        const requiredGroups = new Set(
+          requiredSkillIds
+            .map((id) => skillGroups.get(id))
+            .filter((group): group is SkillGroup => Boolean(group))
+        );
+        const mentionedGroups = new Set(
+          registry.attributes
+            .filter((skill) => searchableText.includes(skill.label.toLowerCase()))
+            .map((skill) => skill.group)
+        );
+        let group: Exclude<AbilityCreationGroup, 'race'> = 'general';
+
+        if (requiredGroups.size === 1) {
+          group = [...requiredGroups][0];
+        } else if (mentionedGroups.size === 1) {
+          group = [...mentionedGroups][0];
+        } else if (/\b(magic|spell|curse|enchant|demon|summon|arcane)\b/.test(searchableText)) {
+          group = 'magic';
+        } else if (/\b(combat|attack|weapon|reload|ammunition|armor|ranged|melee)\b/.test(searchableText)) {
+          group = 'combat';
+        } else if (/\bspecialized skill\b/.test(searchableText)) {
+          group = 'specialized';
+        }
+
+        groups[group].push(ability);
+        return groups;
+      },
+      { general: [], combat: [], magic: [], specialized: [] } as Record<
+        Exclude<AbilityCreationGroup, 'race'>,
+        GeneralUnlockDef[]
+      >
+    );
+  }, [registry.attributes, visibleGeneralAbilities]);
 
   const notableSkills = registry.attributes.filter((attr) => (character.attributes[attr.id] ?? 1) !== 1);
 
@@ -921,33 +1039,63 @@ const nextNotes = updated.notes ?? '';
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {registry.attributes.map((attr) => {
-                const selected =
-                  selectedSkills.includes(attr.id);
+            {selectedSkills.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedSkills.map((skillId) => {
+                  const skill = registry.attributes.find((attr) => attr.id === skillId);
+                  return (
+                    <button
+                      key={skillId}
+                      type="button"
+                      onClick={() => toggleSkill(skillId)}
+                      className="rounded-full border border-amber-200/40 bg-amber-500/10 px-3 py-1 text-sm"
+                      title="Remove selection"
+                    >
+                      {skill?.label ?? skillId} ×
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="grid gap-3">
+              {(['combat', 'magic', 'specialized'] as SkillGroup[]).map((group) => {
+                const items = skillsByGroup[group];
+                const selectedCount = items.filter((attr) => selectedSkills.includes(attr.id)).length;
 
                 return (
-                  <button
-                    key={attr.id}
-                    type="button"
-                    onClick={() =>
-                      toggleSkill(attr.id)
+                  <CollapsibleChoiceSection
+                    key={group}
+                    title={SKILL_GROUP_LABELS[group]}
+                    count={items.length}
+                    selectedCount={selectedCount}
+                    open={openSkillGroups[group]}
+                    onToggle={() =>
+                      setOpenSkillGroups((current) => ({ ...current, [group]: !current[group] }))
                     }
-                    className={clsx(
-                      'rounded-lg border p-4 text-left transition',
-                      selected
-                        ? 'border-amber-200/60 bg-amber-500/10'
-                        : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
-                    )}
                   >
-                    <div className="font-medium">
-                      {attr.label}
-                    </div>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {items.map((attr) => {
+                        const selected = selectedSkills.includes(attr.id);
 
-                    <div className="mt-1 text-xs text-white/60 capitalize">
-                      {attr.group}
+                        return (
+                          <button
+                            key={attr.id}
+                            type="button"
+                            onClick={() => toggleSkill(attr.id)}
+                            className={clsx(
+                              'rounded-lg border p-3 text-left transition',
+                              selected
+                                ? 'border-amber-200/60 bg-amber-500/10'
+                                : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
+                            )}
+                          >
+                            <div className="font-medium">{attr.label}</div>
+                          </button>
+                        );
+                      })}
                     </div>
-                  </button>
+                  </CollapsibleChoiceSection>
                 );
               })}
             </div>
@@ -994,78 +1142,122 @@ const nextNotes = updated.notes ?? '';
               className="border-white/15 bg-black/30 text-white placeholder:text-white/45"
             />
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {visibleGeneralAbilities.map((ability) => {
-                const selected =
-                  selectedAbilities.includes(
-                    ability.name
-                  );
-
-                return (
+            {creationAbilityTotal > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedAbilities.map((name) => (
                   <button
-                    key={ability.name}
+                    key={name}
                     type="button"
-                    onClick={() =>
-                      toggleAbility(ability.name)
-                    }
-                    className={clsx(
-                      'rounded-lg border p-4 text-left transition',
-                      selected
-                        ? 'border-amber-200/60 bg-amber-500/10'
-                        : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
-                    )}
+                    onClick={() => toggleAbility(name)}
+                    className="rounded-full border border-amber-200/40 bg-amber-500/10 px-3 py-1 text-sm"
+                    title="Remove selection"
                   >
-                    <div className="font-bold">
-                      {ability.name}
-                    </div>
-
-                    <div className="mt-2 text-sm text-white/70">
-                      {ability.desc}
-                    </div>
+                    {name} ×
                   </button>
-                );
-              })}
-            </div>
-
-            {character.race && (
-              <div className="space-y-3">
-                <div>
-                  <div className="text-lg font-bold">{character.race} Abilities</div>
-                  <div className="text-sm text-white/70">
-                    Race abilities can count toward your 2 starting ability choices.
-                  </div>
-                </div>
-
-                {visibleRaceAbilities.length ? (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {visibleRaceAbilities.map((ability) => {
-                      const selected = selectedRaceAbilities.includes(ability.name);
-
-                      return (
-                        <button
-                          key={ability.name}
-                          type="button"
-                          onClick={() => toggleRaceAbility(ability.name)}
-                          className={clsx(
-                            'rounded-lg border p-4 text-left transition',
-                            selected
-                              ? 'border-amber-200/60 bg-amber-500/10'
-                              : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
-                          )}
-                        >
-                          <div className="font-bold">{ability.name}</div>
-                          <div className="mt-2 text-sm text-white/70">{ability.desc}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-amber-200/10 bg-black/20 p-4 text-sm text-white/70">
-                    No race abilities currently available for this race and skill build.
-                  </div>
-                )}
+                ))}
+                {selectedRaceAbilities.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => toggleRaceAbility(name)}
+                    className="rounded-full border border-amber-200/40 bg-amber-500/10 px-3 py-1 text-sm"
+                    title="Remove selection"
+                  >
+                    {name} ×
+                  </button>
+                ))}
               </div>
             )}
+
+            <div className="grid gap-3">
+              {(['general', 'combat', 'magic', 'specialized'] as const).map((group) => {
+                const items = generalAbilitiesByGroup[group];
+                if (items.length === 0) return null;
+
+                const selectedCount = items.filter((ability) => selectedAbilities.includes(ability.name)).length;
+                const isOpen = openAbilityGroups[group] || Boolean(abilitySearchTerm);
+
+                return (
+                  <CollapsibleChoiceSection
+                    key={group}
+                    title={`${ABILITY_GROUP_LABELS[group]} Abilities`}
+                    count={items.length}
+                    selectedCount={selectedCount}
+                    open={isOpen}
+                    onToggle={() =>
+                      setOpenAbilityGroups((current) => ({ ...current, [group]: !current[group] }))
+                    }
+                  >
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {items.map((ability) => {
+                        const selected = selectedAbilities.includes(ability.name);
+
+                        return (
+                          <button
+                            key={ability.name}
+                            type="button"
+                            onClick={() => toggleAbility(ability.name)}
+                            className={clsx(
+                              'rounded-lg border p-3 text-left transition',
+                              selected
+                                ? 'border-amber-200/60 bg-amber-500/10'
+                                : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
+                            )}
+                          >
+                            <div className="font-bold">{ability.name}</div>
+                            <div className="mt-2 text-sm text-white/70">{ability.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleChoiceSection>
+                );
+              })}
+
+              {character.race && (
+                <CollapsibleChoiceSection
+                  title={`${character.race} Abilities`}
+                  count={visibleRaceAbilities.length}
+                  selectedCount={selectedRaceAbilities.length}
+                  open={openAbilityGroups.race || Boolean(abilitySearchTerm)}
+                  onToggle={() =>
+                    setOpenAbilityGroups((current) => ({ ...current, race: !current.race }))
+                  }
+                >
+                  <div className="mb-3 text-sm text-white/70">
+                    Race abilities can count toward your 2 starting ability choices.
+                  </div>
+                  {visibleRaceAbilities.length ? (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {visibleRaceAbilities.map((ability) => {
+                        const selected = selectedRaceAbilities.includes(ability.name);
+
+                        return (
+                          <button
+                            key={ability.name}
+                            type="button"
+                            onClick={() => toggleRaceAbility(ability.name)}
+                            className={clsx(
+                              'rounded-lg border p-3 text-left transition',
+                              selected
+                                ? 'border-amber-200/60 bg-amber-500/10'
+                                : 'border-amber-200/10 bg-black/20 hover:border-amber-200/40'
+                            )}
+                          >
+                            <div className="font-bold">{ability.name}</div>
+                            <div className="mt-2 text-sm text-white/70">{ability.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-white/70">
+                      No race abilities currently available for this race and skill build.
+                    </div>
+                  )}
+                </CollapsibleChoiceSection>
+              )}
+            </div>
 
             <div className="flex justify-between">
               <Button

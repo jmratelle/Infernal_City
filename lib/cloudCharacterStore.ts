@@ -38,6 +38,25 @@ export async function sendMagicLink(email: string) {
   if (error) throw error;
 }
 
+export function getMagicLinkErrorMessage(error: unknown) {
+  const authError = error as { code?: string; message?: string; status?: number };
+  const details = `${authError.code ?? ''} ${authError.message ?? ''}`.toLowerCase();
+
+  if (authError.status === 429 || details.includes('rate limit') || details.includes('over_email_send_rate_limit')) {
+    return 'Too many sign-in links were requested. Wait at least 60 seconds, then try again.';
+  }
+
+  if (details.includes('redirect') || details.includes('not allowed')) {
+    return 'This site address is not authorized for sign-in links. The app owner needs to add it to the Supabase redirect URLs.';
+  }
+
+  if (details.includes('email') || details.includes('smtp') || details.includes('send')) {
+    return 'Supabase could not send the email right now. Wait a few minutes, then try again.';
+  }
+
+  return 'Could not send the sign-in link. Please wait a moment and try again.';
+}
+
 export async function signOutCloudStorage() {
   const client = requireSupabase();
   const { error } = await client.auth.signOut();

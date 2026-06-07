@@ -31,6 +31,7 @@ import { normalizeCharacter } from '@/domain/character.normalize';
 import {
   deleteCloudCharacter,
   getCloudUser,
+  getMagicLinkErrorMessage,
   isSupabaseConfigured,
   onCloudAuthChange,
   saveCloudCharacter,
@@ -433,7 +434,7 @@ export function useActiveCharacter() {
     } catch (err) {
       console.error('Failed to send online storage sign-in link', err);
       setCloudStatus('error');
-      setCloudMessage('Could not send the sign-in link. Please check the email address and try again.');
+      setCloudMessage(getMagicLinkErrorMessage(err));
     }
   };
 
