@@ -4,14 +4,18 @@ import React, { useMemo, useRef, useState, type ChangeEventHandler } from 'react
 import {
   AlertCircle,
   CheckCircle2,
+  Cloud,
   Copy,
   Download,
   FileUp,
+  FolderOpen,
   Pencil,
   Plus,
+  RefreshCw,
   Save,
   Search,
   Trash2,
+  Unplug,
   X,
 } from 'lucide-react';
 
@@ -21,20 +25,34 @@ import { Input } from '@/components/ui/input';
 import type { Character } from '@/domain/character.types';
 import { readCharacterFile } from '@/lib/characterFiles';
 import type { CharacterSummary } from '@/lib/characterStore';
-import type { SaveStatus } from '@/hooks/useActiveCharacter';
+import type { FileBackupStatus, SaveStatus } from '@/hooks/useActiveCharacter';
+import type { CloudStatus } from '@/hooks/useActiveCharacter';
+import { OnlineStoragePrompt } from '@/components/character/OnlineStoragePrompt';
 
 type SortMode = 'updated-desc' | 'updated-asc' | 'name' | 'race' | 'origin';
+const ONLINE_STORAGE_PROMPT_KEY = 'infernal-sheet:online-storage-prompt';
 
 type CharacterLibraryProps = {
   characters: CharacterSummary[];
+  cloudMessage: string | null;
+  cloudStatus: CloudStatus;
+  cloudUserEmail: string | null;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onExport: (id: string) => void;
   onImport: (character: Character) => void | Promise<void>;
   onClearAppData?: () => void | Promise<void>;
+  onChooseFileBackupDirectory: () => void | Promise<void>;
+  onDisconnectFileBackupDirectory: () => void | Promise<void>;
+  onDisconnectOnlineStorage: () => void | Promise<void>;
   onLoad: (id: string) => void;
   onNew: () => void;
   onRename: (id: string, name: string) => void;
+  onRequestOnlineStorage: (email: string) => void | Promise<void>;
+  onSyncOnlineStorage: () => void | Promise<void>;
+  onWriteFileBackupsNow: () => void | Promise<void>;
+  fileBackupMessage: string | null;
+  fileBackupStatus: FileBackupStatus;
   saveStatus: SaveStatus;
 };
 
@@ -43,6 +61,16 @@ const statusLabels: Record<SaveStatus, string> = {
   idle: 'Ready',
   saved: 'Saved',
   saving: 'Saving...',
+};
+
+const fileBackupLabels: Record<FileBackupStatus, string> = {
+  error: 'File backup failed',
+  'not-configured': 'File backup off',
+  'permission-needed': 'File permission needed',
+  ready: 'File backup ready',
+  saved: 'File backup saved',
+  saving: 'Writing backups...',
+  unsupported: 'File backup unsupported',
 };
 
 function SaveStatusLabel({ status }: { status: SaveStatus }) {
@@ -72,14 +100,25 @@ function sortCharacters(characters: CharacterSummary[], sortMode: SortMode) {
 
 export function CharacterLibrary({
   characters,
+  cloudMessage,
+  cloudStatus,
+  cloudUserEmail,
   onDelete,
   onDuplicate,
   onExport,
   onImport,
   onClearAppData,
+  onChooseFileBackupDirectory,
+  onDisconnectFileBackupDirectory,
+  onDisconnectOnlineStorage,
   onLoad,
   onNew,
   onRename,
+  onRequestOnlineStorage,
+  onSyncOnlineStorage,
+  onWriteFileBackupsNow,
+  fileBackupMessage,
+  fileBackupStatus,
   saveStatus,
 }: CharacterLibraryProps) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -90,6 +129,29 @@ export function CharacterLibrary({
   const [sortMode, setSortMode] = useState<SortMode>('updated-desc');
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [confirmClearData, setConfirmClearData] = useState(false);
+  const [showOnlineStoragePrompt, setShowOnlineStoragePrompt] = useState(false);
+
+  React.useEffect(() => {
+    try {
+      setShowOnlineStoragePrompt(localStorage.getItem(ONLINE_STORAGE_PROMPT_KEY) !== 'dismissed');
+    } catch {
+      setShowOnlineStoragePrompt(true);
+    }
+  }, []);
+
+  const dismissOnlineStoragePrompt = () => {
+    try {
+      localStorage.setItem(ONLINE_STORAGE_PROMPT_KEY, 'dismissed');
+    } catch {
+      // The choice still applies for the current session when browser storage is blocked.
+    }
+    setShowOnlineStoragePrompt(false);
+  };
+
+  const requestOnlineStorage = async (email: string) => {
+    await onRequestOnlineStorage(email);
+    dismissOnlineStoragePrompt();
+  };
 
   const visibleCharacters = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -135,6 +197,15 @@ export function CharacterLibrary({
 
   return (
     <div className="mx-auto grid max-w-6xl gap-4 p-4">
+      {showOnlineStoragePrompt && (
+        <OnlineStoragePrompt
+          isSending={cloudStatus === 'sending-link'}
+          onClose={dismissOnlineStoragePrompt}
+          onContinueDeviceOnly={dismissOnlineStoragePrompt}
+          onUseOnlineStorage={requestOnlineStorage}
+        />
+      )}
+
       <Card className="sheet-card py-0">
         <CardContent className="flex flex-col gap-4 p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -147,6 +218,30 @@ export function CharacterLibrary({
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <SaveStatusLabel status={saveStatus} />
+              {cloudUserEmail ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={cloudStatus === 'syncing'}
+                    onClick={onSyncOnlineStorage}
+                  >
+                    <Cloud className="h-4 w-4" /> {cloudStatus === 'syncing' ? 'Syncing...' : 'Sync Now'}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={onDisconnectOnlineStorage}>
+                    <Unplug className="h-4 w-4" /> Sign Out
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={cloudStatus === 'unconfigured'}
+                  onClick={() => setShowOnlineStoragePrompt(true)}
+                >
+                  <Cloud className="h-4 w-4" /> Online Storage
+                </Button>
+              )}
               <input
                 id="character-import-file"
                 ref={fileRef}
@@ -191,6 +286,57 @@ export function CharacterLibrary({
             </select>
           </div>
           {importStatus && <div className="text-sm text-white/70">{importStatus}</div>}
+          {(cloudMessage || cloudUserEmail) && (
+            <div className="rounded-md border border-amber-200/15 bg-amber-950/25 p-3 text-sm text-white/75">
+              {cloudUserEmail && <div>Online storage signed in as {cloudUserEmail}.</div>}
+              {cloudMessage && <div>{cloudMessage}</div>}
+            </div>
+          )}
+          {fileBackupStatus !== 'unsupported' && (
+            <div className="flex flex-col gap-3 border-t border-white/10 pt-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="sheet-chip w-fit">
+                    <Save className="h-3.5 w-3.5" />
+                    {fileBackupLabels[fileBackupStatus]}
+                  </div>
+                </div>
+                {fileBackupMessage && <div className="mt-1 text-xs text-white/60">{fileBackupMessage}</div>}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={fileBackupStatus === 'saving'}
+                  onClick={onChooseFileBackupDirectory}
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  Choose Folder
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={fileBackupStatus === 'saving' || fileBackupStatus === 'not-configured'}
+                  onClick={onWriteFileBackupsNow}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Backup Now
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Disconnect file backup folder"
+                  disabled={fileBackupStatus === 'saving' || fileBackupStatus === 'not-configured'}
+                  onClick={onDisconnectFileBackupDirectory}
+                >
+                  <Unplug className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
           {onClearAppData && process.env.NODE_ENV !== 'production' && (
             <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
               {confirmClearData ? (

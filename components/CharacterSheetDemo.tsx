@@ -573,12 +573,17 @@ const togglePortraitActions = () => {
       <CharacterSheetActions
         confirmDelete={confirmDelete}
         fileStatus={fileStatus}
+        fileBackupMessage={props.fileBackupMessage}
+        fileBackupStatus={props.fileBackupStatus}
         isDeleting={isDeletingCharacter}
         onCancelDelete={() => setConfirmDelete(false)}
+        onChooseFileBackupDirectory={props.onChooseFileBackupDirectory}
         onChangeCharacter={props.onChangeCharacter}
         onConfirmDelete={handleDeleteCharacter}
         onDeleteClick={() => setConfirmDelete(true)}
+        onDisconnectFileBackupDirectory={props.onDisconnectFileBackupDirectory}
         onExport={exportCharacter}
+        onWriteFileBackupsNow={props.onWriteFileBackupsNow}
         saveStatus={props.saveStatus ?? 'idle'}
       />
     </div>

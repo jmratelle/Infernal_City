@@ -8,6 +8,7 @@ import {
   deleteCharacter,
   deselectActiveCharacter,
   duplicateCharacter,
+  listCharacters,
   listCharacterSummaries,
   loadActiveCharacter,
   loadCharacter as loadStoredCharacter,
@@ -18,9 +19,29 @@ import {
 } from '@/lib/characterStore';
 import type { Character } from '@/domain/character.types';
 import { downloadCharacterFile } from '@/lib/characterFiles';
+import {
+  chooseCharacterBackupDirectory,
+  disconnectCharacterBackupDirectory,
+  hasCharacterBackupDirectory,
+  supportsCharacterFileBackup,
+  writeCharacterBackup,
+  writeCharacterBackups,
+} from '@/lib/characterFileBackup';
 import { normalizeCharacter } from '@/domain/character.normalize';
+import {
+  deleteCloudCharacter,
+  getCloudUser,
+  isSupabaseConfigured,
+  onCloudAuthChange,
+  saveCloudCharacter,
+  sendMagicLink,
+  signOutCloudStorage,
+  syncCloudCharacters,
+} from '@/lib/cloudCharacterStore';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type FileBackupStatus = 'unsupported' | 'not-configured' | 'ready' | 'saving' | 'saved' | 'permission-needed' | 'error';
+export type CloudStatus = 'unconfigured' | 'signed-out' | 'sending-link' | 'syncing' | 'signed-in' | 'error';
 
 const CHARACTER_CHANNEL = 'infernal-sheet:characters';
 const SAVE_DEBOUNCE_MS = 500;
@@ -56,6 +77,11 @@ export function useActiveCharacter() {
   const [characters, setCharacters] = useState<CharacterSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [fileBackupStatus, setFileBackupStatus] = useState<FileBackupStatus>('unsupported');
+  const [fileBackupMessage, setFileBackupMessage] = useState<string | null>(null);
+  const [cloudStatus, setCloudStatus] = useState<CloudStatus>(isSupabaseConfigured ? 'signed-out' : 'unconfigured');
+  const [cloudUserEmail, setCloudUserEmail] = useState<string | null>(null);
+  const [cloudMessage, setCloudMessage] = useState<string | null>(null);
   const skipNextSaveRef = useRef(false);
 
   const refreshSummaries = async () => {
@@ -66,6 +92,93 @@ export function useActiveCharacter() {
     );
     setCharacters(summaries);
   };
+
+  const runCloudWrite = async (operation: () => Promise<void>) => {
+    try {
+      await operation();
+    } catch (err) {
+      console.error('Online storage write failed', err);
+      setCloudStatus('error');
+      setCloudMessage('Online storage could not be updated. Your device save is still safe.');
+    }
+  };
+
+  const backupCharacterToFile = async (nextCharacter: Character) => {
+    if (!supportsCharacterFileBackup()) return;
+    if (!(await hasCharacterBackupDirectory())) {
+      setFileBackupStatus('not-configured');
+      return;
+    }
+
+    setFileBackupStatus('saving');
+    try {
+      const result = await writeCharacterBackup(nextCharacter);
+      if (result.ok) {
+        setFileBackupStatus('saved');
+        setFileBackupMessage(`Backed up ${result.fileName}`);
+      } else if (result.reason === 'permission-denied') {
+        setFileBackupStatus('permission-needed');
+        setFileBackupMessage('Choose the backup folder again to restore access.');
+      } else {
+        setFileBackupStatus('not-configured');
+        setFileBackupMessage(null);
+      }
+    } catch (err) {
+      console.error('Failed to back up character file', err);
+      setFileBackupStatus('error');
+      setFileBackupMessage('File backup failed.');
+    }
+  };
+
+  useEffect(() => {
+    if (!supportsCharacterFileBackup()) {
+      setFileBackupStatus('unsupported');
+      return;
+    }
+
+    hasCharacterBackupDirectory()
+      .then((configured) => setFileBackupStatus(configured ? 'ready' : 'not-configured'))
+      .catch(() => setFileBackupStatus('error'));
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    let cancelled = false;
+    const updateUser = async (email: string | null) => {
+      if (cancelled) return;
+      setCloudUserEmail(email);
+      setCloudStatus(email ? 'syncing' : 'signed-out');
+      if (!email) return;
+
+      try {
+        const result = await syncCloudCharacters();
+        if (cancelled) return;
+        await refreshSummaries();
+        setCloudStatus('signed-in');
+        setCloudMessage(`Online storage synced: ${result.uploaded} uploaded, ${result.downloaded} downloaded.`);
+      } catch (err) {
+        console.error('Failed to sync online storage', err);
+        if (!cancelled) {
+          setCloudStatus('error');
+          setCloudMessage('Online storage sync failed. Device saves are still available.');
+        }
+      }
+    };
+
+    getCloudUser()
+      .then((user) => updateUser(user?.email ?? null))
+      .catch((err) => {
+        console.error('Failed to load online storage session', err);
+        if (!cancelled) setCloudStatus('error');
+      });
+    const unsubscribe = onCloudAuthChange((user) => void updateUser(user?.email ?? null));
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,6 +247,7 @@ export function useActiveCharacter() {
         return refreshSummaries().then(() => {
           setSaveStatus('saved');
           broadcastCharacterChange();
+          return Promise.all([backupCharacterToFile(saved), runCloudWrite(() => saveCloudCharacter(saved))]);
         });
         })
         .catch((err) => {
@@ -148,6 +262,7 @@ export function useActiveCharacter() {
   const deleteActiveCharacter = async () => {
     if (character?.id) {
       await deleteCharacter(character.id);
+      await runCloudWrite(() => deleteCloudCharacter(character.id));
     } else {
       await clearActiveCharacter();
     }
@@ -191,6 +306,8 @@ export function useActiveCharacter() {
       setCharacter(saved);
       await refreshSummaries();
       setSaveStatus('saved');
+      await backupCharacterToFile(saved);
+      await runCloudWrite(() => saveCloudCharacter(saved));
       broadcastCharacterChange();
     } catch (err) {
       console.error('Failed to create character', err);
@@ -211,6 +328,7 @@ export function useActiveCharacter() {
 
   const deleteSavedCharacter = async (id: string) => {
     await deleteCharacter(id);
+    await runCloudWrite(() => deleteCloudCharacter(id));
     if (character?.id === id) {
       setCharacter(null);
       setSaveStatus('idle');
@@ -225,6 +343,8 @@ export function useActiveCharacter() {
       skipNextSaveRef.current = true;
       setCharacter(copy);
       setSaveStatus('saved');
+      await backupCharacterToFile(copy);
+      await runCloudWrite(() => saveCloudCharacter(copy));
     }
     await refreshSummaries();
     broadcastCharacterChange();
@@ -237,6 +357,8 @@ export function useActiveCharacter() {
       setCharacter(renamed);
       setSaveStatus('saved');
     }
+    if (renamed) await backupCharacterToFile(renamed);
+    if (renamed) await runCloudWrite(() => saveCloudCharacter(renamed));
     await refreshSummaries();
     broadcastCharacterChange();
   };
@@ -246,20 +368,127 @@ export function useActiveCharacter() {
     if (saved) downloadCharacterFile(saved);
   };
 
+  const chooseFileBackupDirectory = async () => {
+    if (!supportsCharacterFileBackup()) {
+      setFileBackupStatus('unsupported');
+      return;
+    }
+
+    setFileBackupStatus('saving');
+    try {
+      const directoryHandle = await chooseCharacterBackupDirectory();
+      if (!directoryHandle) {
+        setFileBackupStatus('unsupported');
+        return;
+      }
+
+      const savedCharacters = await listCharacters();
+      const count = await writeCharacterBackups(savedCharacters);
+      setFileBackupStatus('saved');
+      setFileBackupMessage(count === 1 ? 'Backed up 1 character.' : `Backed up ${count} characters.`);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setFileBackupStatus((await hasCharacterBackupDirectory()) ? 'ready' : 'not-configured');
+        return;
+      }
+
+      console.error('Failed to choose character backup folder', err);
+      setFileBackupStatus('error');
+      setFileBackupMessage('Could not use that backup folder.');
+    }
+  };
+
+  const disconnectFileBackupDirectory = async () => {
+    await disconnectCharacterBackupDirectory();
+    setFileBackupStatus(supportsCharacterFileBackup() ? 'not-configured' : 'unsupported');
+    setFileBackupMessage(null);
+  };
+
+  const writeFileBackupsNow = async () => {
+    if (!supportsCharacterFileBackup()) {
+      setFileBackupStatus('unsupported');
+      return;
+    }
+
+    setFileBackupStatus('saving');
+    try {
+      const savedCharacters = await listCharacters();
+      const count = await writeCharacterBackups(savedCharacters);
+      setFileBackupStatus('saved');
+      setFileBackupMessage(count === 1 ? 'Backed up 1 character.' : `Backed up ${count} characters.`);
+    } catch (err) {
+      console.error('Failed to write character backups', err);
+      setFileBackupStatus('error');
+      setFileBackupMessage('File backup failed.');
+    }
+  };
+
+  const requestOnlineStorage = async (email: string) => {
+    setCloudStatus('sending-link');
+    setCloudMessage(null);
+    try {
+      await sendMagicLink(email);
+      setCloudStatus('signed-out');
+      setCloudMessage(`Check ${email} for your secure sign-in link.`);
+    } catch (err) {
+      console.error('Failed to send online storage sign-in link', err);
+      setCloudStatus('error');
+      setCloudMessage('Could not send the sign-in link. Please check the email address and try again.');
+    }
+  };
+
+  const syncOnlineStorage = async () => {
+    setCloudStatus('syncing');
+    try {
+      const result = await syncCloudCharacters();
+      await refreshSummaries();
+      setCloudStatus('signed-in');
+      setCloudMessage(`Online storage synced: ${result.uploaded} uploaded, ${result.downloaded} downloaded.`);
+    } catch (err) {
+      console.error('Failed to sync online storage', err);
+      setCloudStatus('error');
+      setCloudMessage('Online storage sync failed. Device saves are still available.');
+    }
+  };
+
+  const disconnectOnlineStorage = async () => {
+    try {
+      await signOutCloudStorage();
+      setCloudUserEmail(null);
+      setCloudStatus('signed-out');
+      setCloudMessage('Signed out of online storage. Device saves remain available.');
+    } catch (err) {
+      console.error('Failed to sign out of online storage', err);
+      setCloudStatus('error');
+      setCloudMessage('Could not sign out of online storage.');
+    }
+  };
+
   return {
+    chooseFileBackupDirectory,
     character,
     characters,
+    cloudMessage,
+    cloudStatus,
+    cloudUserEmail,
     createCharacter,
     deleteSavedCharacter,
+    disconnectFileBackupDirectory,
+    disconnectOnlineStorage,
     duplicateSavedCharacter,
     exportSavedCharacter,
+    fileBackupMessage,
+    fileBackupStatus,
     isLoading,
     loadCharacter,
     renameSavedCharacter,
+    requestOnlineStorage,
     deleteActiveCharacter,
     clearAppData,
     saveStatus,
     setCharacter,
     showCharacterLibrary,
+    syncOnlineStorage,
+    writeFileBackupsNow,
   };
 }

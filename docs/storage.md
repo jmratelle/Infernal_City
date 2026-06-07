@@ -37,3 +37,12 @@ Keep these flows separate. A user changing characters should not delete data.
 ## Storage Tools
 
 In development, the library screen exposes `Storage Tools`. It clears this app's IndexedDB character records, legacy localStorage saves, Cache Storage entries, and service worker registration. This is intended for fixing local stale-data issues without clearing the whole browser cache.
+
+## Online Storage
+
+Supabase online storage is optional. IndexedDB remains the working copy, and authenticated users can sync their characters to the `public.characters` table.
+
+- Email magic links provide sign-in.
+- Row Level Security restricts every cloud character to its owner.
+- Sync compares `updatedAt` timestamps and keeps the newest copy.
+- Cloud write failures do not remove or invalidate device saves.

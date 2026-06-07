@@ -199,8 +199,13 @@ export type CharacterSheetProps = {
   registry: RulesRegistry;
   value: Character;
   onChange: (updated: Character) => void;
+  onChooseFileBackupDirectory?: () => void | Promise<void>;
   onChangeCharacter?: () => void;
   onDeleteCharacter?: () => void | Promise<void>;
+  onDisconnectFileBackupDirectory?: () => void | Promise<void>;
+  onWriteFileBackupsNow?: () => void | Promise<void>;
+  fileBackupMessage?: string | null;
+  fileBackupStatus?: 'unsupported' | 'not-configured' | 'ready' | 'saving' | 'saved' | 'permission-needed' | 'error';
   readOnly?: boolean;
   saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
 

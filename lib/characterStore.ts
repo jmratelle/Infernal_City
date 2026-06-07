@@ -130,12 +130,23 @@ export async function listCharacterSummaries(): Promise<CharacterSummary[]> {
   return records.map(toSummary);
 }
 
+export async function listCharacters(): Promise<Character[]> {
+  const records = await db.characters.orderBy('updatedAt').reverse().toArray();
+  return records.map((record) => normalizeCharacter(record.character));
+}
+
 export async function saveActiveCharacter(character: Character): Promise<Character> {
   const stored = toStoredCharacter(character);
   await db.transaction('rw', db.characters, db.meta, async () => {
     await db.characters.put(stored);
     await db.meta.put({ key: ACTIVE_META_KEY, value: stored.id });
   });
+  return stored.character;
+}
+
+export async function saveCharacter(character: Character): Promise<Character> {
+  const stored = toStoredCharacter(character);
+  await db.characters.put(stored);
   return stored.character;
 }
 

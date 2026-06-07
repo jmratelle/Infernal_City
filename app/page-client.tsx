@@ -16,20 +16,31 @@ type PageClientProps = {
 
 export default function PageClient({ initialIsCreating = false }: PageClientProps) {
   const {
+    chooseFileBackupDirectory,
     character,
     characters,
+    cloudMessage,
+    cloudStatus,
+    cloudUserEmail,
     clearAppData,
     createCharacter,
     deleteActiveCharacter,
     deleteSavedCharacter,
+    disconnectFileBackupDirectory,
+    disconnectOnlineStorage,
     duplicateSavedCharacter,
     exportSavedCharacter,
+    fileBackupMessage,
+    fileBackupStatus,
     isLoading,
     loadCharacter,
     renameSavedCharacter,
+    requestOnlineStorage,
     saveStatus,
     setCharacter,
     showCharacterLibrary,
+    syncOnlineStorage,
+    writeFileBackupsNow,
   } = useActiveCharacter();
   const [isCreating, setIsCreating] = useState(initialIsCreating);
   const [isSwitchingCharacter, setIsSwitchingCharacter] = useState(false);
@@ -60,6 +71,9 @@ export default function PageClient({ initialIsCreating = false }: PageClientProp
       ) : !character ? (
         <CharacterLibrary
           characters={characters}
+          cloudMessage={cloudMessage}
+          cloudStatus={cloudStatus}
+          cloudUserEmail={cloudUserEmail}
           onDelete={deleteSavedCharacter}
           onDuplicate={duplicateSavedCharacter}
           onExport={exportSavedCharacter}
@@ -68,9 +82,17 @@ export default function PageClient({ initialIsCreating = false }: PageClientProp
             setIsCreating(false);
           }}
           onClearAppData={clearAppData}
+          onChooseFileBackupDirectory={chooseFileBackupDirectory}
+          onDisconnectFileBackupDirectory={disconnectFileBackupDirectory}
+          onDisconnectOnlineStorage={disconnectOnlineStorage}
           onLoad={loadCharacter}
           onNew={() => setIsCreating(true)}
           onRename={renameSavedCharacter}
+          onRequestOnlineStorage={requestOnlineStorage}
+          onSyncOnlineStorage={syncOnlineStorage}
+          onWriteFileBackupsNow={writeFileBackupsNow}
+          fileBackupMessage={fileBackupMessage}
+          fileBackupStatus={fileBackupStatus}
           saveStatus={saveStatus}
         />
       ) : (
@@ -99,7 +121,12 @@ export default function PageClient({ initialIsCreating = false }: PageClientProp
             value={character}
             onChange={setCharacter}
             onChangeCharacter={() => setIsSwitchingCharacter(true)}
+            onChooseFileBackupDirectory={chooseFileBackupDirectory}
             onDeleteCharacter={deleteActiveCharacter}
+            onDisconnectFileBackupDirectory={disconnectFileBackupDirectory}
+            onWriteFileBackupsNow={writeFileBackupsNow}
+            fileBackupMessage={fileBackupMessage}
+            fileBackupStatus={fileBackupStatus}
             saveStatus={saveStatus}
           />
         </>
