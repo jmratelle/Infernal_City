@@ -1,0 +1,17 @@
+project_id = "infernal-sheet"
+
+[auth]
+site_url = "https://infernal-city.vercel.app"
+additional_redirect_urls = [
+  "https://infernal-city.vercel.app/**",
+  "http://localhost:3000/**",
+]
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true

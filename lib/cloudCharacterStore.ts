@@ -42,8 +42,16 @@ export function getMagicLinkErrorMessage(error: unknown) {
   const authError = error as { code?: string; message?: string; status?: number };
   const details = `${authError.code ?? ''} ${authError.message ?? ''}`.toLowerCase();
 
-  if (authError.status === 429 || details.includes('rate limit') || details.includes('over_email_send_rate_limit')) {
-    return 'Too many sign-in links were requested. Wait at least 60 seconds, then try again.';
+  if (details.includes('over_email_send_rate_limit')) {
+    return 'Supabase has reached its email sending limit. The built-in email service may require waiting up to an hour; configure custom SMTP for reliable production sign-ins.';
+  }
+
+  if (details.includes('over_request_rate_limit')) {
+    return 'Too many sign-in requests came from this connection. Wait a few minutes, then try again.';
+  }
+
+  if (authError.status === 429 || details.includes('rate limit')) {
+    return 'Sign-in requests are temporarily rate limited. Wait a few minutes, then try again.';
   }
 
   if (details.includes('redirect') || details.includes('not allowed')) {
