@@ -3,6 +3,9 @@ import type { User } from '@supabase/supabase-js';
 import type { Character } from '@/domain/character.types';
 import { normalizeCharacter } from '@/domain/character.normalize';
 import {
+  clearCharacterDeletion,
+  deleteCharacter,
+  listCharacterDeletions,
   listCharacterSummaries,
   loadCharacter,
   saveCharacter,
@@ -13,6 +16,11 @@ type CloudCharacterRow = {
   character_id: string;
   character: Character;
   updated_at: string;
+};
+
+type CloudCharacterDeletionRow = {
+  character_id: string;
+  deleted_at: string;
 };
 
 function requireSupabase() {
@@ -120,6 +128,15 @@ export async function saveCloudCharacter(character: Character) {
   if (!user || !supabase) return;
 
   const normalized = normalizeCharacter(character);
+  const { data: deletion, error: deletionError } = await supabase
+    .from('character_deletions')
+    .select('character_id')
+    .eq('user_id', user.id)
+    .eq('character_id', normalized.id)
+    .maybeSingle();
+  if (deletionError) throw deletionError;
+  if (deletion) return;
+
   const { error } = await supabase.from('characters').upsert({
     user_id: user.id,
     character_id: normalized.id,
@@ -137,6 +154,13 @@ export async function deleteCloudCharacter(characterId: string) {
   const user = await currentUser();
   if (!user || !supabase) return;
 
+  const { error: deletionError } = await supabase.from('character_deletions').upsert({
+    user_id: user.id,
+    character_id: characterId,
+    deleted_at: new Date().toISOString(),
+  });
+  if (deletionError) throw deletionError;
+
   const { error } = await supabase
     .from('characters')
     .delete()
@@ -147,22 +171,67 @@ export async function deleteCloudCharacter(characterId: string) {
 
 export async function syncCloudCharacters() {
   const user = await currentUser();
-  if (!user || !supabase) return { downloaded: 0, uploaded: 0 };
+  if (!user || !supabase) return { deleted: 0, downloaded: 0, uploaded: 0 };
 
-  const { data, error } = await supabase
-    .from('characters')
-    .select('character_id, character, updated_at')
-    .eq('user_id', user.id);
+  const localDeletions = await listCharacterDeletions();
+  for (const deletion of localDeletions) {
+    const { error: deletionError } = await supabase.from('character_deletions').upsert({
+      user_id: user.id,
+      character_id: deletion.id,
+      deleted_at: deletion.deletedAt,
+    });
+    if (deletionError) throw deletionError;
+
+    const { error: characterError } = await supabase
+      .from('characters')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('character_id', deletion.id);
+    if (characterError) throw characterError;
+    await clearCharacterDeletion(deletion.id);
+  }
+
+  const [{ data, error }, { data: deletionData, error: deletionsError }] = await Promise.all([
+    supabase
+      .from('characters')
+      .select('character_id, character, updated_at')
+      .eq('user_id', user.id),
+    supabase
+      .from('character_deletions')
+      .select('character_id, deleted_at')
+      .eq('user_id', user.id),
+  ]);
   if (error) throw error;
+  if (deletionsError) throw deletionsError;
 
   const cloudRows = (data ?? []) as CloudCharacterRow[];
+  const cloudDeletions = (deletionData ?? []) as CloudCharacterDeletionRow[];
+  const deletedIds = new Set(cloudDeletions.map((row) => row.character_id));
   const cloudById = new Map(cloudRows.map((row) => [row.character_id, row]));
   const localSummaries = await listCharacterSummaries();
   const localById = new Map(localSummaries.map((summary) => [summary.id, summary]));
+  let deleted = localDeletions.length;
   let downloaded = 0;
   let uploaded = 0;
 
+  if (deletedIds.size > 0) {
+    const { error: staleCharactersError } = await supabase
+      .from('characters')
+      .delete()
+      .eq('user_id', user.id)
+      .in('character_id', [...deletedIds]);
+    if (staleCharactersError) throw staleCharactersError;
+  }
+
+  for (const deletion of cloudDeletions) {
+    if (!localById.has(deletion.character_id)) continue;
+    await deleteCharacter(deletion.character_id, false);
+    localById.delete(deletion.character_id);
+    deleted += 1;
+  }
+
   for (const row of cloudRows) {
+    if (deletedIds.has(row.character_id)) continue;
     const local = localById.get(row.character_id);
     if (!local || new Date(row.updated_at).getTime() > new Date(local.updatedAt).getTime()) {
       await saveCharacter(normalizeCharacter(row.character));
@@ -171,6 +240,7 @@ export async function syncCloudCharacters() {
   }
 
   for (const summary of localSummaries) {
+    if (deletedIds.has(summary.id)) continue;
     const cloud = cloudById.get(summary.id);
     if (!cloud || new Date(summary.updatedAt).getTime() > new Date(cloud.updated_at).getTime()) {
       const character = await loadCharacter(summary.id);
@@ -181,7 +251,7 @@ export async function syncCloudCharacters() {
     }
   }
 
-  return { downloaded, uploaded };
+  return { deleted, downloaded, uploaded };
 }
 
 export { isSupabaseConfigured };

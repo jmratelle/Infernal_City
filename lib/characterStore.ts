@@ -25,6 +25,11 @@ type StoredMeta = {
   value?: string;
 };
 
+type StoredCharacterDeletion = {
+  id: string;
+  deletedAt: string;
+};
+
 export type CharacterSummary = {
   id: string;
   name: string;
@@ -36,6 +41,7 @@ export type CharacterSummary = {
 
 class CharacterDatabase extends Dexie {
   characters!: Table<StoredCharacter, string>;
+  characterDeletions!: Table<StoredCharacterDeletion, string>;
   meta!: Table<StoredMeta, string>;
 
   constructor() {
@@ -45,6 +51,11 @@ class CharacterDatabase extends Dexie {
     });
     this.version(2).stores({
       characters: '&id, updatedAt, name, race, origin',
+      meta: '&key',
+    });
+    this.version(3).stores({
+      characters: '&id, updatedAt, name, race, origin',
+      characterDeletions: '&id, deletedAt',
       meta: '&key',
     });
   }
@@ -137,8 +148,9 @@ export async function listCharacters(): Promise<Character[]> {
 
 export async function saveActiveCharacter(character: Character): Promise<Character> {
   const stored = toStoredCharacter(character);
-  await db.transaction('rw', db.characters, db.meta, async () => {
+  await db.transaction('rw', db.characters, db.characterDeletions, db.meta, async () => {
     await db.characters.put(stored);
+    await db.characterDeletions.delete(stored.id);
     await db.meta.put({ key: ACTIVE_META_KEY, value: stored.id });
   });
   return stored.character;
@@ -146,7 +158,10 @@ export async function saveActiveCharacter(character: Character): Promise<Charact
 
 export async function saveCharacter(character: Character): Promise<Character> {
   const stored = toStoredCharacter(character);
-  await db.characters.put(stored);
+  await db.transaction('rw', db.characters, db.characterDeletions, async () => {
+    await db.characters.put(stored);
+    await db.characterDeletions.delete(stored.id);
+  });
   return stored.character;
 }
 
@@ -167,8 +182,9 @@ export async function clearActiveCharacter(): Promise<void> {
 }
 
 export async function clearAllCharacterStorage(): Promise<void> {
-  await db.transaction('rw', db.characters, db.meta, async () => {
+  await db.transaction('rw', db.characters, db.characterDeletions, db.meta, async () => {
     await db.characters.clear();
+    await db.characterDeletions.clear();
     await db.meta.clear();
   });
   clearLegacyCharacterSaves();
@@ -178,13 +194,26 @@ export async function deselectActiveCharacter(): Promise<void> {
   await db.meta.delete(ACTIVE_META_KEY);
 }
 
-export async function deleteCharacter(id: string): Promise<void> {
-  await db.characters.delete(id);
-  const activeId = (await db.meta.get(ACTIVE_META_KEY))?.value;
-  if (activeId === id) {
-    await db.meta.delete(ACTIVE_META_KEY);
-  }
+export async function deleteCharacter(id: string, recordDeletion = true): Promise<void> {
+  await db.transaction('rw', db.characters, db.characterDeletions, db.meta, async () => {
+    await db.characters.delete(id);
+    if (recordDeletion) {
+      await db.characterDeletions.put({ id, deletedAt: new Date().toISOString() });
+    }
+    const activeId = (await db.meta.get(ACTIVE_META_KEY))?.value;
+    if (activeId === id) {
+      await db.meta.delete(ACTIVE_META_KEY);
+    }
+  });
   clearLegacyCharacterSaves();
+}
+
+export async function listCharacterDeletions(): Promise<StoredCharacterDeletion[]> {
+  return db.characterDeletions.toArray();
+}
+
+export async function clearCharacterDeletion(id: string): Promise<void> {
+  await db.characterDeletions.delete(id);
 }
 
 export async function duplicateCharacter(id: string): Promise<Character | null> {

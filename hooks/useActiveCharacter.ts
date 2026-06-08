@@ -157,7 +157,9 @@ export function useActiveCharacter() {
         if (cancelled) return;
         await refreshSummaries();
         setCloudStatus('signed-in');
-        setCloudMessage(`Online storage synced: ${result.uploaded} uploaded, ${result.downloaded} downloaded.`);
+        setCloudMessage(
+          `Online storage synced: ${result.uploaded} uploaded, ${result.downloaded} downloaded, ${result.deleted} deleted.`,
+        );
       } catch (err) {
         console.error('Failed to sync online storage', err);
         if (!cancelled) {
@@ -450,7 +452,9 @@ export function useActiveCharacter() {
       const result = await syncCloudCharacters();
       await refreshSummaries();
       setCloudStatus('signed-in');
-      setCloudMessage(`Online storage synced: ${result.uploaded} uploaded, ${result.downloaded} downloaded.`);
+      setCloudMessage(
+        `Online storage synced: ${result.uploaded} uploaded, ${result.downloaded} downloaded, ${result.deleted} deleted.`,
+      );
     } catch (err) {
       console.error('Failed to sync online storage', err);
       setCloudStatus('error');
