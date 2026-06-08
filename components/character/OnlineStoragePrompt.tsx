@@ -77,6 +77,10 @@ export function OnlineStoragePrompt({
             Enter your email and we&apos;ll send a secure magic link. Online storage is optional,
             and you can enable it later.
           </div>
+          <div className="rounded-md border border-amber-200/15 bg-amber-950/25 p-3 text-xs text-white/70">
+            On mobile, open the sign-in link in the same browser where you use Infernal City.
+            Links opened inside an email app may connect only that app&apos;s temporary browser.
+          </div>
 
           <Input
             type="email"

@@ -5,6 +5,10 @@ site_url = "https://infernal-city.vercel.app"
 additional_redirect_urls = [
   "https://infernal-city.vercel.app/**",
   "http://localhost:3000/**",
+  "https://infernal-city-jmratelles-projects.vercel.app/",
+  "https://infernal-city-jmratelles-projects.vercel.app/**",
+  "https://infernal-*-city-jmratelles-projects.vercel.app",
+  "https://infernal-*-city-jmratelles-projects.vercel.app/**",
 ]
 
 [auth.email]

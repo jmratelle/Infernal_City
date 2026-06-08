@@ -7,7 +7,7 @@ import {
   loadCharacter,
   saveCharacter,
 } from '@/lib/characterStore';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { initialAuthRedirectError, isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 type CloudCharacterRow = {
   character_id: string;
@@ -25,6 +25,37 @@ async function currentUser(): Promise<User | null> {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
   return data.session?.user ?? null;
+}
+
+export async function completeCloudAuthRedirect() {
+  if (!supabase || typeof window === 'undefined') return { user: null, message: null };
+
+  const hashParams = new URLSearchParams(window.location.hash.slice(1));
+  const queryParams = new URLSearchParams(window.location.search);
+  const errorDescription =
+    initialAuthRedirectError ??
+    hashParams.get('error_description') ??
+    queryParams.get('error_description');
+
+  if (errorDescription) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return {
+      user: null,
+      message: errorDescription,
+    };
+  }
+
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+
+  if (data.session && window.location.hash) {
+    window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+  }
+
+  return {
+    user: data.session?.user ?? null,
+    message: data.session ? 'Online storage connected on this browser.' : null,
+  };
 }
 
 export async function sendMagicLink(email: string) {

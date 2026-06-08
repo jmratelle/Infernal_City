@@ -29,8 +29,8 @@ import {
 } from '@/lib/characterFileBackup';
 import { normalizeCharacter } from '@/domain/character.normalize';
 import {
+  completeCloudAuthRedirect,
   deleteCloudCharacter,
-  getCloudUser,
   getMagicLinkErrorMessage,
   isSupabaseConfigured,
   onCloudAuthChange,
@@ -167,11 +167,17 @@ export function useActiveCharacter() {
       }
     };
 
-    getCloudUser()
-      .then((user) => updateUser(user?.email ?? null))
+    completeCloudAuthRedirect()
+      .then(async ({ user, message }) => {
+        if (message && !cancelled) setCloudMessage(message);
+        await updateUser(user?.email ?? null);
+      })
       .catch((err) => {
         console.error('Failed to load online storage session', err);
-        if (!cancelled) setCloudStatus('error');
+        if (!cancelled) {
+          setCloudStatus('error');
+          setCloudMessage('The sign-in link could not connect online storage. Request a new link and open it in the browser where you want to use the app.');
+        }
       });
     const unsubscribe = onCloudAuthChange((user) => void updateUser(user?.email ?? null));
 
