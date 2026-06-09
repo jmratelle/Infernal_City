@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useState, type ChangeEventHandler } from 'react';
 import {
   AlertCircle,
+  BookOpen,
   CheckCircle2,
   Cloud,
   Copy,
@@ -130,6 +131,7 @@ export function CharacterLibrary({
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [confirmClearData, setConfirmClearData] = useState(false);
   const [showOnlineStoragePrompt, setShowOnlineStoragePrompt] = useState(false);
+  const [showStorageGuide, setShowStorageGuide] = useState(false);
 
   React.useEffect(() => {
     try {
@@ -204,6 +206,69 @@ export function CharacterLibrary({
           onContinueDeviceOnly={dismissOnlineStoragePrompt}
           onUseOnlineStorage={requestOnlineStorage}
         />
+      )}
+      {showStorageGuide && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-4">
+          <Card
+            className="w-full max-w-2xl border-white/10 bg-black text-white"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="storage-guide-title"
+          >
+            <CardContent className="grid gap-5 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div id="storage-guide-title" className="text-xl font-semibold">
+                    Character Storage Guide
+                  </div>
+                  <div className="mt-1 text-sm text-white/70">
+                    You can use one option or combine them for extra protection.
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Close storage guide"
+                  onClick={() => setShowStorageGuide(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <ol className="grid gap-3">
+                <li className="rounded-lg border border-white/10 bg-white/5 p-4">
+                  <div className="font-semibold">1. In-browser storage</div>
+                  <div className="mt-1 text-sm text-white/70">
+                    Characters save automatically in this browser. It is convenient, but clearing
+                    site data, changing browsers, or losing the device can remove them.
+                  </div>
+                </li>
+                <li className="rounded-lg border border-white/10 bg-white/5 p-4">
+                  <div className="font-semibold">2. File backups and exports</div>
+                  <div className="mt-1 text-sm text-white/70">
+                    Use Choose Folder for automatic file backups where supported, or Export on an
+                    individual character to download a portable JSON file. Import restores an
+                    exported character.
+                  </div>
+                </li>
+                <li className="rounded-lg border border-white/10 bg-white/5 p-4">
+                  <div className="font-semibold">3. Cloud storage</div>
+                  <div className="mt-1 text-sm text-white/70">
+                    Sign in through Online Storage to sync characters between devices. Press Sync
+                    Now after changes when moving between devices.
+                  </div>
+                </li>
+              </ol>
+
+              <div className="flex justify-end">
+                <Button type="button" onClick={() => setShowStorageGuide(false)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       <Card className="sheet-card py-0">
@@ -496,6 +561,13 @@ export function CharacterLibrary({
           })}
         </div>
       )}
+
+      <div className="flex justify-center border-t border-white/10 pt-4">
+        <Button type="button" variant="ghost" onClick={() => setShowStorageGuide(true)}>
+          <BookOpen className="h-4 w-4" />
+          Storage Guide
+        </Button>
+      </div>
     </div>
   );
 }
