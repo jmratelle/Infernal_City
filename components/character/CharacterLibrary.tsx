@@ -49,8 +49,9 @@ type CharacterLibraryProps = {
   onLoad: (id: string) => void;
   onNew: () => void;
   onRename: (id: string, name: string) => void;
-  onRequestOnlineStorage: (email: string) => void | Promise<void>;
+  onRequestOnlineStorage: (email: string) => boolean | Promise<boolean>;
   onSyncOnlineStorage: () => void | Promise<void>;
+  onVerifyOnlineStorageCode: (email: string, code: string) => boolean | Promise<boolean>;
   onWriteFileBackupsNow: () => void | Promise<void>;
   fileBackupMessage: string | null;
   fileBackupStatus: FileBackupStatus;
@@ -117,6 +118,7 @@ export function CharacterLibrary({
   onRename,
   onRequestOnlineStorage,
   onSyncOnlineStorage,
+  onVerifyOnlineStorageCode,
   onWriteFileBackupsNow,
   fileBackupMessage,
   fileBackupStatus,
@@ -150,9 +152,14 @@ export function CharacterLibrary({
     setShowOnlineStoragePrompt(false);
   };
 
-  const requestOnlineStorage = async (email: string) => {
-    await onRequestOnlineStorage(email);
-    dismissOnlineStoragePrompt();
+  const requestOnlineStorage = (email: string) => {
+    return onRequestOnlineStorage(email);
+  };
+
+  const verifyOnlineStorageCode = async (email: string, code: string) => {
+    const verified = await onVerifyOnlineStorageCode(email, code);
+    if (verified) dismissOnlineStoragePrompt();
+    return verified;
   };
 
   const visibleCharacters = useMemo(() => {
@@ -201,10 +208,13 @@ export function CharacterLibrary({
     <div className="mx-auto grid max-w-6xl gap-4 p-4">
       {showOnlineStoragePrompt && (
         <OnlineStoragePrompt
-          isSending={cloudStatus === 'sending-link'}
+          isSending={cloudStatus === 'sending-code'}
+          isVerifying={cloudStatus === 'verifying-code' || cloudStatus === 'syncing'}
+          message={cloudMessage}
           onClose={dismissOnlineStoragePrompt}
           onContinueDeviceOnly={dismissOnlineStoragePrompt}
           onUseOnlineStorage={requestOnlineStorage}
+          onVerifyCode={verifyOnlineStorageCode}
         />
       )}
       {showStorageGuide && (

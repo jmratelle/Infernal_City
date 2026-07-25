@@ -66,7 +66,7 @@ export async function completeCloudAuthRedirect() {
   };
 }
 
-export async function sendMagicLink(email: string) {
+export async function sendStorageOtp(email: string) {
   const client = requireSupabase();
   const { error } = await client.auth.signInWithOtp({
     email,
@@ -77,7 +77,18 @@ export async function sendMagicLink(email: string) {
   if (error) throw error;
 }
 
-export function getMagicLinkErrorMessage(error: unknown) {
+export async function verifyStorageOtp(email: string, token: string) {
+  const client = requireSupabase();
+  const { data, error } = await client.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  });
+  if (error) throw error;
+  return data.user ?? data.session?.user ?? null;
+}
+
+export function getOtpErrorMessage(error: unknown) {
   const authError = error as { code?: string; message?: string; status?: number };
   const details = `${authError.code ?? ''} ${authError.message ?? ''}`.toLowerCase();
 
@@ -97,11 +108,15 @@ export function getMagicLinkErrorMessage(error: unknown) {
     return 'This site address is not authorized for sign-in links. The app owner needs to add it to the Supabase redirect URLs.';
   }
 
+  if (details.includes('otp') || details.includes('token') || details.includes('expired') || authError.status === 403) {
+    return 'That sign-in code is invalid or expired. Request a new code and try again.';
+  }
+
   if (details.includes('email') || details.includes('smtp') || details.includes('send')) {
     return 'Supabase could not send the email right now. Wait a few minutes, then try again.';
   }
 
-  return 'Could not send the sign-in link. Please wait a moment and try again.';
+  return 'Could not complete online storage sign-in. Please wait a moment and try again.';
 }
 
 export async function signOutCloudStorage() {

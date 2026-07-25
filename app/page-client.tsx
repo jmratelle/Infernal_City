@@ -40,6 +40,7 @@ export default function PageClient({ initialIsCreating = false }: PageClientProp
     setCharacter,
     showCharacterLibrary,
     syncOnlineStorage,
+    verifyOnlineStorageCode,
     writeFileBackupsNow,
   } = useActiveCharacter();
   const [isCreating, setIsCreating] = useState(initialIsCreating);
@@ -90,6 +91,7 @@ export default function PageClient({ initialIsCreating = false }: PageClientProp
           onRename={renameSavedCharacter}
           onRequestOnlineStorage={requestOnlineStorage}
           onSyncOnlineStorage={syncOnlineStorage}
+          onVerifyOnlineStorageCode={verifyOnlineStorageCode}
           onWriteFileBackupsNow={writeFileBackupsNow}
           fileBackupMessage={fileBackupMessage}
           fileBackupStatus={fileBackupStatus}

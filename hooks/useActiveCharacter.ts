@@ -31,18 +31,19 @@ import { normalizeCharacter } from '@/domain/character.normalize';
 import {
   completeCloudAuthRedirect,
   deleteCloudCharacter,
-  getMagicLinkErrorMessage,
+  getOtpErrorMessage,
   isSupabaseConfigured,
   onCloudAuthChange,
   saveCloudCharacter,
-  sendMagicLink,
+  sendStorageOtp,
   signOutCloudStorage,
   syncCloudCharacters,
+  verifyStorageOtp,
 } from '@/lib/cloudCharacterStore';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 export type FileBackupStatus = 'unsupported' | 'not-configured' | 'ready' | 'saving' | 'saved' | 'permission-needed' | 'error';
-export type CloudStatus = 'unconfigured' | 'signed-out' | 'sending-link' | 'syncing' | 'signed-in' | 'error';
+export type CloudStatus = 'unconfigured' | 'signed-out' | 'sending-code' | 'verifying-code' | 'syncing' | 'signed-in' | 'error';
 
 const CHARACTER_CHANNEL = 'infernal-sheet:characters';
 const SAVE_DEBOUNCE_MS = 500;
@@ -178,7 +179,7 @@ export function useActiveCharacter() {
         console.error('Failed to load online storage session', err);
         if (!cancelled) {
           setCloudStatus('error');
-          setCloudMessage('The sign-in link could not connect online storage. Request a new link and open it in the browser where you want to use the app.');
+          setCloudMessage('Online storage could not finish signing in. Request a new code and try again.');
         }
       });
     const unsubscribe = onCloudAuthChange((user) => void updateUser(user?.email ?? null));
@@ -433,16 +434,40 @@ export function useActiveCharacter() {
   };
 
   const requestOnlineStorage = async (email: string) => {
-    setCloudStatus('sending-link');
+    setCloudStatus('sending-code');
     setCloudMessage(null);
     try {
-      await sendMagicLink(email);
+      await sendStorageOtp(email);
       setCloudStatus('signed-out');
-      setCloudMessage(`Check ${email} for your secure sign-in link.`);
+      setCloudMessage(`Check ${email} for your secure sign-in code.`);
+      return true;
     } catch (err) {
-      console.error('Failed to send online storage sign-in link', err);
+      console.error('Failed to send online storage sign-in code', err);
       setCloudStatus('error');
-      setCloudMessage(getMagicLinkErrorMessage(err));
+      setCloudMessage(getOtpErrorMessage(err));
+      return false;
+    }
+  };
+
+  const verifyOnlineStorageCode = async (email: string, token: string) => {
+    setCloudStatus('verifying-code');
+    setCloudMessage(null);
+    try {
+      const user = await verifyStorageOtp(email, token);
+      setCloudUserEmail(user?.email ?? email);
+      setCloudStatus('syncing');
+      const result = await syncCloudCharacters();
+      await refreshSummaries();
+      setCloudStatus('signed-in');
+      setCloudMessage(
+        `Online storage synced: ${result.uploaded} uploaded, ${result.downloaded} downloaded, ${result.deleted} deleted.`,
+      );
+      return true;
+    } catch (err) {
+      console.error('Failed to verify online storage sign-in code', err);
+      setCloudStatus('error');
+      setCloudMessage(getOtpErrorMessage(err));
+      return false;
     }
   };
 
@@ -494,6 +519,7 @@ export function useActiveCharacter() {
     loadCharacter,
     renameSavedCharacter,
     requestOnlineStorage,
+    verifyOnlineStorageCode,
     deleteActiveCharacter,
     clearAppData,
     saveStatus,

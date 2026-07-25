@@ -9,18 +9,45 @@ import { Input } from '@/components/ui/input';
 
 type OnlineStoragePromptProps = {
   isSending?: boolean;
+  isVerifying?: boolean;
+  message?: string | null;
   onClose: () => void;
   onContinueDeviceOnly: () => void;
-  onUseOnlineStorage: (email: string) => void | Promise<void>;
+  onUseOnlineStorage: (email: string) => boolean | Promise<boolean>;
+  onVerifyCode: (email: string, code: string) => boolean | Promise<boolean>;
 };
 
 export function OnlineStoragePrompt({
   isSending = false,
+  isVerifying = false,
+  message = null,
   onClose,
   onContinueDeviceOnly,
   onUseOnlineStorage,
+  onVerifyCode,
 }: OnlineStoragePromptProps) {
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [codeSentTo, setCodeSentTo] = useState<string | null>(null);
+  const isBusy = isSending || isVerifying;
+
+  const sendCode = async () => {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) return;
+
+    const sent = await onUseOnlineStorage(normalizedEmail);
+    if (sent) {
+      setCodeSentTo(normalizedEmail);
+      setCode('');
+    }
+  };
+
+  const verifyCode = async () => {
+    if (!codeSentTo || !code.trim()) return;
+
+    const verified = await onVerifyCode(codeSentTo, code.trim());
+    if (verified) onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-4">
@@ -74,12 +101,8 @@ export function OnlineStoragePrompt({
           </div>
 
           <div className="text-sm text-white/70">
-            Enter your email and we&apos;ll send a secure magic link. Online storage is optional,
+            Enter your email and we&apos;ll send a secure sign-in code. Online storage is optional,
             and you can enable it later.
-          </div>
-          <div className="rounded-md border border-amber-200/15 bg-amber-950/25 p-3 text-xs text-white/70">
-            On mobile, open the sign-in link in the same browser where you use Infernal City.
-            Links opened inside an email app may connect only that app&apos;s temporary browser.
           </div>
 
           <Input
@@ -88,22 +111,61 @@ export function OnlineStoragePrompt({
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@example.com"
             className="border-white/15 bg-black/30 text-white"
-            disabled={isSending}
+            disabled={isBusy || Boolean(codeSentTo)}
             aria-label="Email address for online storage"
           />
 
+          {codeSentTo && (
+            <div className="grid gap-3">
+              <div className="rounded-md border border-amber-200/15 bg-amber-950/25 p-3 text-xs text-white/70">
+                Check {codeSentTo} for the one-time code, then enter it here. This keeps the
+                sign-in connected to this app window.
+              </div>
+              <Input
+                inputMode="numeric"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                placeholder="123456"
+                className="border-white/15 bg-black/30 text-white"
+                disabled={isBusy}
+                aria-label="Online storage sign-in code"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void verifyCode();
+                }}
+              />
+            </div>
+          )}
+
+          {message && (
+            <div className="rounded-md border border-amber-200/15 bg-amber-950/25 p-3 text-xs text-white/75">
+              {message}
+            </div>
+          )}
+
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="secondary" onClick={onContinueDeviceOnly} disabled={isSending}>
+            <Button type="button" variant="secondary" onClick={onContinueDeviceOnly} disabled={isBusy}>
               Continue on This Device
             </Button>
-            <Button
-              type="button"
-              disabled={isSending || !email.trim()}
-              onClick={() => onUseOnlineStorage(email.trim())}
-            >
-              <Cloud className="h-4 w-4" />
-              {isSending ? 'Sending Link...' : 'Send Sign-in Link'}
-            </Button>
+            {codeSentTo ? (
+              <>
+                <Button type="button" variant="ghost" disabled={isBusy} onClick={() => setCodeSentTo(null)}>
+                  Change Email
+                </Button>
+                <Button type="button" disabled={isBusy || !code.trim()} onClick={verifyCode}>
+                  <ShieldCheck className="h-4 w-4" />
+                  {isVerifying ? 'Verifying...' : 'Verify Code'}
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="button"
+                disabled={isBusy || !email.trim()}
+                onClick={sendCode}
+              >
+                <Cloud className="h-4 w-4" />
+                {isSending ? 'Sending Code...' : 'Send Sign-in Code'}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

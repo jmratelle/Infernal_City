@@ -42,7 +42,7 @@ In development, the library screen exposes `Storage Tools`. It clears this app's
 
 Supabase online storage is optional. IndexedDB remains the working copy, and authenticated users can sync their characters to the `public.characters` table.
 
-- Email magic links provide sign-in.
+- Email one-time passcodes provide sign-in. The Supabase email template must include `{{ .Token }}` so users can enter the code inside the app.
 - Row Level Security restricts every cloud character to its owner.
 - Sync compares `updatedAt` timestamps and keeps the newest copy.
 - Cloud write failures do not remove or invalidate device saves.
