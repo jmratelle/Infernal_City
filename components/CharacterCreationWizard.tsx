@@ -49,13 +49,13 @@ type CreationStep =
   | 'review';
 
 const STEPS: CreationStep[] = [
-  'name',
   'race',
   'race_choices',
   'skills',
   'abilities',
   'origin',
   'origin_bonus',
+  'name',
   'review',
 ];
 
@@ -695,7 +695,7 @@ export default function CharacterCreationWizard({
     }
 
     setStepIndex(
-        STEPS.indexOf('review')
+        STEPS.indexOf('name')
     );
     }
     function confirmOriginBonus() {
@@ -787,7 +787,7 @@ const nextNotes = updated.notes ?? '';
   originAppliedCharacterRef.current = originBase;
 
   setStepIndex(
-    STEPS.indexOf('review')
+    STEPS.indexOf('name')
   );
 }
 
@@ -868,7 +868,15 @@ const nextNotes = updated.notes ?? '';
               />
             </div>
 
-            <div className="flex justify-end">
+              <div className="flex justify-between">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={back}
+              >
+                Back
+              </Button>
+              
               <Button
                 type="button"
                 disabled={!character.name.trim()}
